@@ -1,0 +1,169 @@
+/* Product card shared by the shop grid and the home page
+   (design: src/acrhi/Prenta Shop.dc.html). */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #ECE6DF;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #16233B;
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.card:hover {
+  box-shadow: 0 10px 24px -12px rgba(22, 35, 59, .25);
+  transform: translateY(-2px);
+}
+
+.tile {
+  position: relative;
+  display: block;
+  background: #F3EEE8;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+/* ── Garment picture (also used on the product page) ─────── */
+.media {
+  position: absolute;
+  inset: 8% 10%;
+  transition: transform .3s ease;
+}
+.card:hover .media { transform: scale(1.04); }
+
+.photo,
+.cutout,
+.tint {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.photo,
+.cutout { object-fit: contain; display: block; }
+/* Neutral cut-outs are light grey; lift them to read as white fabric. */
+.white { filter: brightness(1.14) contrast(.92); }
+.tint {
+  mix-blend-mode: multiply;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.badges {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 4px;
+}
+.badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #16233B;
+  color: #fff;
+}
+.badgeSale { background: #EF5F7A; }
+
+.fav {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, .92);
+  color: #16233B;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: color .15s, transform .15s;
+}
+.fav:hover { transform: scale(1.08); }
+.favOn { color: #EF5F7A; }
+
+/* ── Text ─────────────────────────────────────────────────── */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  padding: 10px 12px 12px;
+}
+.cat {
+  font-size: 10.5px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #8A8F9C;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #16233B;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.name:hover { color: #EF5F7A; }
+.name:focus-visible { outline: 2px solid #EF5F7A; outline-offset: 2px; }
+
+.swatches { display: flex; align-items: center; gap: 4px; }
+.swatch {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15);
+  cursor: pointer;
+}
+.swatchActive { outline: 1.5px solid #16233B; outline-offset: 1.5px; }
+.more { font-size: 11px; color: #A0A5B1; margin-left: 2px; }
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+.price { font-weight: 700; font-size: 15px; color: #EF5F7A; white-space: nowrap; }
+.oldPrice { font-size: 12px; color: #A0A5B1; text-decoration: line-through; white-space: nowrap; }
+.add {
+  margin-left: auto;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: none;
+  background: #16233B;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background .2s;
+}
+.add:hover { background: #EF5F7A; }
+.added { background: #3F6B4F; }
+
+@media (max-width: 560px) {
+  .body { padding: 8px 10px 10px; }
+  .name { font-size: 13px; }
+  .price { font-size: 14px; }
+  .add { width: 30px; height: 30px; }
+  .fav { width: 28px; height: 28px; }
+}

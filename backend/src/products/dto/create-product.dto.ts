@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -17,6 +17,34 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   category?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  colors?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  sizes?: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  material?: string;
+
+  @IsOptional()
+  @IsIn(['unisex', 'men', 'women'])
+  gender?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  oldPrice?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  newArrival?: boolean;
 
   @IsOptional()
   @IsString()

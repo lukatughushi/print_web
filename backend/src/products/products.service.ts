@@ -16,7 +16,7 @@ export class ProductsService {
   findAll(category?: string) {
     const filter: Record<string, unknown> = { isActive: true };
     if (category) filter.category = category;
-    return this.productModel.find(filter).sort({ createdAt: -1 }).exec();
+    return this.productModel.find(filter).sort({ createdAt: -1, _id: -1 }).exec();
   }
 
   async findOne(id: string) {

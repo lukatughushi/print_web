@@ -1,16 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { CATEGORIES, isOnSale, priceOf } from '../lib/catalog';
+import ProductCard, { ProductImage } from '../components/ProductCard';
+import SiteFooter from '../components/SiteFooter';
 import s from './HomePage.module.css';
 
-import logoPrenta from '../assets/prenta/LOGO_PRENTA.png';
 import heroTshirt from '../assets/prenta/home_tshirt.png';
 import mainHoodie from '../assets/prenta/main_hoode.png';
-import mainBag from '../assets/prenta/main_bag.png';
-import catTshirt from '../assets/prenta/cat_tshirt.png';
-import catLongsleeve from '../assets/prenta/cat_longsleeve.png';
-import catCap from '../assets/prenta/cat_cap.png';
-import catMug from '../assets/prenta/cat_mug.png';
 
 import { API_URL as API_BASE } from '../lib/config';
 
@@ -29,26 +26,6 @@ const DEFAULT_SETTINGS = {
   contactEmail: 'info@prenta.ge',
   contactAddress: 'თბილისი, ჭავჭავაძის 12',
 };
-
-/* ── Categories — exact set from Prenta.dc (P object) ──────── */
-const CATEGORIES = [
-  { key: 'tee', cat: 'TSHIRT', name: 'მაისური', en: 'T-SHIRT', from: 35, img: catTshirt },
-  { key: 'hoodie', cat: 'HOODIE', name: 'ჰუდი', en: 'HOODIE', from: 89, img: mainHoodie },
-  { key: 'long', cat: 'TSHIRT', name: 'გრძელმკლავიანი', en: 'LONG SLEEVE', from: 55, img: catLongsleeve },
-  { key: 'tote', cat: 'BAG', name: 'ჩანთა', en: 'TOTE BAG', from: 29, img: mainBag },
-  { key: 'cap', cat: 'BAG', name: 'ქუდი', en: 'CAP', from: 39, img: catCap },
-  { key: 'mug', cat: 'BAG', name: 'ჭიქა', en: 'MUG', from: 25, img: catMug },
-];
-
-/* ── Bestsellers — first 6 of Prenta.dc buildShop() ───────── */
-const BESTSELLERS = [
-  { title: 'ღამის ჭექა', badge: 'მაისური', en: 'Night Bolt', price: 49, img: catTshirt },
-  { title: 'მთების ხაზი', badge: 'მაისური', en: 'Ridge Line', price: 49, img: catTshirt },
-  { title: 'ალუბლის გული', badge: 'ჰუდი', en: 'Cherry Heart', price: 105, img: mainHoodie },
-  { title: 'მზის ტალღა', badge: 'ჩანთა', en: 'Sun Wave', price: 39, img: mainBag },
-  { title: 'ვარსკვლავი', badge: 'ქუდი', en: 'Star Cap', price: 49, img: catCap },
-  { title: 'დილის რგოლი', badge: 'ჭიქა', en: 'Morning Ring', price: 35, img: catMug },
-];
 
 const STEPS = [
   { n: '01', t: 'აწყვე დიზაინი', d: 'ატვირთე ლოგო ან სურათი, დაამატე ტექსტი და მზა ემბლემები — წინ, უკან და სახელოებზე.' },
@@ -112,14 +89,24 @@ export default function HomePage() {
   const goDesign = () => navigate(designLink.startsWith('/') ? designLink : '/');
   const goShop = () => navigate('/shop');
 
-  // Link a static category to a live product of the same category when one exists.
-  const productByCategory = {};
-  products.forEach((p) => { if (!productByCategory[p.category]) productByCategory[p.category] = p; });
-  const openCategory = (catEnum) => {
-    const match = productByCategory[catEnum];
-    if (match) navigate(`/design/${match.id}`);
-    else goDesign();
-  };
+  // Lowest price per category, for the category tiles.
+  const fromPrice = {};
+  products.forEach((p) => {
+    const price = priceOf(p);
+    if (price > 0 && !(fromPrice[p.category] <= price)) fromPrice[p.category] = price;
+  });
+
+  // Featured: discounted first, then new arrivals, one of each category at most.
+  const featured = [];
+  const seen = new Set();
+  [...products]
+    .sort((a, b) => Number(isOnSale(b)) - Number(isOnSale(a)) || Number(!!b.newArrival) - Number(!!a.newArrival))
+    .forEach((p) => {
+      if (featured.length < 10 && !seen.has(p.category)) {
+        seen.add(p.category);
+        featured.push(p);
+      }
+    });
 
   /* ── Dynamic banners → slider ───────────────────────────── */
   const [banners, setBanners] = useState(null); // null = loading, [] = none
@@ -224,7 +211,7 @@ export default function HomePage() {
                 </div>
               </div>
               <div className={s.heroLinks}>
-                <div className={s.heroLink} onClick={goShop}>ნახე პოპულარული მაისურები</div>
+                <div className={s.heroLink} onClick={() => navigate('/shop?cat=TSHIRT')}>ნახე პოპულარული მაისურები</div>
                 <div className={s.heroLink} onClick={goDesign}>როგორ მუშაობს ბეჭდვა</div>
               </div>
             </div>
@@ -254,45 +241,43 @@ export default function HomePage() {
 
       {/* ── Categories ───────────────────────────────────── */}
       <section className={s.section}>
-        <h2 className={s.h2}>კატეგორიები</h2>
-        <p className={s.sub}>ექვსი პროდუქტი, ყველა DTF ბეჭდვისთვის მომზადებული.</p>
+        <div className={s.sectionHead}>
+          <div>
+            <h2 className={s.h2}>კატეგორიები</h2>
+            <p className={s.sub} style={{ marginBottom: 0 }}>ტანსაცმელი და აქსესუარები — ყველა ბეჭდვისთვის მომზადებული.</p>
+          </div>
+          <Link className={s.moreLink} to="/shop">მთელი კატალოგი →</Link>
+        </div>
         <div className={s.catGrid}>
           {CATEGORIES.map((c) => (
-            <div key={c.key} className={s.catCard} onClick={() => openCategory(c.cat)} role="button" tabIndex={0}>
-              <img className={s.catImg} src={c.img} alt={c.name} />
-              <div className={s.catName}>{c.name}</div>
-              <div className={s.catEn}>{c.en}</div>
-              <div className={s.catPrice}>{money(c.from)}-დან</div>
-            </div>
+            <Link key={c.code} className={s.catCard} to={`/shop?cat=${c.code}`}>
+              <span className={s.catTile}>
+                <ProductImage product={{ category: c.code, name: c.label }} color={c.swatch} className={s.catImg} />
+              </span>
+              <span className={s.catName}>{c.label}</span>
+              {fromPrice[c.code] !== undefined && (
+                <span className={s.catPrice}>{money(fromPrice[c.code])}-დან</span>
+              )}
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* ── Bestsellers ──────────────────────────────────── */}
-      <section className={s.section}>
-        <div className={s.sectionHead}>
-          <div>
-            <h2 className={s.h2}>ბესთსელერები</h2>
-            <p className={s.sub} style={{ marginBottom: 0 }}>ყველაზე ხშირად შეკვეთილი მზა დიზაინები.</p>
-          </div>
-          <div className={s.moreLink} onClick={goShop}>ყველა პროდუქტი →</div>
-        </div>
-        <div className={s.bestGrid}>
-          {BESTSELLERS.map((b) => (
-            <div key={b.en} className={s.bestCard} onClick={goShop} role="button" tabIndex={0}>
-              <div className={s.bestTile}>
-                <img src={b.img} alt={b.title} />
-              </div>
-              <div className={s.bestBody}>
-                <span className={s.bestBadge}>{b.badge}</span>
-                <div className={s.bestTitle}>{b.title}</div>
-                <div className={s.bestEn}>{b.en}</div>
-                <div className={s.bestPrice}>{money(b.price)}</div>
-              </div>
+      {/* ── Featured products ────────────────────────────── */}
+      {featured.length > 0 && (
+        <section className={s.section}>
+          <div className={s.sectionHead}>
+            <div>
+              <h2 className={s.h2}>შეთავაზებები</h2>
+              <p className={s.sub} style={{ marginBottom: 0 }}>ფასდაკლებები და ახალი კოლექცია.</p>
             </div>
-          ))}
-        </div>
-      </section>
+            <Link className={s.moreLink} to="/shop?sale=1">ყველა ფასდაკლება →</Link>
+          </div>
+          <div className={s.bestGrid}>
+            {featured.map((p) => <ProductCard key={p.id} product={p} currency={settings.currency} />)}
+          </div>
+        </section>
+      )}
 
       {/* ── Corporate CTA ────────────────────────────────── */}
       <section className={s.sectionPad} style={{ maxWidth: 1360, margin: '0 auto' }}>
@@ -350,56 +335,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────── */}
-      <footer className={s.footer}>
-        <div className={s.footerGrid}>
-          <div>
-            <div className={s.footerBrand}>
-              <img src={logoPrenta} alt="Prenta" />
-              <span className={s.footerWordmark}>PRENTA</span>
-            </div>
-            <div className={s.footerAbout}>
-              ბეჭდვა მაისურებზე, ჰუდებზე, ჩანთებზე და ჭიქებზე.<br />
-              {settings.contactAddress}<br />
-              {settings.contactPhone}<br />
-              {settings.contactEmail}
-            </div>
-          </div>
-          <div>
-            <div className={s.footerColTitle}>პროდუქცია</div>
-            <div className={s.footerCol}>
-              <span onClick={goShop}>მაისურები</span>
-              <span onClick={goShop}>ჰუდები</span>
-              <span onClick={goShop}>ჩანთები</span>
-              <span onClick={goShop}>ქუდები და ჭიქები</span>
-            </div>
-          </div>
-          <div>
-            <div className={s.footerColTitle}>სერვისი</div>
-            <div className={s.footerCol}>
-              <span onClick={goDesign}>დიზაინის კონსტრუქტორი</span>
-              <span>კორპორატიული შეკვეთები</span>
-              <span>DTF ბეჭდვა</span>
-              <span>ბეჭდვის მაკეტის მოთხოვნები</span>
-            </div>
-          </div>
-          <div>
-            <div className={s.footerColTitle}>დახმარება</div>
-            <div className={s.footerCol}>
-              <span>მიწოდება და ვადები</span>
-              <span>დაბრუნება</span>
-              <span>ხშირად დასმული კითხვები</span>
-              <span>კონტაქტი</span>
-            </div>
-          </div>
-        </div>
-        <div className={s.footerBar}>
-          <div className={s.footerBarInner}>
-            <span>© {new Date().getFullYear()} Prenta · ყველა უფლება დაცულია</span>
-            <span>გადახდა: ბარათით, კურიერთან ან განვადებით</span>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter settings={settings} />
 
     </div>
   );

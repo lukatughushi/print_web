@@ -115,17 +115,53 @@
 /* ── Product detail ──────────────────────────────────────── */
 .detailGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 40px;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: clamp(20px, 4vw, 40px);
 }
 .detailTile {
+  position: relative;
   background: #F3EEEA;
-  border-radius: 24px;
+  border-radius: 20px;
   aspect-ratio: 1 / 1;
-  display: grid;
-  place-items: center;
+  overflow: hidden;
 }
-.detailTile img { width: 84%; aspect-ratio: 1; object-fit: contain; display: block; }
+.detailBadge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #EF5F79;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+}
+.crumbs { font-size: 13px; color: #8A98A6; margin-bottom: 18px; }
+.crumbs a { color: #8A98A6; text-decoration: none; }
+.crumbs a:hover { color: #EF5F79; }
+.detailPriceRow { display: flex; align-items: baseline; gap: 12px; margin: 10px 0 18px; }
+.detailOld { font-size: 18px; color: #8A98A6; text-decoration: line-through; }
+.specs {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 18px;
+  margin: 0 0 24px;
+  font-size: 14px;
+}
+.specs dt { color: #8A98A6; }
+.specs dd { margin: 0; }
+.fieldValue { color: #16283F; text-transform: none; letter-spacing: 0; font-weight: 600; }
+.colorRow { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+.colorSwatch {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(22, 40, 63, .25);
+  box-shadow: inset 0 0 0 2px #fff;
+  cursor: pointer;
+}
+.colorSwatchActive { outline: 2px solid #16283F; outline-offset: 2px; }
 .kicker {
   font-size: 12px;
   letter-spacing: .14em;
@@ -134,15 +170,14 @@
 }
 .detailTitle {
   font-family: var(--serif), Georgia, serif;
-  font-size: 36px;
+  font-size: clamp(24px, 3.2vw, 34px);
   margin: 6px 0 4px;
   line-height: 1.1;
 }
 .detailPrice {
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 700;
   color: #EF5F79;
-  margin-bottom: 24px;
 }
 .detailText { color: #5A6B7E; line-height: 1.65; margin: 0 0 26px; }
 .fieldLabel {

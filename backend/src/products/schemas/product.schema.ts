@@ -16,6 +16,27 @@ export class Product {
   @Prop({ trim: true, index: true })
   category?: string;
 
+  // Colour keys (e.g. 'white', 'navy'); the storefront maps them to swatches.
+  @Prop({ type: [String], default: [] })
+  colors: string[];
+
+  @Prop({ type: [String], default: [] })
+  sizes: string[];
+
+  @Prop({ trim: true })
+  material?: string;
+
+  // 'unisex' | 'men' | 'women'
+  @Prop({ trim: true, default: 'unisex' })
+  gender: string;
+
+  // Pre-discount price; when set above `price` the product shows as on sale.
+  @Prop({ min: 0 })
+  oldPrice?: number;
+
+  @Prop({ default: false })
+  newArrival: boolean;
+
   // GridFS file id (see FilesModule) or an external image URL.
   @Prop()
   image?: string;

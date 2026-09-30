@@ -253,6 +253,7 @@
   cursor: pointer;
   transition: color .15s;
 }
+.moreLink { text-decoration: none; }
 .moreLink:hover { color: #16283F; }
 
 /* ── How it works ────────────────────────────────────────── */
@@ -278,43 +279,53 @@
 /* ── Category grid ───────────────────────────────────────── */
 .catGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
 }
-@media (max-width: 860px) { .catGrid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .catGrid { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .catGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .catGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; } }
+@media (max-width: 440px) { .catGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .catCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   background: #fff;
   border: 1px solid #EDE3DC;
-  border-radius: 20px;
-  padding: 16px;
-  cursor: pointer;
-  transition: transform .18s ease, box-shadow .18s ease;
+  border-radius: 14px;
+  padding: 10px 10px 12px;
+  color: #16283F;
+  text-decoration: none;
+  transition: border-color .18s ease, box-shadow .18s ease;
 }
 .catCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 34px rgba(22, 40, 63, .10);
+  border-color: #DCCFC4;
+  box-shadow: 0 10px 24px rgba(22, 40, 63, .08);
 }
-.catImg {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: contain;
+.catTile {
+  position: relative;
   display: block;
-  background: #F7F3F0;
-  border-radius: 14px;
+  aspect-ratio: 1;
+  background: #F4EFEB;
+  border-radius: 10px;
+  overflow: hidden;
 }
-.catName { font-weight: 700; font-size: 16px; margin-top: 12px; }
-.catEn { font-size: 12px; color: #8A98A6; letter-spacing: .06em; text-transform: uppercase; margin-top: 2px; }
-.catPrice { margin-top: 8px; font-weight: 700; color: #EF5F79; }
+.catTile .catImg {
+  inset: 13%;
+  transition: transform .3s ease;
+}
+.catCard:hover .catImg { transform: scale(1.06); }
+.catName { font-weight: 600; font-size: 14px; line-height: 1.3; margin-top: 10px; }
+.catPrice { margin-top: 3px; font-size: 13px; font-weight: 700; color: #EF5F79; }
 
 /* ── Bestsellers ─────────────────────────────────────────── */
 .bestGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
 }
-@media (max-width: 860px) { .bestGrid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .bestGrid { grid-template-columns: 1fr; } }
+@media (max-width: 1200px) { .bestGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 1000px) { .bestGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .bestGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 .bestCard {
   background: #fff;
   border: 1px solid #EDE3DC;
@@ -462,8 +473,10 @@
   gap: 9px;
   font-size: 14px;
 }
-.footerCol span { cursor: pointer; transition: color .15s; }
-.footerCol span:hover { color: #F4778C; }
+.footerCol span,
+.footerCol a { cursor: pointer; color: inherit; text-decoration: none; transition: color .15s; }
+.footerCol span:hover,
+.footerCol a:hover { color: #F4778C; }
 .footerBar { border-top: 1px solid rgba(255, 255, 255, .12); }
 .footerBarInner {
   max-width: 1360px;

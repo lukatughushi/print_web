@@ -38,6 +38,7 @@ const MODEL_URLS = {
   hoodie: '/models/hoodie.glb',
   hoodie_zip: '/models/hoodie_zip.glb',
   cap: '/models/cap_main.glb',
+  tote: '/models/tote_main.glb',
 };
 
 // Per-model tweaks. Every model needs a FRONT_PRINT mesh or material;
@@ -66,6 +67,8 @@ const MODEL_OPTIONS = {
   hoodie_zip: { rotationY: 0, printFit: 'band', fabricMaterial: 'FABRIC' },
   // cap_main.glb is exported with its brim facing -Z, so turn it around.
   cap: { rotationY: Math.PI, printFit: 'band' },
+  // tote_main.glb: square-ish front/back print panels, front faces +Z.
+  tote: { rotationY: 0, printFit: 'band' },
 };
 
 const PRINT_MATERIAL_NAME = 'FRONT_PRINT';
@@ -85,6 +88,7 @@ useGLTF.preload(MODEL_URLS.male);
 useGLTF.preload(MODEL_URLS.hoodie);
 useGLTF.preload(MODEL_URLS.hoodie_zip);
 useGLTF.preload(MODEL_URLS.cap);
+useGLTF.preload(MODEL_URLS.tote);
 
 /* =========================================================
    HELPERS

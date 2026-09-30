@@ -186,6 +186,18 @@ function drawTextWithSpacing(
   }
 }
 
+/**
+ * Images and texts in drawing order (bottom first). Objects carry an optional
+ * numeric `z`; ones without it (designs made before layer ordering) keep the
+ * old order: every image below every text, each in array order.
+ */
+export function sortByStack(images = [], textObjects = []) {
+  return [
+    ...images.map((node, i) => ({ kind: 'image', node, i, z: node.z ?? -2 })),
+    ...textObjects.map((node, i) => ({ kind: 'text', node, i: images.length + i, z: node.z ?? -1 })),
+  ].sort((a, b) => a.z - b.z || a.i - b.i);
+}
+
 /* ═══════════════════════════════════════════════════════════
    MAIN RENDER
 ═══════════════════════════════════════════════════════════ */
@@ -241,9 +253,17 @@ export async function renderShirtCanvas(
     canvas.height
   );
 
-  /* ─────────────────────────────────────────────
-     IMAGES
-  ───────────────────────────────────────────── */
+  // Web fonts must be loaded before the canvas can draw with them;
+  // otherwise text falls back to Arial until the next redraw.
+  if (typeof document !== 'undefined' && document.fonts) {
+    await Promise.all(
+      textObjects.map((node) =>
+        document.fonts
+          .load(buildCanvasFont(node, 40), node.text || 'Aა')
+          .catch(() => null)
+      )
+    );
+  }
 
   const loadedImages =
     await Promise.all(
@@ -252,175 +272,183 @@ export async function renderShirtCanvas(
       )
     );
 
-  images.forEach(
-    (node, idx) => {
-      const img =
-        loadedImages[idx];
+  const imageByNode =
+    new Map(
+      images.map((node, idx) => [
+        node,
+        loadedImages[idx],
+      ])
+    );
 
-      if (!img) {
-        return;
+  // One pass in stacking order, so layers can be reordered across types.
+  sortByStack(images, textObjects).forEach(
+    ({ kind, node }) => {
+      if (kind === 'image') {
+        drawImageNode(ctx, node, imageByNode.get(node), S);
+      } else {
+        drawTextNode(ctx, node, S);
       }
+    }
+  );
+}
 
-      const {
-        width: boxW,
-        height: boxH,
-      } =
-        getImageBaseSize(
-          img,
-          node
-        );
+function drawImageNode(ctx, node, img, S) {
+  if (!img) {
+    return;
+  }
 
-      const scale =
-        node.scale ??
-        node.scaleX ??
-        1;
+  const {
+    width: boxW,
+    height: boxH,
+  } =
+    getImageBaseSize(
+      img,
+      node
+    );
 
-      const rotation =
-        node.rotation ?? 0;
+  const scale =
+    node.scale ??
+    node.scaleX ??
+    1;
 
-      const opacity =
-        node.opacity ?? 1;
+  const rotation =
+    node.rotation ?? 0;
 
-      const x =
-        node.x ?? 0;
+  const opacity =
+    node.opacity ?? 1;
 
-      const y =
-        node.y ?? 0;
+  const x =
+    node.x ?? 0;
 
-      ctx.save();
+  const y =
+    node.y ?? 0;
 
-      ctx.globalAlpha =
-        opacity;
+  ctx.save();
 
-      ctx.translate(
-        x * S,
-        y * S
-      );
+  ctx.globalAlpha =
+    opacity;
 
-      ctx.rotate(
-        (rotation *
-          Math.PI) /
-          180
-      );
+  ctx.translate(
+    x * S,
+    y * S
+  );
 
-      ctx.scale(
-        scale,
-        scale
-      );
+  ctx.rotate(
+    (rotation *
+      Math.PI) /
+      180
+  );
 
-      ctx.drawImage(
-        img,
+  ctx.scale(
+    scale,
+    scale
+  );
+
+  ctx.drawImage(
+    img,
+    0,
+    0,
+    boxW * S,
+    boxH * S
+  );
+
+  ctx.restore();
+}
+
+function drawTextNode(ctx, node, S) {
+  if (!node.text) {
+    return;
+  }
+
+  const x =
+    node.x ?? 0;
+
+  const y =
+    node.y ?? 0;
+
+  const rotation =
+    node.rotation ?? 0;
+
+  const fontSize =
+    node.fontSize ?? 28;
+
+  const lineHeight =
+    Math.max(
+      0.1,
+      node.lineHeight ?? 1
+    );
+
+  const letterSpacing =
+    (node.letterSpacing ??
+      0) * S;
+
+  const textScaleX =
+    node.textScaleX ?? 1;
+
+  const textScaleY =
+    node.textScaleY ?? 1;
+
+  const opacity =
+    node.opacity ?? 1;
+
+  ctx.save();
+
+  ctx.globalAlpha =
+    opacity;
+
+  ctx.translate(
+    x * S,
+    y * S
+  );
+
+  ctx.rotate(
+    (rotation *
+      Math.PI) /
+      180
+  );
+
+  ctx.scale(
+    textScaleX,
+    textScaleY
+  );
+
+  ctx.fillStyle =
+    node.fill ||
+    '#000000';
+
+  ctx.textBaseline =
+    'top';
+
+  ctx.font =
+    buildCanvasFont(
+      node,
+      fontSize * S
+    );
+
+  const lines =
+    String(
+      node.text
+    ).split('\n');
+
+  lines.forEach(
+    (line, i) => {
+      const lineY =
+        i *
+        fontSize *
+        lineHeight *
+        S;
+
+      drawTextWithSpacing(
+        ctx,
+        line,
         0,
-        0,
-        boxW * S,
-        boxH * S
+        lineY,
+        letterSpacing
       );
-
-      ctx.restore();
     }
   );
 
-  /* ─────────────────────────────────────────────
-     TEXT
-  ───────────────────────────────────────────── */
-
-  textObjects.forEach(
-    (node) => {
-      if (!node.text) {
-        return;
-      }
-
-      const x =
-        node.x ?? 0;
-
-      const y =
-        node.y ?? 0;
-
-      const rotation =
-        node.rotation ?? 0;
-
-      const fontSize =
-        node.fontSize ?? 28;
-
-      const lineHeight =
-        Math.max(
-          0.1,
-          node.lineHeight ?? 1
-        );
-
-      const letterSpacing =
-        (node.letterSpacing ??
-          0) * S;
-
-      const textScaleX =
-        node.textScaleX ?? 1;
-
-      const textScaleY =
-        node.textScaleY ?? 1;
-
-      const opacity =
-        node.opacity ?? 1;
-
-      ctx.save();
-
-      ctx.globalAlpha =
-        opacity;
-
-      ctx.translate(
-        x * S,
-        y * S
-      );
-
-      ctx.rotate(
-        (rotation *
-          Math.PI) /
-          180
-      );
-
-      ctx.scale(
-        textScaleX,
-        textScaleY
-      );
-
-      ctx.fillStyle =
-        node.fill ||
-        '#000000';
-
-      ctx.textBaseline =
-        'top';
-
-      ctx.font =
-        buildCanvasFont(
-          node,
-          fontSize * S
-        );
-
-      const lines =
-        String(
-          node.text
-        ).split('\n');
-
-      lines.forEach(
-        (line, i) => {
-          const lineY =
-            i *
-            fontSize *
-            lineHeight *
-            S;
-
-          drawTextWithSpacing(
-            ctx,
-            line,
-            0,
-            lineY,
-            letterSpacing
-          );
-        }
-      );
-
-      ctx.restore();
-    }
-  );
+  ctx.restore();
 }
 
 /* ═══════════════════════════════════════════════════════════

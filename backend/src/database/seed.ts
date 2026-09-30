@@ -6,9 +6,11 @@ import { AppModule } from '../app.module';
 import { Product } from '../products/schemas/product.schema';
 import { Role, User } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
+import { buildCatalog, CATALOG_CATEGORY_CODES } from './catalog';
 
 /**
- * Idempotent seed: creates an admin, a demo user and sample products.
+ * Idempotent seed: creates an admin, a demo user and the demo catalogue
+ * (20 products per storefront category, see ./catalog.ts).
  * Run: `npm run seed` (dev) or `npm run seed:prod` (after build, e.g. Render shell).
  * Pass `--reset` to wipe users and products first.
  */
@@ -46,18 +48,18 @@ async function seed() {
       logger.log(`Created ${account.role}: ${account.email} / ${account.password}`);
     }
 
-    if ((await productModel.countDocuments()) === 0) {
-      await productModel.insertMany([
-        { name: 'Classic T-Shirt', description: '100% cotton unisex tee', price: 35, category: 'tshirts' },
-        { name: 'Long Sleeve', description: 'Soft long-sleeve crew neck', price: 45, category: 'tshirts' },
-        { name: 'Hoodie', description: 'Heavyweight fleece hoodie', price: 79, category: 'hoodies' },
-        { name: 'Tote Bag', description: 'Canvas tote with custom print', price: 25, category: 'bags' },
-        { name: 'Ceramic Mug', description: '330ml white ceramic mug', price: 20, category: 'mugs' },
-        { name: 'Baseball Cap', description: 'Embroidered adjustable cap', price: 30, category: 'caps' },
-      ]);
-      logger.log('Inserted sample products');
+    // Old demo rows used lowercase categories the storefront doesn't know.
+    const legacy = await productModel.deleteMany({
+      category: { $in: ['tshirts', 'hoodies', 'bags', 'mugs', 'caps'] },
+    });
+    if (legacy.deletedCount) logger.log(`Removed ${legacy.deletedCount} legacy sample products`);
+
+    if ((await productModel.countDocuments({ category: { $in: CATALOG_CATEGORY_CODES } })) === 0) {
+      const catalog = buildCatalog();
+      await productModel.insertMany(catalog);
+      logger.log(`Inserted ${catalog.length} catalogue products`);
     } else {
-      logger.log('Products exist, skipping');
+      logger.log('Catalogue products exist, skipping');
     }
   } finally {
     await app.close();

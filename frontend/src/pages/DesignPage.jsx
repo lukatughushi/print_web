@@ -4,12 +4,14 @@ import { Stage, Layer, Image as KonvaImage, Text, Rect, Transformer } from 'reac
 import useImage from 'use-image';
 import useCartStore from '../store/cartStore';
 import api from '../lib/api';
+import { priceOf } from '../lib/catalog';
 import ShirtViewer3D from '../components/ShirtViewer3D';
 import {
   createShirtCanvas,
   renderShirtCanvas,
   EDITOR_W,
   EDITOR_H,
+  sortByStack,
 } from '../lib/shirtTexture';
 import s from './DesignPage.module.css';
 
@@ -99,8 +101,8 @@ const CATEGORIES = [
   },
   {
     id: 'hat',
-    label: 'ქუდი',
-    category: null,
+    label: 'კეპი',
+    category: 'CAP',
     front: hat,
     back: null,
     hasBack: false,
@@ -129,6 +131,7 @@ const MODEL_TYPE_BY_TAB = {
   tshirt: 'male',
   hoodie: 'hoodie',
   hat: 'cap',
+  bag: 'tote',
 };
 
 // Hoodie styles. All belong to the hoodie product; each has its own 3D model
@@ -140,19 +143,19 @@ const HOODIE_STYLES = [
 
 // 3D models with a BACK_PRINT surface. On these the Front/Back buttons also
 // switch which side's design is being edited.
-const BACK_PRINT_MODELS = new Set(['cap', 'hoodie', 'hoodie_zip']);
+const BACK_PRINT_MODELS = new Set(['cap', 'hoodie', 'hoodie_zip', 'tote']);
 
 const EMPTY_SIDE = { images: [], textObjects: [] };
 const EMPTY_DESIGN = { front: EMPTY_SIDE, back: EMPTY_SIDE };
 const EMPTY_HISTORY = { entries: [], step: -1 };
 
 const SHIRT_COLORS = [
-  { key: 'white', hex: '#ffffff' },
-  { key: 'black', hex: '#1a1a1a' },
-  { key: 'grey', hex: '#888888' },
-  { key: 'red', hex: '#cc2222' },
-  { key: 'blue', hex: '#2244cc' },
-  { key: 'green', hex: '#228833' },
+  { key: 'white', hex: '#ffffff', name: 'თეთრი' },
+  { key: 'black', hex: '#1a1a1a', name: 'შავი' },
+  { key: 'grey', hex: '#888888', name: 'ნაცრისფერი' },
+  { key: 'red', hex: '#cc2222', name: 'წითელი' },
+  { key: 'blue', hex: '#2244cc', name: 'ლურჯი' },
+  { key: 'green', hex: '#228833', name: 'მწვანე' },
 ];
 
 const TEXT_COLORS = [
@@ -177,7 +180,119 @@ const FONT_FAMILIES = [
   'Impact',
 ];
 
+// Web fonts shown as cards (loaded in index.html). The classic list above
+// stays available under "other fonts".
+const WEB_FONTS = [
+  { family: 'Bebas Neue', label: 'Bebas Neue' },
+  { family: 'Noto Sans Georgian', label: 'Noto Sans' },
+  { family: 'Noto Serif Georgian', label: 'Noto Serif' },
+  { family: 'Caveat', label: 'Caveat' },
+];
+
+const ALL_FONTS = [
+  ...WEB_FONTS.map((f) => f.family),
+  ...FONT_FAMILIES,
+];
+
+const DEFAULT_FONT = 'Noto Sans Georgian';
+
+const fontLabel = (family) =>
+  WEB_FONTS.find((f) => f.family === family)?.label ?? family;
+
 const SIZES = ['S', 'M', 'L', 'XL', '2XL'];
+
+/* ── Icons (stroke icons from the constructor design) ───── */
+
+function Icon({ d, size = 18, width = 1.7, children }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={width}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {d && <path d={d} />}
+      {children}
+    </svg>
+  );
+}
+
+const SHIRT_PATH =
+  'M8 3 4 5 2 9l3 2 1-1v11h12V10l1 1 3-2-2-4-4-2c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z';
+
+const ICONS = {
+  product: <Icon d={SHIRT_PATH} size={22} width={1.6} />,
+  color: (
+    <Icon size={22} width={1.6}>
+      <path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.4-4-8-9-8z" />
+      <circle cx="7.5" cy="11" r="1.2" />
+      <circle cx="10.5" cy="7" r="1.2" />
+      <circle cx="15.5" cy="8" r="1.2" />
+    </Icon>
+  ),
+  text: <Icon d="M5 7V5h14v2M12 5v14M9 19h6" size={22} width={1.6} />,
+  image: (
+    <Icon size={22} width={1.6}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="2" />
+      <path d="m21 16-5-5-9 9" />
+    </Icon>
+  ),
+  layers: (
+    <Icon size={16} width={1.8}>
+      <path d="m12 3 9 5-9 5-9-5 9-5z" />
+      <path d="m3 13 9 5 9-5" />
+    </Icon>
+  ),
+  eye: (
+    <Icon size={16} width={1.8}>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </Icon>
+  ),
+  eyeOff: (
+    <Icon size={16} width={1.8}>
+      <path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.9 8.3 2 12 2 12s3.5 7 10 7c1.6 0 3-.4 4.3-1" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </Icon>
+  ),
+  up: <Icon d="m6 15 6-6 6 6" size={14} width={2} />,
+  down: <Icon d="m6 9 6 6 6-6" size={14} width={2} />,
+  trash: <Icon d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" size={16} width={1.8} />,
+  undo: <Icon d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3" width={1.8} />,
+  redo: <Icon d="m15 14 5-5-5-5M20 9H9a5 5 0 0 0 0 10h3" width={1.8} />,
+  rotate: <Icon d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" size={15} width={1.8} />,
+  upload: <Icon d="M12 16V4M7 9l5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" size={20} width={1.8} />,
+  cart: (
+    <Icon size={17} width={1.8}>
+      <path d="M3 4h2l2.4 11h11l2-8H6.2" />
+      <circle cx="9" cy="20" r="1" />
+      <circle cx="17" cy="20" r="1" />
+    </Icon>
+  ),
+  front: <Icon d={SHIRT_PATH} size={16} />,
+  back: (
+    <Icon
+      d="M8 3 4 5 2 9l3 2 1-1v11h12V10l1 1 3-2-2-4-4-2c-1 .8-2.4 1.2-4 1.2S9 3.8 8 3z"
+      size={16}
+    />
+  ),
+  cube: <Icon d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3zM4 7.5 12 12l8-4.5M12 12v9" size={16} />,
+};
+
+const TOOLS = [
+  { id: 'product', label: 'პროდუქტი' },
+  { id: 'color', label: 'ფერი' },
+  { id: 'text', label: 'ტექსტი' },
+  { id: 'image', label: 'სურათი' },
+];
+
+const formatPrice = (value) => `${Number(value).toFixed(2)} ₾`;
 
 const CANVAS_WIDTH = EDITOR_W;
 const CANVAS_HEIGHT = EDITOR_H;
@@ -204,12 +319,10 @@ function fitBox(naturalW, naturalH, box = UPLOAD_BOX) {
       };
 }
 
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+// Object ids: texts keep numeric ids, images string ids (as saved before).
+const newId = () => Date.now();
 
-const toNum = (v) => {
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : null;
-};
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 const clampPos = (v) => clamp(Math.round(v), -2000, 2000);
 
@@ -604,52 +717,6 @@ function TextItem({
   );
 }
 
-/* ── Collapsible section ───────────────────────────────── */
-
-function Section({
-  title,
-  defaultOpen = true,
-  children,
-}) {
-  const [open, setOpen] =
-    useState(defaultOpen);
-
-  return (
-    <div className={s.section}>
-      <button
-        className={s.sectionHeader}
-        onClick={() =>
-          setOpen((o) => !o)
-        }
-      >
-        <span>{title}</span>
-
-        <svg
-          className={`${s.chevron} ${
-            open
-              ? s.chevronOpen
-              : ''
-          }`}
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className={s.sectionBody}>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ═══════════════════════════════════════════════════════════
    MAIN PAGE
 ═══════════════════════════════════════════════════════════ */
@@ -750,6 +817,23 @@ export default function DesignPage() {
 
   const [fontSize, setFontSize] =
     useState(28);
+
+  // Font for new texts (the selected text's own font is on the text).
+  const [fontFamily, setFontFamily] =
+    useState(DEFAULT_FONT);
+
+  // Which tool panel is open next to the icon rail.
+  const [tool, setTool] =
+    useState('product');
+
+  const [dropActive, setDropActive] =
+    useState(false);
+
+  const uploadInputRef =
+    useRef(null);
+
+  const replaceInputRef =
+    useRef(null);
 
   // Every product (tab) has its own design, and each of its print sides has
   // its own images/texts — uploads, moves and resizes on one product or side
@@ -1142,6 +1226,16 @@ export default function DesignPage() {
     editSide,
   ]);
 
+  // Konva measures text hit-areas with these fonts, so load them up front.
+  useEffect(() => {
+    if (!document.fonts) return;
+    WEB_FONTS.forEach(({ family }) => {
+      document.fonts
+        .load(`20px "${family}"`, 'Aა')
+        .catch(() => {});
+    });
+  }, []);
+
   useEffect(() => {
     const imagesToPreload = [
       manWhite,
@@ -1376,24 +1470,25 @@ export default function DesignPage() {
           )
         ];
 
+  // Adds a text on top of the stack: the typed text when nothing is
+  // selected, otherwise a placeholder the customer edits in place.
   function handleAddText() {
-    if (
-      !textInput.trim()
-    )
-      return;
+    const text =
+      (!selectedText &&
+        textInput.trim()) ||
+      'ტექსტი';
 
-    const id =
-      Date.now();
+    const id = newId();
 
     const created = {
       id,
-      text: textInput.trim(),
+      text,
       x: TEXT_DEFAULT_X,
       y: TEXT_DEFAULT_Y,
       fontSize,
       rotation: 0,
       fill: textColor,
-      fontFamily: 'Arial',
+      fontFamily,
       fontWeight: 'normal',
       fontStyle: 'normal',
       lineHeight: 1,
@@ -1401,7 +1496,8 @@ export default function DesignPage() {
       textScaleX: 1,
       textScaleY: 1,
       visible: true,
-      layerName: textInput.trim(),
+      layerName: text,
+      z: nextZ(),
     };
 
     created.initialDefaults =
@@ -1429,6 +1525,7 @@ export default function DesignPage() {
     );
 
     setSelectedId(id);
+    setTool('text');
     setTextInput('');
   }
 
@@ -1452,52 +1549,18 @@ export default function DesignPage() {
     }
   }
 
-  function handleTextColorChange(
-    color
-  ) {
-    setTextColor(color);
-
-    if (selectedId) {
-      setTextObjects(
-        (prev) =>
-          prev.map((t) =>
-            t.id === selectedId
-              ? {
-                  ...t,
-                  fill: color,
-                }
-              : t
-          )
-      );
-    }
-  }
-
-  const deleteImageById = (id) => {
-    const nextImages =
-      images.filter(
-        (item) =>
-          item.id !== id
-      );
-
-    setImages(nextImages);
-
-    saveHistory(
-      nextImages,
-      textObjects
-    );
-
-    if (selectedId === id) {
-      setSelectedId(null);
-    }
-  };
-
   const handlePhotoUpload = (
     e
   ) => {
-    const file =
-      e.target.files[0];
+    addImageFile(e.target.files[0]);
+    e.target.value = '';
+  };
 
-    if (!file) return;
+  function addImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+
+    const id = String(newId());
+    const z = nextZ();
 
     const reader =
       new FileReader();
@@ -1539,9 +1602,8 @@ export default function DesignPage() {
             const next = [
               ...prev,
               {
-                id: String(
-                  Date.now()
-                ),
+                id,
+                z,
                 name: file.name,
                 layerName: file.name,
                 visible: true,
@@ -1581,8 +1643,9 @@ export default function DesignPage() {
       file
     );
 
-    e.target.value = '';
-  };
+    setSelectedId(id);
+    setTool('image');
+  }
 
 
   const selectedText =
@@ -1591,36 +1654,154 @@ export default function DesignPage() {
         item.id === selectedId
     ) || null;
 
-  const patchSelectedText = (
-    patch
-  ) => {
-    if (!selectedText) return;
+  const selectedImage =
+    images.find(
+      (item) =>
+        item.id === selectedId
+    ) || null;
 
-    setTextObjects((prev) =>
-      prev.map((item) =>
-        item.id === selectedText.id
-          ? {
-              ...item,
-              ...patch,
-            }
-          : item
-      )
+  // Selecting an object (on the canvas or in the layer list) also opens
+  // its tool panel.
+  const selectObject = (id, kind) => {
+    setSelectedId(id);
+    if (kind) setTool(kind);
+  };
+
+  // Bottom → top, the order both the editor and the print texture draw in.
+  const stack = sortByStack(images, textObjects);
+
+  const nextZ = () =>
+    stack.reduce(
+      (max, item) => Math.max(max, item.z),
+      -1
+    ) + 1;
+
+  // record=false for live slider drags; commitHistory() on release.
+  const updateText = (id, patch, record = true) => {
+    const next = textObjects.map((item) =>
+      item.id === id ? { ...item, ...patch } : item
+    );
+    setTextObjects(next);
+    if (record) saveHistory(images, next);
+  };
+
+  const updateImage = (id, patch, record = true) => {
+    const next = images.map((item) =>
+      item.id === id ? { ...item, ...patch } : item
+    );
+    setImages(next);
+    if (record) saveHistory(next, textObjects);
+  };
+
+  const commitHistory = () =>
+    saveHistory(images, textObjects);
+
+  // Swap an object with its neighbour in the stack (dir +1 = up).
+  const moveLayer = (id, dir) => {
+    const from = stack.findIndex(
+      (item) => item.node.id === id
+    );
+    const to = from + dir;
+    if (from < 0 || to < 0 || to >= stack.length) return;
+
+    const order = [...stack];
+    [order[from], order[to]] = [order[to], order[from]];
+
+    const zOf = new Map(
+      order.map((item, z) => [item.node, z])
+    );
+    const nextImages = images.map((item) => ({
+      ...item,
+      z: zOf.get(item),
+    }));
+    const nextTexts = textObjects.map((item) => ({
+      ...item,
+      z: zOf.get(item),
+    }));
+
+    setImages(nextImages);
+    setTextObjects(nextTexts);
+    saveHistory(nextImages, nextTexts);
+  };
+
+  const alignSelectedImage = (where) => {
+    if (!selectedImage) return;
+    const w =
+      (selectedImage.width ?? UPLOAD_BOX) *
+      (selectedImage.scale ?? 1);
+    const x =
+      where === 'l'
+        ? 0
+        : where === 'r'
+        ? CANVAS_WIDTH - w
+        : (CANVAS_WIDTH - w) / 2;
+    updateImage(selectedImage.id, { x: clampPos(x) });
+  };
+
+  // Swap the selected image's file, keeping its position and transform.
+  const replaceSelectedImage = (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file || !selectedImage) return;
+
+    const target = selectedImage;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const src = ev.target.result;
+      const probe = new Image();
+      probe.onload = () => {
+        const renamed =
+          !target.layerName ||
+          target.layerName === target.name;
+        updateImage(target.id, {
+          src,
+          name: file.name,
+          ...(renamed ? { layerName: file.name } : {}),
+          ...fitBox(probe.naturalWidth, probe.naturalHeight),
+        });
+      };
+      probe.src = src;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // The text box edits the selected text, or drafts the next new one.
+  const editText = (value) => {
+    if (!selectedText) {
+      setTextInput(value);
+      return;
+    }
+    const keepName =
+      selectedText.layerName &&
+      selectedText.layerName !== selectedText.text;
+    updateText(
+      selectedText.id,
+      {
+        text: value,
+        ...(keepName ? {} : { layerName: value }),
+      },
+      false
     );
   };
 
-  const layerItems = [
-    ...textObjects.map((item) => ({
-      ...item,
-      objectType: 'text',
-    })),
-    ...images.map((item) => ({
-      ...item,
-      objectType: 'image',
-    })),
-  ].sort(
-    (a, b) =>
-      Number(a.id) - Number(b.id)
-  );
+  const pickFont = (family) => {
+    setFontFamily(family);
+    if (selectedText) {
+      updateText(selectedText.id, { fontFamily: family });
+    }
+  };
+
+  const cycleFont = () => {
+    if (!selectedText) return;
+    const i = ALL_FONTS.indexOf(selectedText.fontFamily);
+    pickFont(ALL_FONTS[(i + 1) % ALL_FONTS.length]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDropActive(false);
+    addImageFile(e.dataTransfer.files[0]);
+  };
 
   const renameLayer = (
     objectType,
@@ -1915,7 +2096,7 @@ export default function DesignPage() {
         orderProduct.name,
 
       basePrice:
-        orderProduct.basePrice,
+        priceOf(orderProduct),
 
       size: selectedSize,
       quantity,
@@ -1963,11 +2144,8 @@ export default function DesignPage() {
       </div>
     );
 
-  const price = orderProduct
-    ? (
-        orderProduct.basePrice *
-        quantity
-      ).toFixed(2)
+  const unitPrice = orderProduct
+    ? priceOf(orderProduct)
     : null;
 
   const flipCls =
@@ -1978,1211 +2156,850 @@ export default function DesignPage() {
       ? s.flipIn
       : '';
 
+  const shirtColorInfo =
+    SHIRT_COLORS.find((c) => c.key === shirtColor) ?? SHIRT_COLORS[0];
+
+  // Lowest active price per category, for the product cards.
+  const fromPrice = (category) => {
+    const prices = (products ?? [])
+      .filter((p) => p.category === category && priceOf(p) > 0)
+      .map(priceOf);
+    return prices.length ? Math.min(...prices) : null;
+  };
+
+  const visibleCount = (side) =>
+    designs[side].images.filter((i) => i.visible !== false).length +
+    designs[side].textObjects.filter((t) => t.visible !== false).length;
+
+  const frontCount = visibleCount('front');
+  const backCount = supportsBackPrint ? visibleCount('back') : 0;
+
+  const designLabel =
+    frontCount + backCount === 0
+      ? 'ცარიელი'
+      : `${frontCount + backCount} ელემენტი · ${[
+          frontCount && 'წინა',
+          backCount && 'უკანა',
+        ]
+          .filter(Boolean)
+          .join(' + ')}`;
+
+  const variantLabel =
+    activeTab === 'tshirt'
+      ? gender === 'man'
+        ? 'კაცი'
+        : 'ქალი'
+      : activeTab === 'hoodie'
+      ? HOODIE_STYLES.find((st) => st.id === hoodieStyle)?.label
+      : null;
+
+  const thumbSrc = activeTab === 'tshirt' ? currentSrc : activeCat.front;
+  const thumbFilter =
+    activeTab === 'tshirt' ? 'none' : COLOR_FILTERS[shirtColor] ?? 'none';
+
+  // Editing is paused while the customer orbits the 3D model.
+  const canEdit = !is3DMode;
+  const backIsEmpty =
+    is3D &&
+    supportsBackPrint &&
+    editSide === 'back' &&
+    designs.back.images.length + designs.back.textObjects.length === 0;
+
+  const layerList = [...stack].reverse();
+
+  const canUndo = historyStep > 0;
+  const canRedo = historyStep < history.length - 1;
+
   return (
     <div className={s.page}>
-      {/* LEFT SIDEBAR */}
+      {/* TOOL RAIL */}
 
-      <aside
-        className={
-          s.leftSidebar
-        }
-      >
-        <div
-          className={
-            s.productTabs
-          }
-        >
-          {CATEGORIES.map(
-            (c) => (
-              <button
-                key={c.id}
-                className={`${s.productTab} ${
-                  activeTab ===
-                  c.id
-                    ? s.productTabActive
-                    : ''
-                }`}
-                onClick={() =>
-                  switchTab(
-                    c.id
-                  )
-                }
-              >
-                {c.label}
-              </button>
-            )
-          )}
-        </div>
-
-        {activeTab ===
-          'tshirt' && (
-          <div
-            style={{
-              padding:
-                '10px 16px 0',
-            }}
+      <nav className={s.rail} aria-label="ინსტრუმენტები">
+        {TOOLS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={`${s.railBtn} ${tool === t.id ? s.railBtnActive : ''}`}
+            aria-pressed={tool === t.id}
+            onClick={() => setTool(t.id)}
           >
-            <div
-              className={
-                s.genderToggle
-              }
-            >
-              <button
-                className={`${s.genderBtn} ${
-                  gender ===
-                  'man'
-                    ? s.genderBtnActive
-                    : ''
-                }`}
-                onClick={() =>
-                  setGender(
-                    'man'
-                  )
-                }
-              >
-                კაცი
-              </button>
+            {ICONS[t.id]}
+            {t.label}
+          </button>
+        ))}
+      </nav>
 
-              <button
-                className={`${s.genderBtn} ${
-                  gender ===
-                  'woman'
-                    ? s.genderBtnActive
-                    : ''
-                }`}
-                onClick={() =>
-                  setGender(
-                    'woman'
-                  )
-                }
-              >
-                ქალი
-              </button>
-            </div>
-          </div>
-        )}
+      {/* TOOL PANEL + LAYERS */}
 
-        {activeTab ===
-          'hoodie' && (
-          <div
-            style={{
-              padding:
-                '10px 16px 0',
-            }}
-          >
-            <div
-              className={
-                s.genderToggle
-              }
-              role="group"
-              aria-label="ჰუდის სტილი"
-            >
-              {HOODIE_STYLES.map(
-                (st) => (
-                  <button
-                    key={st.id}
-                    type="button"
-                    aria-pressed={
-                      hoodieStyle ===
-                      st.id
-                    }
-                    className={`${s.genderBtn} ${
-                      hoodieStyle ===
-                      st.id
-                        ? s.genderBtnActive
-                        : ''
-                    }`}
-                    onClick={() =>
-                      switchHoodieStyle(
-                        st.id
-                      )
-                    }
-                  >
-                    {st.label}
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-        )}
-
-        <Section title="ფერი">
-          <div
-            className={
-              s.colorGrid
-            }
-          >
-            {SHIRT_COLORS.map(
-              ({
-                key,
-                hex,
-              }) => (
-                <button
-                  key={key}
-                  className={`${s.colorDot} ${
-                    shirtColor ===
-                    key
-                      ? s.colorDotActive
-                      : ''
-                  }`}
-                  style={{
-                    background:
-                      hex,
-                    border:
-                      hex ===
-                      '#ffffff'
-                        ? '1.5px solid #ddd'
-                        : 'none',
-                  }}
-                  onClick={() =>
-                    setShirtColor(
-                      key
-                    )
-                  }
-                />
-              )
-            )}
-          </div>
-        </Section>
-
-        <Section
-          title="სურათი"
-          defaultOpen={
-            false
-          }
-        >
-          <label
-            className={
-              s.uploadBtn
-            }
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line
-                x1="12"
-                y1="3"
-                x2="12"
-                y2="15"
-              />
-            </svg>
-
-            {GEO.upload}
-
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              style={{
-                display:
-                  'none',
-              }}
-              onChange={
-                handlePhotoUpload
-              }
-            />
-          </label>
-
-          {images.length > 0 && (
-            <div
-              style={{
-                display:
-                  'flex',
-                flexDirection:
-                  'column',
-                gap: '8px',
-                marginTop:
-                  '10px',
-              }}
-            >
-              {images.map(
-                (
-                  item,
-                  index
-                ) => (
-                  <div
-                    key={
-                      item.id
-                    }
-                    style={{
-                      display:
-                        'flex',
-                      alignItems:
-                        'center',
-                      gap: '9px',
-                      padding:
-                        '8px 9px',
-                      border:
-                        selectedId ===
-                        item.id
-                          ? '1.5px solid #c9a96e'
-                          : '1px solid #e5e7eb',
-                      borderRadius:
-                        '9px',
-                      background:
-                        '#ffffff',
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedId(
-                          item.id
-                        )
-                      }
-                      style={{
-                        width:
-                          '42px',
-                        height:
-                          '42px',
-                        padding: 0,
-                        flexShrink:
-                          0,
-                        border:
-                          '1px solid #e5e7eb',
-                        borderRadius:
-                          '7px',
-                        background:
-                          '#f7f7f7',
-                        overflow:
-                          'hidden',
-                        cursor:
-                          'pointer',
-                      }}
-                      title="სურათის არჩევა"
-                    >
-                      <img
-                        src={
-                          item.src
-                        }
-                        alt=""
-                        style={{
-                          width:
-                            '100%',
-                          height:
-                            '100%',
-                          objectFit:
-                            'cover',
-                          display:
-                            'block',
-                        }}
-                      />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedId(
-                          item.id
-                        )
-                      }
-                      style={{
-                        minWidth:
-                          0,
-                        flex: 1,
-                        padding: 0,
-                        border:
-                          'none',
-                        background:
-                          'transparent',
-                        textAlign:
-                          'left',
-                        cursor:
-                          'pointer',
-                      }}
-                    >
-                      <span
-                        style={{
-                          display:
-                            'block',
-                          overflow:
-                            'hidden',
-                          textOverflow:
-                            'ellipsis',
-                          whiteSpace:
-                            'nowrap',
-                          color:
-                            '#16283F',
-                          fontSize:
-                            '12px',
-                          fontWeight:
-                            600,
-                        }}
-                      >
-                        {item.name ||
-                          item.layerName ||
-                          `სურათი ${index + 1}`}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        deleteImageById(
-                          item.id
-                        )
-                      }
-                      aria-label="სურათის წაშლა"
-                      title="წაშლა"
-                      style={{
-                        width:
-                          '32px',
-                        height:
-                          '32px',
-                        flexShrink:
-                          0,
-                        display:
-                          'grid',
-                        placeItems:
-                          'center',
-                        border:
-                          'none',
-                        borderRadius:
-                          '6px',
-                        background:
-                          'transparent',
-                        color:
-                          '#ef4444',
-                        cursor:
-                          'pointer',
-                        fontSize:
-                          '20px',
-                        lineHeight:
-                          1,
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                )
-              )}
-            </div>
-          )}
-        </Section>
-
-        <Section title="ტექსტი">
-          <textarea
-            className={
-              s.textArea
-            }
-            rows={2}
-            placeholder="ტექსტი..."
-            value={
-              textInput
-            }
-            onChange={(e) =>
-              setTextInput(
-                e.target.value
-              )
-            }
-          />
-
-          <div
-            className={
-              s.fontSizeRow
-            }
-          >
-            <span
-              className={
-                s.sliderLabel
-              }
-            >
-              ზომა: {fontSize}
-              px
-            </span>
-
-            <input
-              type="range"
-              min="12"
-              max="72"
-              value={
-                fontSize
-              }
-              className={
-                s.slider
-              }
-              onChange={(
-                e
-              ) =>
-                handleFontSizeChange(
-                  +e
-                    .target
-                    .value
-                )
-              }
-            />
-          </div>
-
-          <div
-            className={
-              s.textColorRow
-            }
-          >
-            {TEXT_COLORS.map(
-              (c) => (
-                <button
-                  key={c}
-                  className={`${s.textColorDot} ${
-                    textColor ===
-                    c
-                      ? s.textColorDotActive
-                      : ''
-                  }`}
-                  style={{
-                    background:
-                      c,
-                    border:
-                      c ===
-                      '#ffffff'
-                        ? '1.5px solid #ddd'
-                        : 'none',
-                  }}
-                  onClick={() =>
-                    handleTextColorChange(
-                      c
-                    )
-                  }
-                />
-              )
-            )}
-          </div>
-
-          {selectedText && (
-            <div
-              style={{
-                marginTop: '14px',
-                paddingTop: '14px',
-                borderTop: '1px solid #ececec',
-              }}
-            >
-            <div
-              style={{
-                display: 'grid',
-                gap: '10px',
-              }}
-            >
-              <label
-                style={{
-                  display: 'grid',
-                  gap: '5px',
-                }}
-              >
-                <span
-                  className={
-                    s.sliderLabel
-                  }
-                >
-                  ფონტი
-                </span>
-
-                <select
-                  value={
-                    selectedText.fontFamily ??
-                    'Arial'
-                  }
-                  onChange={(e) =>
-                    patchSelectedText({
-                      fontFamily:
-                        e.target.value,
-                    })
-                  }
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    border:
-                      '1px solid #e1e1e1',
-                    borderRadius:
-                      '8px',
-                    padding:
-                      '0 10px',
-                    background:
-                      '#ffffff',
-                    color:
-                      '#16283F',
-                    fontSize:
-                      '13px',
-                  }}
-                >
-                  {FONT_FAMILIES.map(
-                    (family) => (
-                      <option
-                        key={
-                          family
-                        }
-                        value={
-                          family
-                        }
-                      >
-                        {family}
-                      </option>
-                    )
-                  )}
-                </select>
-              </label>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns:
-                    '1fr 1fr',
-                  gap: '8px',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    patchSelectedText({
-                      fontWeight:
-                        selectedText.fontWeight ===
-                        'bold'
-                          ? 'normal'
-                          : 'bold',
-                    })
-                  }
-                  style={{
-                    height: '38px',
-                    borderRadius:
-                      '8px',
-                    border:
-                      selectedText.fontWeight ===
-                      'bold'
-                        ? '1.5px solid #c9a96e'
-                        : '1px solid #e1e1e1',
-                    background:
-                      selectedText.fontWeight ===
-                      'bold'
-                        ? '#fffaf0'
-                        : '#ffffff',
-                    color:
-                      '#16283F',
-                    cursor:
-                      'pointer',
-                    fontWeight:
-                      800,
-                  }}
-                >
-                  B — Bold
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    patchSelectedText({
-                      fontStyle:
-                        selectedText.fontStyle ===
-                        'italic'
-                          ? 'normal'
-                          : 'italic',
-                    })
-                  }
-                  style={{
-                    height: '38px',
-                    borderRadius:
-                      '8px',
-                    border:
-                      selectedText.fontStyle ===
-                      'italic'
-                        ? '1.5px solid #c9a96e'
-                        : '1px solid #e1e1e1',
-                    background:
-                      selectedText.fontStyle ===
-                      'italic'
-                        ? '#fffaf0'
-                        : '#ffffff',
-                    color:
-                      '#16283F',
-                    cursor:
-                      'pointer',
-                    fontStyle:
-                      'italic',
-                    fontWeight:
-                      700,
-                  }}
-                >
-                  I — Italic
-                </button>
+      <aside className={s.toolPanel}>
+        <div className={s.toolBody}>
+          {tool === 'product' && (
+            <>
+              <div>
+                <div className={s.panelTitle}>პროდუქტი</div>
+                <div className={s.panelSub}>აირჩიეთ ტიპი და მოდელი</div>
               </div>
 
-              <label
-                style={{
-                  display: 'grid',
-                  gap: '5px',
-                }}
-              >
-                <span
-                  className={
-                    s.sliderLabel
-                  }
-                >
-                  ზომა:{' '}
-                  {Math.round(
-                    selectedText.fontSize ??
-                      28
-                  )}
-                  px
-                </span>
+              <div className={s.productGrid}>
+                {CATEGORIES.map((c) => {
+                  const from = c.category ? fromPrice(c.category) : null;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={`${s.productCard} ${
+                        activeTab === c.id ? s.productCardActive : ''
+                      }`}
+                      aria-pressed={activeTab === c.id}
+                      onClick={() => switchTab(c.id)}
+                    >
+                      <span className={s.productThumb}>
+                        <img src={c.front} alt="" draggable={false} />
+                      </span>
+                      <span className={s.productCardName}>{c.label}</span>
+                      <span className={s.productCardPrice}>
+                        {from !== null ? `${from} ₾-დან` : 'მალე'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-                <input
-                  type="range"
-                  min="8"
-                  max="300"
-                  step="1"
-                  className={
-                    s.slider
+              {activeTab === 'tshirt' && (
+                <div className={s.field}>
+                  <div className={s.fieldLabel}>სქესი</div>
+                  <div className={s.segment} role="group" aria-label="სქესი">
+                    {[
+                      ['man', 'კაცი'],
+                      ['woman', 'ქალი'],
+                    ].map(([id, label]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        aria-pressed={gender === id}
+                        className={`${s.segmentBtn} ${
+                          gender === id ? s.segmentBtnActive : ''
+                        }`}
+                        onClick={() => setGender(id)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'hoodie' && (
+                <div className={s.field}>
+                  <div className={s.fieldLabel}>მოდელი</div>
+                  <div className={s.chips} role="group" aria-label="ჰუდის სტილი">
+                    {HOODIE_STYLES.map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        aria-pressed={hoodieStyle === st.id}
+                        className={`${s.chip} ${
+                          hoodieStyle === st.id ? s.chipActive : ''
+                        }`}
+                        onClick={() => switchHoodieStyle(st.id)}
+                      >
+                        {st.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {tool === 'color' && (
+            <>
+              <div>
+                <div className={s.panelTitle}>ფერი</div>
+                <div className={s.panelSub}>არჩეული: {shirtColorInfo.name}</div>
+              </div>
+
+              <div className={s.swatchGrid}>
+                {SHIRT_COLORS.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    className={s.swatchBtn}
+                    aria-pressed={shirtColor === c.key}
+                    onClick={() => setShirtColor(c.key)}
+                  >
+                    <span
+                      className={`${s.swatch} ${
+                        shirtColor === c.key ? s.swatchActive : ''
+                      }`}
+                      style={{ background: c.hex }}
+                    />
+                    <span className={s.swatchName}>{c.name}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {tool === 'text' && (
+            <>
+              <div>
+                <div className={s.panelTitle}>ტექსტი</div>
+                <div className={s.panelSub}>
+                  {selectedText
+                    ? 'დაარედაქტირეთ არჩეული ტექსტი'
+                    : 'ჩაწერეთ და დაამატეთ ახალი ტექსტი'}
+                </div>
+              </div>
+
+              <textarea
+                className={s.textArea}
+                rows={2}
+                placeholder="ტექსტი..."
+                value={selectedText ? selectedText.text : textInput}
+                onChange={(e) => editText(e.target.value)}
+                onBlur={() => selectedText && commitHistory()}
+              />
+
+              <div className={s.field}>
+                <div className={s.fieldLabel}>შრიფტი</div>
+                <div className={s.fontGrid}>
+                  {WEB_FONTS.map((f) => {
+                    const active =
+                      (selectedText?.fontFamily ?? fontFamily) === f.family;
+                    return (
+                      <button
+                        key={f.family}
+                        type="button"
+                        aria-pressed={active}
+                        className={`${s.fontCard} ${active ? s.fontCardActive : ''}`}
+                        onClick={() => pickFont(f.family)}
+                      >
+                        <span
+                          className={s.fontSample}
+                          style={{ fontFamily: `'${f.family}'` }}
+                        >
+                          Aa ა
+                        </span>
+                        <span className={s.fontName}>{f.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <select
+                  className={s.select}
+                  aria-label="სხვა შრიფტები"
+                  value={
+                    FONT_FAMILIES.includes(selectedText?.fontFamily ?? fontFamily)
+                      ? selectedText?.fontFamily ?? fontFamily
+                      : ''
                   }
-                  value={Math.round(
-                    selectedText.fontSize ??
-                      28
-                  )}
-                  onChange={(e) =>
-                    patchSelectedText({
-                      fontSize:
-                        clampFont(
-                          Number(
-                            e.target
-                              .value
+                  onChange={(e) => e.target.value && pickFont(e.target.value)}
+                >
+                  <option value="">სხვა შრიფტები…</option>
+                  {FONT_FAMILIES.map((family) => (
+                    <option key={family} value={family}>
+                      {family}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={s.sliders}>
+                <label className={s.sliderField}>
+                  <span className={s.sliderHead}>
+                    <span>ზომა</span>
+                    <b>{Math.round(selectedText?.fontSize ?? fontSize)} px</b>
+                  </span>
+                  <input
+                    type="range"
+                    min="8"
+                    max="120"
+                    value={Math.round(selectedText?.fontSize ?? fontSize)}
+                    onChange={(e) =>
+                      selectedText
+                        ? updateText(
+                            selectedText.id,
+                            { fontSize: clampFont(+e.target.value) },
+                            false
                           )
-                        ),
+                        : handleFontSizeChange(+e.target.value)
+                    }
+                    onPointerUp={() => selectedText && commitHistory()}
+                    onKeyUp={() => selectedText && commitHistory()}
+                  />
+                </label>
+
+                {selectedText && (
+                  <div className={s.sliderPair}>
+                    <label className={s.sliderField}>
+                      <span className={s.sliderHead}>
+                        <span>ინტერვალი</span>
+                        <b>{selectedText.letterSpacing ?? 0}</b>
+                      </span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="20"
+                        value={selectedText.letterSpacing ?? 0}
+                        onChange={(e) =>
+                          updateText(
+                            selectedText.id,
+                            { letterSpacing: +e.target.value },
+                            false
+                          )
+                        }
+                        onPointerUp={commitHistory}
+                        onKeyUp={commitHistory}
+                      />
+                    </label>
+
+                    <label className={s.sliderField}>
+                      <span className={s.sliderHead}>
+                        <span>ბრუნვა</span>
+                        <b>{selectedText.rotation ?? 0}°</b>
+                      </span>
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        value={selectedText.rotation ?? 0}
+                        onChange={(e) =>
+                          updateText(
+                            selectedText.id,
+                            { rotation: clampRot(+e.target.value) },
+                            false
+                          )
+                        }
+                        onPointerUp={commitHistory}
+                        onKeyUp={commitHistory}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div className={s.field}>
+                <div className={s.fieldLabel}>ტექსტის ფერი</div>
+                <div className={s.textColors}>
+                  {TEXT_COLORS.map((c) => {
+                    const active = (selectedText?.fill ?? textColor) === c;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        aria-label={c}
+                        aria-pressed={active}
+                        className={`${s.textSwatch} ${active ? s.swatchActive : ''}`}
+                        style={{ background: c }}
+                        onClick={() => {
+                          setTextColor(c);
+                          if (selectedText) updateText(selectedText.id, { fill: c });
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {selectedText && (
+                <button
+                  type="button"
+                  className={s.linkBtn}
+                  onClick={() =>
+                    updateText(selectedText.id, {
+                      fontFamily: DEFAULT_FONT,
+                      fontWeight: 'normal',
+                      fontStyle: 'normal',
+                      fontSize: 28,
+                      lineHeight: 1,
+                      letterSpacing: 0,
+                      textScaleX: 1,
+                      textScaleY: 1,
+                      rotation: 0,
+                      fill: '#1a1a1a',
                     })
                   }
-                />
-
-                <input
-                  type="number"
-                  min="8"
-                  max="300"
-                  step="1"
-                  className={
-                    s.objInput
-                  }
-                  value={Math.round(
-                    selectedText.fontSize ??
-                      28
-                  )}
-                  onChange={(e) => {
-                    const value =
-                      toNum(
-                        e.target
-                          .value
-                      );
-
-                    if (
-                      value !== null
-                    ) {
-                      patchSelectedText({
-                        fontSize:
-                          clampFont(
-                            value
-                          ),
-                      });
-                    }
-                  }}
-                />
-              </label>
+                >
+                  პარამეტრების დარესეტება
+                </button>
+              )}
 
               <button
                 type="button"
-                onClick={() =>
-                  patchSelectedText({
-                    fontFamily: 'Arial',
-                    fontWeight: 'normal',
-                    fontStyle: 'normal',
-                    fontSize: 28,
-                    lineHeight: 1,
-                    letterSpacing: 0,
-                    textScaleX: 1,
-                    textScaleY: 1,
-                    fill: '#1a1a1a',
-                  })
-                }
-                style={{
-                  width: '100%',
-                  height: '40px',
-                  borderRadius: '8px',
-                  border: '1px solid #16283F',
-                  background: '#ffffff',
-                  color: '#16283F',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                }}
+                className={s.dashedBtn}
+                onClick={handleAddText}
               >
-                პარამეტრების დარესეტება
+                + ახალი ტექსტის დამატება
               </button>
-
-            </div>
-            </div>
+            </>
           )}
 
-          <button
-            className={
-              s.addTextBtn
-            }
-            onClick={
-              handleAddText
-            }
-          >
-            {GEO.addText}
-          </button>
-        </Section>
-
-        <Section title="ლეიერები">
-          <div
-            style={{
-              display: 'flex',
-              flexDirection:
-                'column',
-              gap: '7px',
-            }}
-          >
-            {layerItems.length ===
-            0 ? (
-              <div
-                className={
-                  s.objMsg
-                }
-              >
-                ჯერ ობიექტები
-                არ არის
+          {tool === 'image' && (
+            <>
+              <div>
+                <div className={s.panelTitle}>სურათი</div>
+                <div className={s.panelSub}>ატვირთეთ ლოგო ან ფოტო</div>
               </div>
-            ) : (
-              layerItems.map(
-                (
-                  item,
-                  index
-                ) => {
-                  const isText =
-                    item.objectType ===
-                    'text';
 
-                  const hidden =
-                    item.visible ===
-                    false;
+              <button
+                type="button"
+                className={`${s.dropzone} ${dropActive ? s.dropzoneActive : ''}`}
+                onClick={() => uploadInputRef.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDropActive(true);
+                }}
+                onDragLeave={() => setDropActive(false)}
+                onDrop={handleDrop}
+              >
+                <span className={s.dropIcon}>{ICONS.upload}</span>
+                <span className={s.dropTitle}>ჩააგდეთ ფაილი ან აირჩიეთ</span>
+                <span className={s.dropHint}>PNG, JPG, WEBP, GIF</span>
+              </button>
 
-                  const active =
-                    selectedId ===
-                    item.id;
+              <input
+                ref={uploadInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                hidden
+                onChange={handlePhotoUpload}
+              />
 
-                  const fallbackName =
-                    isText
-                      ? item.text ||
-                        `ტექსტი ${
-                          index + 1
-                        }`
-                      : item.name ||
-                        `სურათი ${
-                          index + 1
-                        }`;
-
-                  return (
-                    <div
-                      key={`${item.objectType}-${item.id}`}
-                      style={{
-                        display:
-                          'flex',
-                        alignItems:
-                          'center',
-                        gap: '7px',
-                        minHeight:
-                          '46px',
-                        padding:
-                          '6px 7px',
-                        borderRadius:
-                          '9px',
-                        border:
-                          active
-                            ? '1.5px solid #c9a96e'
-                            : '1px solid #e5e7eb',
-                        background:
-                          active
-                            ? '#fffaf0'
-                            : '#ffffff',
-                        opacity:
-                          hidden
-                            ? 0.55
-                            : 1,
-                      }}
-                    >
-                      <button
-                        type="button"
-                        aria-label={
-                          hidden
-                            ? 'ობიექტის გამოჩენა'
-                            : 'ობიექტის დამალვა'
-                        }
-                        title={
-                          hidden
-                            ? 'გამოჩენა'
-                            : 'დამალვა'
-                        }
-                        onClick={() =>
-                          toggleLayerVisibility(
-                            item.objectType,
-                            item.id
-                          )
-                        }
-                        style={{
-                          width:
-                            '32px',
-                          height:
-                            '32px',
-                          flexShrink:
-                            0,
-                          display:
-                            'grid',
-                          placeItems:
-                            'center',
-                          border:
-                            'none',
-                          background:
-                            'transparent',
-                          cursor:
-                            'pointer',
-                          fontSize:
-                            '17px',
-                          color:
-                            '#16283F',
-                        }}
-                      >
-                        {hidden
-                          ? '◌'
-                          : '◉'}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          !hidden &&
-                          setSelectedId(
-                            item.id
-                          )
-                        }
-                        style={{
-                          width:
-                            '30px',
-                          height:
-                            '30px',
-                          flexShrink:
-                            0,
-                          border:
-                            '1px solid #e5e7eb',
-                          borderRadius:
-                            '6px',
-                          background:
-                            '#f7f7f7',
-                          overflow:
-                            'hidden',
-                          padding: 0,
-                          cursor:
-                            hidden
-                              ? 'default'
-                              : 'pointer',
-                          display:
-                            'grid',
-                          placeItems:
-                            'center',
-                          fontWeight:
-                            800,
-                          color:
-                            '#16283F',
-                        }}
-                      >
-                        {isText ? (
-                          'T'
-                        ) : (
-                          <img
-                            src={
-                              item.src
-                            }
-                            alt=""
-                            style={{
-                              width:
-                                '100%',
-                              height:
-                                '100%',
-                              objectFit:
-                                'cover',
-                            }}
-                          />
-                        )}
-                      </button>
-
+              {selectedImage ? (
+                <>
+                  <div className={s.sliders}>
+                    <label className={s.sliderField}>
+                      <span className={s.sliderHead}>
+                        <span>მასშტაბი</span>
+                        <b>{Math.round((selectedImage.scale ?? 1) * 100)}%</b>
+                      </span>
                       <input
-                        value={
-                          item.layerName ??
-                          fallbackName
-                        }
-                        onFocus={() =>
-                          !hidden &&
-                          setSelectedId(
-                            item.id
+                        type="range"
+                        min="10"
+                        max="300"
+                        value={Math.round((selectedImage.scale ?? 1) * 100)}
+                        onChange={(e) =>
+                          updateImage(
+                            selectedImage.id,
+                            { scale: clampScale(+e.target.value / 100) },
+                            false
                           )
                         }
-                        onChange={(
-                          e
-                        ) =>
-                          renameLayer(
-                            item.objectType,
-                            item.id,
-                            e.target
-                              .value
-                          )
-                        }
-                        aria-label="ლეიერის სახელი"
-                        style={{
-                          minWidth:
-                            0,
-                          flex: 1,
-                          height:
-                            '32px',
-                          padding:
-                            '0 8px',
-                          border:
-                            '1px solid transparent',
-                          borderRadius:
-                            '6px',
-                          outline:
-                            'none',
-                          background:
-                            'transparent',
-                          color:
-                            '#16283F',
-                          fontSize:
-                            '12px',
-                          fontWeight:
-                            active
-                              ? 700
-                              : 500,
-                        }}
+                        onPointerUp={commitHistory}
+                        onKeyUp={commitHistory}
                       />
+                    </label>
 
-                      <button
-                        type="button"
-                        aria-label="ობიექტის წაშლა"
-                        title="წაშლა"
-                        onClick={() =>
-                          deleteLayer(
-                            item.objectType,
-                            item.id
+                    <label className={s.sliderField}>
+                      <span className={s.sliderHead}>
+                        <span>ბრუნვა</span>
+                        <b>{selectedImage.rotation ?? 0}°</b>
+                      </span>
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        value={selectedImage.rotation ?? 0}
+                        onChange={(e) =>
+                          updateImage(
+                            selectedImage.id,
+                            { rotation: clampRot(+e.target.value) },
+                            false
                           )
                         }
-                        style={{
-                          width:
-                            '32px',
-                          height:
-                            '32px',
-                          flexShrink:
-                            0,
-                          display:
-                            'grid',
-                          placeItems:
-                            'center',
-                          border:
-                            'none',
-                          borderRadius:
-                            '6px',
-                          background:
-                            'transparent',
-                          color:
-                            '#ef4444',
-                          cursor:
-                            'pointer',
-                          fontSize:
-                            '18px',
-                          lineHeight:
-                            1,
-                        }}
-                      >
-                        ×
-                      </button>
+                        onPointerUp={commitHistory}
+                        onKeyUp={commitHistory}
+                      />
+                    </label>
+
+                    <label className={s.sliderField}>
+                      <span className={s.sliderHead}>
+                        <span>გამჭვირვალობა</span>
+                        <b>{Math.round((selectedImage.opacity ?? 1) * 100)}%</b>
+                      </span>
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        value={Math.round((selectedImage.opacity ?? 1) * 100)}
+                        onChange={(e) =>
+                          updateImage(
+                            selectedImage.id,
+                            { opacity: clampOpacity(+e.target.value / 100) },
+                            false
+                          )
+                        }
+                        onPointerUp={commitHistory}
+                        onKeyUp={commitHistory}
+                      />
+                    </label>
+                  </div>
+
+                  <div className={s.field}>
+                    <div className={s.fieldLabel}>პოზიცია</div>
+                    <div className={s.alignRow}>
+                      {[
+                        ['l', 'მარცხნივ'],
+                        ['c', 'ცენტრში'],
+                        ['r', 'მარჯვნივ'],
+                      ].map(([id, label]) => (
+                        <button
+                          key={id}
+                          type="button"
+                          className={s.alignBtn}
+                          onClick={() => alignSelectedImage(id)}
+                        >
+                          {label}
+                        </button>
+                      ))}
                     </div>
-                  );
-                }
-              )
+                  </div>
+                </>
+              ) : (
+                images.length > 0 && (
+                  <div className={s.hintBox}>
+                    აირჩიეთ სურათი ლეიერებიდან ან კანვასზე, რომ შეცვალოთ
+                  </div>
+                )
+              )}
+            </>
+          )}
+        </div>
+
+        <div className={s.layers}>
+          <div className={s.layersHead}>
+            {ICONS.layers}
+            <span>ლეიერები</span>
+            <span className={s.countBadge}>{layerList.length}</span>
+            {supportsBackPrint && (
+              <span className={s.layersSide}>
+                {editSide === 'back' ? GEO.back : GEO.front}
+              </span>
             )}
           </div>
-        </Section>
 
+          {layerList.length === 0 ? (
+            <div className={s.layersEmpty}>
+              ჯერ ობიექტები არ არის — დაამატეთ ტექსტი ან სურათი
+            </div>
+          ) : (
+            <div className={s.layerList}>
+              {layerList.map(({ kind, node }, index) => {
+                const isText = kind === 'text';
+                const hidden = node.visible === false;
+                const active = selectedId === node.id;
+                const fallbackName = isText
+                  ? node.text || 'ტექსტი'
+                  : node.name || 'სურათი';
+
+                return (
+                  <div
+                    key={`${kind}-${node.id}`}
+                    className={`${s.layerRow} ${active ? s.layerRowActive : ''} ${
+                      hidden ? s.layerRowHidden : ''
+                    }`}
+                    onClick={() => !hidden && selectObject(node.id, kind)}
+                  >
+                    <span className={s.layerGlyph}>
+                      {isText ? 'T' : <img src={node.src} alt="" />}
+                    </span>
+
+                    <div className={s.layerText}>
+                      <input
+                        className={s.layerName}
+                        value={node.layerName ?? fallbackName}
+                        aria-label="ლეიერის სახელი"
+                        onChange={(e) =>
+                          renameLayer(kind, node.id, e.target.value)
+                        }
+                      />
+                      <span className={s.layerKind}>
+                        {isText
+                          ? `ტექსტი · ${fontLabel(node.fontFamily ?? 'Arial')}`
+                          : `სურათი · ${Math.round((node.scale ?? 1) * 100)}%`}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className={s.iconBtn}
+                      title={hidden ? 'გამოჩენა' : 'დამალვა'}
+                      aria-label={hidden ? 'ობიექტის გამოჩენა' : 'ობიექტის დამალვა'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleLayerVisibility(kind, node.id);
+                      }}
+                    >
+                      {hidden ? ICONS.eyeOff : ICONS.eye}
+                    </button>
+                    <button
+                      type="button"
+                      className={s.iconBtnSm}
+                      title="ზემოთ"
+                      aria-label="ზემოთ გადატანა"
+                      disabled={index === 0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        moveLayer(node.id, 1);
+                      }}
+                    >
+                      {ICONS.up}
+                    </button>
+                    <button
+                      type="button"
+                      className={s.iconBtnSm}
+                      title="ქვემოთ"
+                      aria-label="ქვემოთ გადატანა"
+                      disabled={index === layerList.length - 1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        moveLayer(node.id, -1);
+                      }}
+                    >
+                      {ICONS.down}
+                    </button>
+                    <button
+                      type="button"
+                      className={`${s.iconBtn} ${s.iconBtnDanger}`}
+                      title="წაშლა"
+                      aria-label="ობიექტის წაშლა"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteLayer(kind, node.id);
+                      }}
+                    >
+                      {ICONS.trash}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </aside>
 
-      {/* CENTER */}
+      {/* STAGE */}
 
-      <main
-        className={
-          s.centerArea
-        }
-      >
-        <div
-          className={
-            s.productViewer
-          }
-        >
+      <main className={s.stage}>
+        <div className={s.stageTopLeft}>
+          <button
+            type="button"
+            className={s.floatBtn}
+            title="დაბრუნება (Ctrl+Z)"
+            aria-label="დაბრუნება"
+            disabled={!canUndo}
+            onClick={undo}
+          >
+            {ICONS.undo}
+          </button>
+          <button
+            type="button"
+            className={s.floatBtn}
+            title="გამეორება (Ctrl+Y)"
+            aria-label="გამეორება"
+            disabled={!canRedo}
+            onClick={redo}
+          >
+            {ICONS.redo}
+          </button>
+        </div>
+
+        {canEdit && selectedText && (
+          <div className={s.contextBar}>
+            <button
+              type="button"
+              className={s.ctxPill}
+              title="შრიფტის შეცვლა"
+              onClick={cycleFont}
+            >
+              {fontLabel(selectedText.fontFamily ?? 'Arial')}
+              <Icon d="m6 9 6 6 6-6" size={12} width={2.4} />
+            </button>
+            <span className={s.ctxSep} />
+            <button
+              type="button"
+              className={s.ctxBtn}
+              aria-label="შემცირება"
+              onClick={() =>
+                updateText(selectedText.id, {
+                  fontSize: clampFont((selectedText.fontSize ?? 28) - 2),
+                })
+              }
+            >
+              −
+            </button>
+            <span className={s.ctxValue}>{Math.round(selectedText.fontSize ?? 28)}</span>
+            <button
+              type="button"
+              className={s.ctxBtn}
+              aria-label="გაზრდა"
+              onClick={() =>
+                updateText(selectedText.id, {
+                  fontSize: clampFont((selectedText.fontSize ?? 28) + 2),
+                })
+              }
+            >
+              +
+            </button>
+            <span className={s.ctxSep} />
+            <button
+              type="button"
+              className={s.ctxDot}
+              title="ტექსტის ფერი"
+              aria-label="ტექსტის ფერი"
+              style={{ background: selectedText.fill ?? '#000' }}
+              onClick={() => setTool('text')}
+            />
+            <button
+              type="button"
+              className={`${s.ctxBtn} ${selectedText.fontWeight === 'bold' ? s.ctxBtnOn : ''}`}
+              aria-pressed={selectedText.fontWeight === 'bold'}
+              aria-label="Bold"
+              style={{ fontWeight: 800 }}
+              onClick={() =>
+                updateText(selectedText.id, {
+                  fontWeight: selectedText.fontWeight === 'bold' ? 'normal' : 'bold',
+                })
+              }
+            >
+              B
+            </button>
+            <button
+              type="button"
+              className={`${s.ctxBtn} ${selectedText.fontStyle === 'italic' ? s.ctxBtnOn : ''}`}
+              aria-pressed={selectedText.fontStyle === 'italic'}
+              aria-label="Italic"
+              style={{ fontStyle: 'italic', fontFamily: 'Georgia, serif' }}
+              onClick={() =>
+                updateText(selectedText.id, {
+                  fontStyle: selectedText.fontStyle === 'italic' ? 'normal' : 'italic',
+                })
+              }
+            >
+              I
+            </button>
+            <span className={s.ctxSep} />
+            <span className={s.ctxMeta}>
+              {ICONS.rotate}
+              {selectedText.rotation ?? 0}°
+            </span>
+            <button
+              type="button"
+              className={`${s.ctxBtn} ${s.ctxDanger}`}
+              title="წაშლა"
+              aria-label="წაშლა"
+              onClick={deleteSelectedObject}
+            >
+              {ICONS.trash}
+            </button>
+          </div>
+        )}
+
+        {canEdit && selectedImage && (
+          <div className={s.contextBar}>
+            <button
+              type="button"
+              className={s.ctxPill}
+              onClick={() => replaceInputRef.current?.click()}
+            >
+              ჩანაცვლება
+            </button>
+            <input
+              ref={replaceInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              hidden
+              onChange={replaceSelectedImage}
+            />
+            <span className={s.ctxSep} />
+            <button
+              type="button"
+              className={s.ctxBtn}
+              aria-label="შემცირება"
+              onClick={() =>
+                updateImage(selectedImage.id, {
+                  scale: clampScale((selectedImage.scale ?? 1) - 0.1),
+                })
+              }
+            >
+              −
+            </button>
+            <span className={s.ctxValue}>
+              {Math.round((selectedImage.scale ?? 1) * 100)}%
+            </span>
+            <button
+              type="button"
+              className={s.ctxBtn}
+              aria-label="გაზრდა"
+              onClick={() =>
+                updateImage(selectedImage.id, {
+                  scale: clampScale((selectedImage.scale ?? 1) + 0.1),
+                })
+              }
+            >
+              +
+            </button>
+            <span className={s.ctxSep} />
+            <button
+              type="button"
+              className={s.ctxPillPlain}
+              title="90°-ით მობრუნება"
+              onClick={() =>
+                updateImage(selectedImage.id, {
+                  rotation: ((((selectedImage.rotation ?? 0) + 90 + 180) % 360) + 360) % 360 - 180,
+                })
+              }
+            >
+              {ICONS.rotate}
+              {selectedImage.rotation ?? 0}°
+            </button>
+            <span className={s.ctxMeta}>
+              {Math.round((selectedImage.opacity ?? 1) * 100)}%
+            </span>
+            <button
+              type="button"
+              className={`${s.ctxBtn} ${s.ctxDanger}`}
+              title="წაშლა"
+              aria-label="წაშლა"
+              onClick={deleteSelectedObject}
+            >
+              {ICONS.trash}
+            </button>
+          </div>
+        )}
+
+        <div className={is3D ? s.viewer3D : s.viewerFlat}>
           <div
-            className={
-              flipCls
-            }
-            style={
-              is3D
-                ? {
-                    position:
-                      'relative',
-
-                    width:
-                      '100%',
-
-                    flex: 1,
-
-                    minHeight:
-                      0,
-
-                    margin:
-                      '0 auto',
-
-                    // The editor overlay spans the whole 326x500 canvas and
-                    // grows with zoom (much taller than the panel on the cap).
-                    // Clip it to the viewer so it can never cover the
-                    // Front / Back / 3D Mode buttons below.
-                    overflow:
-                      'hidden',
-                  }
-                : {
-                    position:
-                      'relative',
-
-                    width:
-                      '400px',
-
-                    height:
-                      '500px',
-
-                    margin:
-                      '0 auto',
-                  }
-            }
+            className={`${is3D ? s.viewBox3D : s.viewBoxFlat} ${flipCls}`}
           >
             <div
               ref={viewerRef}
-              style={
-                is3D
-                  ? {
-                      position:
-                        'absolute',
-
-                      inset: 0,
-
-                      borderRadius:
-                        '18px',
-
-                      overflow:
-                        'hidden',
-                    }
-                  : {
-                      width:
-                        '400px',
-
-                      height:
-                        '500px',
-
-                      display:
-                        'flex',
-
-                      alignItems:
-                        'center',
-
-                      justifyContent:
-                        'center',
-
-                      flexShrink:
-                        0,
-
-                      overflow:
-                        'hidden',
-
-                      borderRadius:
-                        '18px',
-                    }
-              }
+              className={is3D ? s.canvas3D : s.canvasFlat}
             >
               {is3D ? (
                 <ShirtViewer3D
-                  color={
-                    shirtHex
-                  }
-                  designCanvas={
-                    designCanvas
-                  }
-                  designRev={
-                    designRev
-                  }
-                  view={
-                    view3d
-                  }
-                  viewResetKey={
-                    view3dResetKey
-                  }
-                  interactive={
-                    is3DMode
-                  }
-                  onPrintAreaChange={
-                    handlePrintArea
-                  }
-                  productType={
-                    modelType
-                  }
+                  color={shirtHex}
+                  designCanvas={designCanvas}
+                  designRev={designRev}
+                  view={view3d}
+                  viewResetKey={view3dResetKey}
+                  interactive={is3DMode}
+                  onPrintAreaChange={handlePrintArea}
+                  productType={modelType}
                   backDesignCanvas={
-                    supportsBackPrint
-                      ? backDesignCanvas
-                      : null
+                    supportsBackPrint ? backDesignCanvas : null
                   }
-                  backDesignRev={
-                    backDesignRev
-                  }
-                  printSide={
-                    editSide
-                  }
+                  backDesignRev={backDesignRev}
+                  printSide={editSide}
                 />
               ) : (
                 <img
-                  src={
-                    currentSrc
-                  }
-                  alt={
-                    activeCat.label
-                  }
-                  draggable={
-                    false
-                  }
-                  style={{
-                    width:
-                      '400px',
-
-                    height:
-                      '500px',
-
-                    objectFit:
-                      'contain',
-
-                    objectPosition:
-                      'center',
-
-                    display:
-                      'block',
-
-                    flexShrink:
-                      0,
-
-                    filter:
-                      activeFilter,
-
-                    transition:
-                      'filter 0.3s ease',
-                  }}
+                  src={currentSrc}
+                  alt={activeCat.label}
+                  draggable={false}
+                  className={s.flatImage}
+                  style={{ filter: activeFilter }}
                 />
               )}
             </div>
@@ -3191,533 +3008,326 @@ export default function DesignPage() {
               style={
                 is3D
                   ? {
-                      position:
-                        'absolute',
-
-                      left:
-                        printRect
-                          ? `${printRect.left}px`
-                          : '50%',
-
-                      top:
-                        printRect
-                          ? `${printRect.top}px`
-                          : '0px',
-
-                      width:
-                        CANVAS_WIDTH +
-                        'px',
-
-                      height:
-                        CANVAS_HEIGHT +
-                        'px',
-
+                      position: 'absolute',
+                      left: printRect ? `${printRect.left}px` : '50%',
+                      top: printRect ? `${printRect.top}px` : '0px',
+                      width: CANVAS_WIDTH + 'px',
+                      height: CANVAS_HEIGHT + 'px',
                       margin: 0,
-
                       padding: 0,
-
-                      transformOrigin:
-                        'top left',
-
-                      transform:
-                        printRect
-                          ? `scale(${
-                              printRect.width /
-                              CANVAS_WIDTH
-                            }, ${
-                              printRect.height /
-                              CANVAS_HEIGHT
-                            })`
-                          : 'translateX(-50%)',
-
-                      opacity:
-                        printRect &&
-                        printRect.visible
-                          ? 1
-                          : 0,
-
+                      transformOrigin: 'top left',
+                      transform: printRect
+                        ? `scale(${printRect.width / CANVAS_WIDTH}, ${
+                            printRect.height / CANVAS_HEIGHT
+                          })`
+                        : 'translateX(-50%)',
+                      opacity: printRect && printRect.visible ? 1 : 0,
                       // A hidden overlay (print side facing away) must not
                       // swallow clicks meant for the viewer or the buttons.
                       pointerEvents:
-                        !is3DMode &&
-                        printRect &&
-                        printRect.visible
+                        !is3DMode && printRect && printRect.visible
                           ? 'auto'
                           : 'none',
-
-                      transition:
-                        'opacity 0.2s ease',
+                      transition: 'opacity 0.2s ease',
                     }
                   : {
-                      position:
-                        'absolute',
-
-                      top:
-                        '-15px',
-
-                      left:
-                        '33px',
-
-                      width:
-                        CANVAS_WIDTH +
-                        'px',
-
-                      height:
-                        CANVAS_HEIGHT +
-                        'px',
-
+                      position: 'absolute',
+                      top: '-15px',
+                      left: '33px',
+                      width: CANVAS_WIDTH + 'px',
+                      height: CANVAS_HEIGHT + 'px',
                       margin: 0,
-
                       padding: 0,
-
                       opacity: 1,
-
-                     pointerEvents: is3DMode
-                      ? 'none'
-                      : 'auto',
+                      pointerEvents: is3DMode ? 'none' : 'auto',
                     }
               }
             >
               <Stage
                 ref={stageRef}
-                width={
-                  CANVAS_WIDTH
-                }
-                height={
-                  CANVAS_HEIGHT
-                }
-                onMouseDown={(
-                  e
-                ) => {
-                  if (
-                    e.target ===
-                    e.target.getStage()
-                  ) {
-                    setSelectedId(
-                      null
-                    );
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}
+                onMouseDown={(e) => {
+                  if (e.target === e.target.getStage()) {
+                    setSelectedId(null);
                   }
                 }}
-                onTap={(
-                  e
-                ) => {
-                  if (
-                    e.target ===
-                    e.target.getStage()
-                  ) {
-                    setSelectedId(
-                      null
-                    );
+                onTap={(e) => {
+                  if (e.target === e.target.getStage()) {
+                    setSelectedId(null);
                   }
                 }}
               >
                 <Layer>
-                  {images
-                    .filter((img) => img.visible !== false)
-                    .map((img) => (
-                    <DesignImage
-                      key={img.id}
-                      imgData={img}
-                      isSelected={selectedId === img.id}
-                      is3DProduct={is3D}
-                      is3DMode={is3DMode}
-                      onSelect={() => setSelectedId(img.id)}
-                      onChange={(newProps, opts) => {
-                        setImages((prev) => {
-                          const next = prev.map((i) =>
-                            i.id === img.id
-                              ? { ...i, ...newProps }
-                              : i
-                          );
+                  {stack
+                    .filter(({ node }) => node.visible !== false)
+                    .map(({ kind, node }) =>
+                      kind === 'image' ? (
+                        <DesignImage
+                          key={`image-${node.id}`}
+                          imgData={node}
+                          isSelected={selectedId === node.id}
+                          is3DProduct={is3D}
+                          is3DMode={is3DMode}
+                          onSelect={() => selectObject(node.id, 'image')}
+                          onChange={(newProps, opts) => {
+                            setImages((prev) => {
+                              const next = prev.map((i) =>
+                                i.id === node.id ? { ...i, ...newProps } : i
+                              );
 
-                          if (!opts?.silent) {
-                            saveHistory(next, textObjects);
-                          }
+                              if (!opts?.silent) {
+                                saveHistory(next, textObjects);
+                              }
 
-                          return next;
-                        });
-                      }}
-                    />
-                  ))}
+                              return next;
+                            });
+                          }}
+                        />
+                      ) : (
+                        <TextItem
+                          key={`text-${node.id}`}
+                          node={node}
+                          isSelected={selectedId === node.id}
+                          is3DProduct={is3D}
+                          is3DMode={is3DMode}
+                          onSelect={() => selectObject(node.id, 'text')}
+                          onChange={(newProps, opts) => {
+                            setTextObjects((prev) => {
+                              const next = prev.map((item) =>
+                                item.id === node.id
+                                  ? { ...item, ...newProps }
+                                  : item
+                              );
 
-                  {textObjects
-                    .filter((t) => t.visible !== false)
-                    .map((t) => (
-                    <TextItem
-                      key={t.id}
-                      node={t}
-                      isSelected={selectedId === t.id}
-                      is3DProduct={is3D}
-                      is3DMode={is3DMode}
-                      onSelect={() => setSelectedId(t.id)}
-                      onChange={(newProps, opts) => {
-                        setTextObjects((prev) => {
-                          const next = prev.map((item) =>
-                            item.id === t.id
-                              ? { ...item, ...newProps }
-                              : item
-                          );
+                              if (!opts?.silent) {
+                                saveHistory(images, next);
+                              }
 
-                          if (!opts?.silent) {
-                            saveHistory(images, next);
-                          }
-
-                          return next;
-                        });
-                      }}
-                    />
-                  ))}
+                              return next;
+                            });
+                          }}
+                        />
+                      )
+                    )}
                 </Layer>
               </Stage>
             </div>
           </div>
+        </div>
 
-        {is3D && (
-          <div
-            style={{
-              display: 'flex',
-              gap: '10px',
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginTop: '4px',
-            }}
-          >
-            <button
-              type="button"
-              onClick={showFront}
-              aria-pressed={supportsBackPrint ? editSide === 'front' : undefined}
-              style={{
-                padding: '8px 24px',
-                minWidth: '92px',
-                borderRadius: '999px',
-                // Filled = the side being edited (back-printable products).
-                background: supportsBackPrint && editSide === 'front' ? '#16283F' : '#ffffff',
-                color: supportsBackPrint && editSide === 'front' ? '#ffffff' : '#16283F',
-                border: '1.5px solid #16283F',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: 700,
-              }}
-            >
-              წინა
-            </button>
-
-            <button
-              type="button"
-              onClick={showBack}
-              aria-pressed={supportsBackPrint ? editSide === 'back' : undefined}
-              style={{
-                padding: '8px 24px',
-                minWidth: '92px',
-                borderRadius: '999px',
-                // Filled = the side being edited (back-printable products).
-                background: supportsBackPrint && editSide === 'back' ? '#16283F' : '#ffffff',
-                color: supportsBackPrint && editSide === 'back' ? '#ffffff' : '#16283F',
-                border: '1.5px solid #16283F',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: 700,
-              }}
-            >
-              უკანა
+        {backIsEmpty && !is3DMode && (
+          <div className={s.emptyBack}>
+            უკანა მხარე ცარიელია
+            <button type="button" onClick={handleAddText}>
+              + ტექსტი
             </button>
             <button
-  onClick={toggle3DMode}
-  style={{
-    padding: '8px 24px',
-    minWidth: '110px',
-    borderRadius: '999px',
-    background: is3DMode
-      ? '#16283F'
-      : '#ffffff',
-    color: is3DMode
-      ? '#ffffff'
-      : '#16283F',
-    border: '1.5px solid #16283F',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontWeight: 700,
-  }}
->
-  3D Mode
+              type="button"
+              onClick={() => {
+                setTool('image');
+                uploadInputRef.current?.click();
+              }}
+            >
+              + სურათი
             </button>
           </div>
         )}
 
+        {is3DMode && (
+          <div className={s.orbitHint}>
+            {ICONS.rotate}
+            გადაათრიეთ მოსაბრუნებლად
+          </div>
+        )}
+
+        <div className={s.viewDock}>
+          {is3D ? (
+            <>
+              <button
+                type="button"
+                className={`${s.dockBtn} ${view3d === 'front' ? s.dockBtnActive : ''}`}
+                aria-pressed={view3d === 'front'}
+                onClick={showFront}
+              >
+                {ICONS.front}
+                {GEO.front}
+              </button>
+              <button
+                type="button"
+                className={`${s.dockBtn} ${view3d === 'back' ? s.dockBtnActive : ''}`}
+                aria-pressed={view3d === 'back'}
+                onClick={showBack}
+              >
+                {ICONS.back}
+                {GEO.back}
+              </button>
+              <span className={s.dockSep} />
+              <button
+                type="button"
+                className={`${s.dockBtn} ${is3DMode ? s.dockBtnActive : ''}`}
+                aria-pressed={is3DMode}
+                title="3D რეჟიმში მოდელი თავისუფლად ბრუნავს"
+                onClick={toggle3DMode}
+              >
+                {ICONS.cube}
+                3D
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={`${s.dockBtn} ${side === 'front' ? s.dockBtnActive : ''}`}
+                aria-pressed={side === 'front'}
+                onClick={() => goToSide('front')}
+              >
+                {ICONS.front}
+                {GEO.front}
+              </button>
+              <button
+                type="button"
+                className={`${s.dockBtn} ${side === 'back' ? s.dockBtnActive : ''}`}
+                aria-pressed={side === 'back'}
+                disabled={!activeCat.hasBack}
+                onClick={() => goToSide('back')}
+              >
+                {ICONS.back}
+                {GEO.back}
+              </button>
+            </>
+          )}
         </div>
       </main>
 
-      {/* RIGHT SIDEBAR */}
+      {/* ORDER PANEL */}
 
-      <aside
-        className={
-          s.rightSidebar
-        }
-      >
-        <div
-          className={
-            s.productInfo
-          }
-        >
-          <div
-            className={
-              s.productName
-            }
-          >
-            {orderProduct
-              ? orderProduct.name
-              : activeCat.label}
-          </div>
-
-          <div
-            className={
-              s.productCat
-            }
-          >
-            {activeCat.label}
-          </div>
-        </div>
-
-        <div
-          className={
-            s.divider
-          }
-        />
-
-        {/* Sizes come from the product (set in admin); single-size products need no picker. */}
-        {orderProduct &&
-          sizeOptions.length > 1 && (
-          <>
-            <div
-              className={
-                s.controlBlock
-              }
-            >
-              <div
-                className={
-                  s.controlLabel
-                }
-              >
-                {GEO.size}
-              </div>
-
-              <div
-                className={
-                  s.sizeGrid
-                }
-              >
-                {sizeOptions.map(
-                  (sz) => (
-                    <button
-                      key={
-                        sz
-                      }
-                      className={`${s.sizeBtn} ${
-                        selectedSize ===
-                        sz
-                          ? s.sizeBtnActive
-                          : ''
-                      }`}
-                      onClick={() =>
-                        setSize(
-                          sz
-                        )
-                      }
-                    >
-                      {sz}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-
-            <div
-              className={
-                s.divider
-              }
-            />
-          </>
-        )}
-
-        <div
-          className={
-            s.controlBlock
-          }
-        >
-          <div
-            className={
-              s.controlLabel
-            }
-          >
-            {GEO.qty}
-          </div>
-
-          <div
-            className={
-              s.qtyControl
-            }
-          >
-            <button
-              className={
-                s.qtyBtn
-              }
-              onClick={() =>
-                setQuantity(
-                  (q) =>
-                    Math.max(
-                      1,
-                      q - 1
-                    )
-                )
-              }
-            >
-              −
-            </button>
-
-            <span
-              className={
-                s.qtyVal
-              }
-            >
-              {quantity}
+      <aside className={s.orderPanel}>
+        <div className={s.orderBody}>
+          <div className={s.orderHead}>
+            <span className={s.orderThumb}>
+              <img src={thumbSrc} alt="" style={{ filter: thumbFilter }} />
             </span>
+            <div>
+              <div className={s.orderName}>
+                {orderProduct ? orderProduct.name : activeCat.label}
+              </div>
+              <div className={s.orderMeta}>
+                {[activeCat.label, variantLabel].filter(Boolean).join(' · ')}
+              </div>
+            </div>
+          </div>
 
-            <button
-              className={
-                s.qtyBtn
-              }
-              onClick={() =>
-                setQuantity(
-                  (q) =>
-                    q + 1
-                )
-              }
-            >
-              +
-            </button>
+          <div className={s.summary}>
+            <div className={s.summaryRow}>
+              <span>ფერი</span>
+              <b>
+                {shirtColorInfo.name}
+                <span
+                  className={s.summaryDot}
+                  style={{ background: shirtColorInfo.hex }}
+                />
+              </b>
+            </div>
+            {orderProduct && (
+              <div className={s.summaryRow}>
+                <span>{GEO.size}</span>
+                <b>{selectedSize}</b>
+              </div>
+            )}
+            <div className={s.summaryRow}>
+              <span>დიზაინი</span>
+              <b>{designLabel}</b>
+            </div>
+          </div>
+
+          {/* Sizes come from the product (set in admin); single-size products need no picker. */}
+          {orderProduct && sizeOptions.length > 1 && (
+            <div className={s.field}>
+              <div className={s.orderLabel}>{GEO.size}</div>
+              <div className={s.sizeGrid}>
+                {sizeOptions.map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    aria-pressed={selectedSize === sz}
+                    className={`${s.sizeBtn} ${selectedSize === sz ? s.sizeBtnActive : ''}`}
+                    onClick={() => setSize(sz)}
+                  >
+                    {sz}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={s.qtyRow}>
+            <span className={s.orderLabel}>{GEO.qty}</span>
+            <div className={s.qtyControl}>
+              <button
+                type="button"
+                className={s.qtyBtn}
+                aria-label="შემცირება"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              >
+                −
+              </button>
+              <span className={s.qtyVal}>{quantity}</span>
+              <button
+                type="button"
+                className={s.qtyBtn}
+                aria-label="გაზრდა"
+                onClick={() => setQuantity((q) => q + 1)}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className={s.priceRows}>
+            <div>
+              <span>ერთეულის ფასი</span>
+              <span>{unitPrice !== null ? formatPrice(unitPrice) : '—'}</span>
+            </div>
+            <div>
+              <span>{GEO.qty}</span>
+              <span>× {quantity}</span>
+            </div>
           </div>
         </div>
 
-        <div
-          className={
-            s.divider
-          }
-        />
-
-        <div
-          className={
-            s.priceRow
-          }
-        >
-          <span
-            className={
-              s.priceLabel
-            }
-          >
-            {GEO.price}
-          </span>
-
-          <div>
-            <div
-              className={
-                s.priceValue
-              }
-            >
-              {price !== null
-                ? `₾${price}`
+        <div className={s.orderFoot}>
+          <div className={s.totalRow}>
+            <span>სულ</span>
+            <b>
+              {unitPrice !== null
+                ? formatPrice(unitPrice * quantity)
                 : '—'}
-            </div>
-
-            <div
-              className={
-                s.priceUnit
-              }
-            >
-              {price !== null
-                ? `× ${quantity} ცალი`
-                : 'ჯერ არ იყიდება'}
-            </div>
+            </b>
           </div>
-        </div>
 
-        <div
-          className={
-            s.divider
-          }
-        />
-
-        <div
-          className={
-            s.colorPreview
-          }
-        >
-          <span
-            className={
-              s.controlLabel
-            }
-          >
-            შერჩეული ფერი
-          </span>
-
-          <div
-            className={
-              s.colorPreviewDot
-            }
-            style={{
-              background:
-                SHIRT_COLORS.find(
-                  (c) =>
-                    c.key ===
-                    shirtColor
-                )?.hex ??
-                '#fff',
-
-              border:
-                shirtColor ===
-                'white'
-                  ? '2px solid #ddd'
-                  : 'none',
-            }}
-          />
-        </div>
-
-        <div
-          className={
-            s.actions
-          }
-        >
           <button
-            className={
-              s.orderBtn
-            }
-            onClick={
-              handleAddToCart
-            }
-            disabled={
-              !orderProduct
-            }
+            type="button"
+            className={s.orderBtn}
+            onClick={handleAddToCart}
+            disabled={!orderProduct}
           >
             {GEO.order}
           </button>
 
           <button
-            className={`${s.cartBtn} ${
-              cartAdded
-                ? s.cartBtnAdded
-                : ''
-            }`}
-            onClick={
-              handleAddToCart
-            }
-            disabled={
-              cartAdded ||
-              !orderProduct
-            }
+            type="button"
+            className={`${s.cartBtn} ${cartAdded ? s.cartBtnAdded : ''}`}
+            onClick={handleAddToCart}
+            disabled={cartAdded || !orderProduct}
           >
-            {cartAdded
-              ? '✓ დამატებულია'
-              : GEO.addCart}
+            {ICONS.cart}
+            {cartAdded ? '✓ დამატებულია' : 'კალათაში დამატება'}
           </button>
+
+          {!orderProduct && (
+            <div className={s.notForSale}>ეს პროდუქტი ჯერ არ იყიდება</div>
+          )}
         </div>
       </aside>
     </div>

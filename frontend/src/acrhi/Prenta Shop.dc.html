@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&amp;family=Noto+Serif+Georgian:wght@500;600;700&amp;display=swap" rel="stylesheet"><style>
+*{box-sizing:border-box}body{margin:0;background:#f9f6f3;color:#16233b;font-family:"Noto Sans Georgian",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#16233b;text-decoration:none}a:hover{color:#ef5f7a}
+input[type=range]{accent-color:#ef5f7a}
+::-webkit-scrollbar{height:6px;width:6px}::-webkit-scrollbar-thumb{background:#d9d0c6;border-radius:6px}
+</style></helmet>
+
+<header style="position:sticky;top:0;z-index:40;background:#16233b;color:#fff">
+  <div style="max-width:1320px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:center;gap:24px">
+    <a href="#" style="display:flex;align-items:center;gap:10px;color:#fff;flex:none">
+      <img src="assets/logo.png" alt="" style="width:34px;height:34px;border-radius:6px">
+      <span style="font-family:'Noto Serif Georgian',serif;font-weight:700;letter-spacing:.16em;font-size:19px">PRENTA</span>
+    </a>
+    <nav style="display:{{navDisplay}};gap:4px;align-items:center">
+      <a href="#" style="padding:8px 14px;border-radius:999px;color:#fff;font-size:14px" style-hover="background:rgba(255,255,255,.08);color:#fff">მთავარი</a>
+      <a href="#shop" style="padding:8px 14px;border-radius:999px;background:#f3ebe3;color:#16233b;font-size:14px;font-weight:600">მაღაზია</a>
+      <a href="#" style="padding:8px 14px;border-radius:999px;color:#fff;font-size:14px" style-hover="background:rgba(255,255,255,.08);color:#fff">კონსტრუქტორი</a>
+      <a href="#" style="padding:8px 14px;border-radius:999px;color:#fff;font-size:14px" style-hover="background:rgba(255,255,255,.08);color:#fff">კორპორატიული</a>
+    </nav>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <a href="#" style="display:{{navDisplay}};color:#fff;font-size:14px;padding:8px 12px">შესვლა</a>
+      <button onClick="{{noop}}" aria-label="რჩეულები" style="width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:transparent;color:#fff;display:grid;place-items:center;cursor:pointer;position:relative">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"></path></svg>
+        <sc-if value="{{ hasFav }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#f3ebe3;color:#16233b;font-size:11px;font-weight:700;display:grid;place-items:center">{{ favCount }}</span></sc-if>
+      </button>
+      <button onClick="{{noop}}" style="height:40px;padding:0 16px;border-radius:999px;border:none;background:#ef5f7a;color:#fff;display:flex;align-items:center;gap:8px;font:600 14px 'Noto Sans Georgian',sans-serif;cursor:pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 7h14l-1.5 12h-11z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg>
+        <span style="display:{{cartLabelDisplay}}">კალათა</span>
+        <span style="background:#fff;color:#ef5f7a;border-radius:9px;min-width:20px;height:20px;padding:0 6px;display:grid;place-items:center;font-size:12px">{{ cartCount }}</span>
+      </button>
+    </div>
+  </div>
+</header>
+<div style="background:#f3ebe3;color:#16233b;font-size:12.5px;text-align:center;padding:9px 16px">★ 2 400+ დაბეჭდილი შეკვეთა · ბეჭდვა 3 დღეში · მიწოდება მთელ საქართველოში</div>
+
+<section style="background:#16233b;color:#fff;position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;background:radial-gradient(60% 80% at 95% 0%,rgba(239,95,122,.28),transparent 60%),radial-gradient(40% 60% at 0% 100%,rgba(60,170,170,.18),transparent 60%)"></div>
+  <div style="position:relative;max-width:1320px;margin:0 auto;padding:{{heroPad}};display:grid;grid-template-columns:{{heroCols}};gap:24px;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:18px;max-width:560px">
+      <span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#f3ebe3;opacity:.8">DTF ბეჭდვა · მინიმუმ 1 ცალი</span>
+      <h1 style="margin:0;font-family:'Noto Serif Georgian',serif;font-weight:700;font-size:clamp(30px,4.2vw,52px);line-height:1.12;text-wrap:balance">დაბეჭდე საკუთარი დიზაინი <span style="color:#ef5f7a">მაისურზე, ჰუდზე, ჩანთაზე.</span></h1>
+      <p style="margin:0;font-size:15.5px;line-height:1.65;color:#d6dbe6;text-wrap:pretty">ატვირთე სურათი ან აირჩიე მზა დიზაინი — მიიღე პროდუქტი 3 დღეში.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <a href="#" style="height:48px;padding:0 24px;border-radius:999px;background:#ef5f7a;color:#fff;display:flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px" style-hover="background:#e24d69;color:#fff">დაიწყე დიზაინი →</a>
+        <a href="#shop" style="height:48px;padding:0 24px;border-radius:999px;border:1px solid rgba(255,255,255,.35);color:#fff;display:flex;align-items:center;font-weight:600;font-size:14.5px" style-hover="background:rgba(255,255,255,.08);color:#fff">მზა პროდუქცია</a>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center">
+      <img src="assets/hero.png" alt="მაისურები" style="width:100%;max-width:{{heroImgMax}};aspect-ratio:780/660;object-fit:cover;-webkit-mask-image:radial-gradient(closest-side,#000 70%,transparent 100%);mask-image:radial-gradient(closest-side,#000 70%,transparent 100%)">
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;border-bottom:1px solid #eee6dd">
+  <div style="max-width:1320px;margin:0 auto;padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 32px">
+    <div style="display:flex;gap:12px;align-items:baseline"><span style="font-family:'Noto Serif Georgian',serif;color:#ef5f7a;font-size:13px">01</span><div><div style="font-weight:600;font-size:14px">აწყვე დიზაინი</div><div style="font-size:12.5px;color:#6b7385;margin-top:2px">ლოგო, სურათი ან ტექსტი — წინ, უკან, სახელოზე</div></div></div>
+    <div style="display:flex;gap:12px;align-items:baseline"><span style="font-family:'Noto Serif Georgian',serif;color:#ef5f7a;font-size:13px">02</span><div><div style="font-weight:600;font-size:14px">ნახე ფასი მაშინვე</div><div style="font-size:12.5px;color:#6b7385;margin-top:2px">პროდუქტი + ბეჭდვის ზონა + რაოდენობა</div></div></div>
+    <div style="display:flex;gap:12px;align-items:baseline"><span style="font-family:'Noto Serif Georgian',serif;color:#ef5f7a;font-size:13px">03</span><div><div style="font-weight:600;font-size:14px">მიიღე 3 დღეში</div><div style="font-size:12.5px;color:#6b7385;margin-top:2px">150 ₾-დან მიწოდება უფასოა</div></div></div>
+  </div>
+</section>
+
+<main id="shop" style="max-width:1320px;margin:0 auto;padding:32px 20px 56px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div>
+      <div style="font-size:12.5px;color:#8a8f9c;display:flex;gap:6px"><a href="#" style="color:#8a8f9c">მთავარი</a><span>/</span><span style="color:#16233b">მაღაზია</span></div>
+      <h2 style="margin:6px 0 0;font-family:'Noto Serif Georgian',serif;font-weight:700;font-size:clamp(24px,3vw,34px)">{{ pageTitle }}</h2>
+    </div>
+    <span style="font-size:13px;color:#6b7385">{{ resultLabel }}</span>
+  </div>
+
+  <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin:0 -20px;padding-left:20px;padding-right:20px;scrollbar-width:none">
+    <sc-for list="{{ catTiles }}" as="c" hint-placeholder-count="10">
+      <button onClick="{{ c.onPick }}" style="flex:none;width:{{tileW}};display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 8px 10px;border-radius:14px;border:1px solid {{ c.border }};background:{{ c.bg }};cursor:pointer;font-family:inherit;color:#16233b">
+        <div style="position:relative;width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#f1ebe4;display:grid;place-items:center">
+          <sc-if value="{{ c.img }}" hint-placeholder-val="{{ false }}"><img src="{{ c.img }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if>
+          <sc-if value="{{ c.noImg }}"><span style="font-family:'Noto Serif Georgian',serif;font-size:11px;letter-spacing:.08em;color:#a79c90;text-transform:uppercase;padding:4px;text-align:center">{{ c.en }}</span></sc-if>
+        </div>
+        <span style="font-size:12px;font-weight:600;line-height:1.3;text-align:center;text-wrap:balance">{{ c.short }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="display:grid;grid-template-columns:{{layoutCols}};gap:28px;align-items:start">
+    <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeDrawer }}" style="position:fixed;inset:0;background:rgba(22,35,59,.45);z-index:60"></div>
+    </sc-if>
+    <aside style="display:{{asideDisplay}};position:{{asidePos}};top:{{asideTop}};left:0;bottom:{{asideBottom}};z-index:70;width:{{asideW}};max-height:{{asideMaxH}};overflow-y:{{asideOverflow}};overflow-x:hidden;background:#fff;border:1px solid #ece6df;border-radius:{{asideRadius}};padding:18px 18px 22px;flex-direction:column;gap:22px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-weight:700;font-size:15px">ფილტრები</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <sc-if value="{{ hasActive }}"><button onClick="{{ clearAll }}" style="border:none;background:none;color:#ef5f7a;font:600 12.5px inherit;font-family:inherit;cursor:pointer;padding:4px">გასუფთავება</button></sc-if>
+          <sc-if value="{{ isMobile }}"><button onClick="{{ closeDrawer }}" aria-label="დახურვა" style="width:32px;height:32px;border-radius:999px;border:1px solid #ece6df;background:#fff;cursor:pointer;font-size:16px;color:#16233b">×</button></sc-if>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8f9c;margin-bottom:4px">კატეგორია</div>
+        <sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="10">
+          <label onClick="{{ c.onToggle }}" style="display:flex;align-items:center;gap:10px;padding:5px 0;cursor:pointer;font-size:13.5px;user-select:none">
+            <span style="width:18px;height:18px;flex:none;border-radius:5px;border:1.5px solid {{ c.boxBorder }};background:{{ c.boxBg }};display:grid;place-items:center;color:#fff;font-size:12px;line-height:1">{{ c.tick }}</span>
+            <span style="flex:1;line-height:1.3">{{ c.ka }}</span>
+            <span style="font-size:12px;color:#a0a5b1">{{ c.count }}</span>
+          </label>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8f9c">ფასი</span><span style="font-size:13px;font-weight:600">{{ priceLabel }}</span></div>
+        <input type="range" min="20" max="160" step="5" value="{{ maxPrice }}" onChange="{{ onPrice }}" style="width:100%">
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#a0a5b1"><span>20 ₾</span><span>160 ₾</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8f9c">ფერი</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ colorFilters }}" as="c" hint-placeholder-count="8">
+            <button onClick="{{ c.onToggle }}" title="{{ c.ka }}" aria-label="{{ c.ka }}" style="width:30px;height:30px;border-radius:999px;border:2px solid {{ c.ring }};padding:3px;background:#fff;cursor:pointer">
+              <span style="display:block;width:100%;height:100%;border-radius:999px;background:{{ c.hex }};box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8f9c">ზომა</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <sc-for list="{{ sizeFilters }}" as="s" hint-placeholder-count="6">
+            <button onClick="{{ s.onToggle }}" style="min-width:42px;height:34px;padding:0 10px;border-radius:8px;border:1px solid {{ s.border }};background:{{ s.bg }};color:{{ s.fg }};font:600 12.5px inherit;font-family:inherit;cursor:pointer">{{ s.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8f9c">სხვა</div>
+        <sc-for list="{{ flagFilters }}" as="f" hint-placeholder-count="2">
+          <label onClick="{{ f.onToggle }}" style="display:flex;align-items:center;gap:10px;padding:4px 0;cursor:pointer;font-size:13.5px;user-select:none">
+            <span style="width:34px;height:20px;flex:none;border-radius:999px;background:{{ f.track }};position:relative;transition:background .15s"><span style="position:absolute;top:2px;left:{{ f.knob }};width:16px;height:16px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .15s"></span></span>
+            <span>{{ f.label }}</span>
+          </label>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ isMobile }}"><button onClick="{{ closeDrawer }}" style="height:46px;border-radius:999px;border:none;background:#16233b;color:#fff;font:600 14px inherit;font-family:inherit;cursor:pointer">{{ showResultsLabel }}</button></sc-if>
+    </aside>
+
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+        <div style="flex:1 1 220px;display:flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:999px;background:#fff;border:1px solid #ece6df">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8f9c" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+          <input value="{{ q }}" onChange="{{ onSearch }}" placeholder="მოძებნე დიზაინი ან პროდუქტი…" style="flex:1;border:none;outline:none;background:transparent;font:14px inherit;font-family:inherit;color:#16233b;min-width:0">
+        </div>
+        <sc-if value="{{ isMobile }}"><button onClick="{{ openDrawer }}" style="height:42px;padding:0 16px;border-radius:999px;border:1px solid #16233b;background:#fff;color:#16233b;font:600 13.5px inherit;font-family:inherit;display:flex;align-items:center;gap:8px;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>ფილტრები<sc-if value="{{ hasActive }}"><span style="background:#ef5f7a;color:#fff;border-radius:9px;min-width:18px;height:18px;padding:0 5px;font-size:11px;display:grid;place-items:center">{{ activeCount }}</span></sc-if></button></sc-if>
+        <label style="height:42px;display:flex;align-items:center;gap:6px;padding:0 6px 0 14px;border-radius:999px;background:#fff;border:1px solid #ece6df;font-size:13px;color:#6b7385">
+          <span>დალაგება:</span>
+          <select value="{{ sort }}" onChange="{{ onSort }}" style="border:none;outline:none;background:transparent;font:600 13px inherit;font-family:inherit;color:#16233b;cursor:pointer;padding-right:6px">
+            <option value="pop">პოპულარული</option>
+            <option value="new">ახალი</option>
+            <option value="asc">ფასი ↑</option>
+            <option value="desc">ფასი ↓</option>
+          </select>
+        </label>
+      </div>
+
+      <sc-if value="{{ hasActive }}">
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <sc-for list="{{ activeChips }}" as="a">
+            <button onClick="{{ a.onRemove }}" style="height:30px;padding:0 10px 0 12px;border-radius:999px;border:none;background:#16233b;color:#fff;font:500 12.5px inherit;font-family:inherit;display:flex;align-items:center;gap:6px;cursor:pointer">{{ a.label }}<span style="opacity:.7">×</span></button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isEmpty }}">
+        <div style="background:#fff;border:1px dashed #d9d0c6;border-radius:14px;padding:48px 20px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
+          <div style="font-weight:600">ვერაფერი მოიძებნა</div>
+          <div style="font-size:13px;color:#6b7385">სცადე ფილტრების შეცვლა</div>
+          <button onClick="{{ clearAll }}" style="height:38px;padding:0 18px;border-radius:999px;border:none;background:#ef5f7a;color:#fff;font:600 13px inherit;font-family:inherit;cursor:pointer">ფილტრების გასუფთავება</button>
+        </div>
+      </sc-if>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax({{cardMin}},1fr));gap:{{gridGap}}">
+        <sc-for list="{{ pageItems }}" as="p" hint-placeholder-count="12">
+          <article style="background:#fff;border:1px solid #ece6df;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s,transform .2s" style-hover="box-shadow:0 10px 24px -12px rgba(22,35,59,.25);transform:translateY(-2px)">
+            <div style="position:relative;aspect-ratio:1/1;overflow:hidden;background:{{ p.tint }}">
+              <sc-if value="{{ p.img }}" hint-placeholder-val="{{ false }}"><img src="{{ p.img }}" alt="{{ p.name }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"></sc-if>
+              <sc-if value="{{ p.noImg }}"><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:repeating-linear-gradient(135deg,transparent 0 10px,rgba(0,0,0,.025) 10px 20px)"><span style="font-family:'Noto Serif Georgian',serif;font-size:15px;font-weight:600;color:{{ p.phInk }};letter-spacing:.06em;text-transform:uppercase">{{ p.catEn }}</span><span style="font:10px ui-monospace,Menlo,monospace;color:{{ p.phInk }};opacity:.7">ფოტო მალე</span></div></sc-if>
+              <div style="position:absolute;top:8px;left:8px;display:flex;gap:4px">
+                <sc-if value="{{ p.isNew }}"><span style="background:#16233b;color:#fff;font-size:10.5px;font-weight:600;padding:3px 7px;border-radius:6px">ახალი</span></sc-if>
+                <sc-if value="{{ p.sale }}"><span style="background:#ef5f7a;color:#fff;font-size:10.5px;font-weight:600;padding:3px 7px;border-radius:6px">-{{ p.salePct }}%</span></sc-if>
+              </div>
+              <button onClick="{{ p.onFav }}" aria-label="რჩეულებში" style="position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:999px;border:none;background:rgba(255,255,255,.92);display:grid;place-items:center;cursor:pointer;color:{{ p.favColor }}">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="{{ p.favFill }}" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"></path></svg>
+              </button>
+            </div>
+            <div style="padding:10px 12px 12px;display:flex;flex-direction:column;gap:5px;flex:1">
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#8a8f9c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.catKa }}</div>
+              <div style="font-size:14px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+              <div style="display:flex;gap:4px;align-items:center">
+                <sc-for list="{{ p.colors }}" as="c"><span title="{{ c.ka }}" style="width:12px;height:12px;border-radius:999px;background:{{ c.hex }};box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)"></span></sc-for>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:4px">
+                <span style="font-weight:700;font-size:15px;color:#ef5f7a">{{ p.price }} ₾</span>
+                <sc-if value="{{ p.sale }}"><span style="font-size:12px;color:#a0a5b1;text-decoration:line-through">{{ p.oldPrice }} ₾</span></sc-if>
+                <button onClick="{{ p.onAdd }}" aria-label="კალათაში" style="margin-left:auto;width:34px;height:34px;border-radius:999px;border:none;background:{{ p.addBg }};color:#fff;display:grid;place-items:center;cursor:pointer;flex:none;transition:background .2s" style-hover="background:#ef5f7a">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="{{ p.addIcon }}"></path></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ hasPages }}">
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:12px">
+          <button onClick="{{ prevPage }}" style="height:38px;padding:0 14px;border-radius:999px;border:1px solid #ece6df;background:#fff;color:#16233b;cursor:pointer;font-family:inherit">←</button>
+          <sc-for list="{{ pages }}" as="pg">
+            <button onClick="{{ pg.onGo }}" style="width:38px;height:38px;border-radius:999px;border:1px solid {{ pg.border }};background:{{ pg.bg }};color:{{ pg.fg }};font:600 13px inherit;font-family:inherit;cursor:pointer">{{ pg.n }}</button>
+          </sc-for>
+          <button onClick="{{ nextPage }}" style="height:38px;padding:0 14px;border-radius:999px;border:1px solid #ece6df;background:#fff;color:#16233b;cursor:pointer;font-family:inherit">→</button>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</main>
+
+<section style="max-width:1320px;margin:0 auto;padding:0 20px 56px">
+  <div style="background:#16233b;color:#fff;border-radius:20px;padding:clamp(24px,4vw,44px);display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;align-items:center;overflow:hidden">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:12px;letter-spacing:.14em;color:#f3ebe3;opacity:.8">კორპორატიული შეკვეთები</span>
+      <h3 style="margin:0;font-family:'Noto Serif Georgian',serif;font-size:clamp(22px,2.6vw,32px);line-height:1.2;text-wrap:balance">გუნდისთვის, ღონისძიებისთვის, ბრენდისთვის</h3>
+      <p style="margin:0;color:#c9cfdb;font-size:14.5px;line-height:1.65;max-width:520px">10 ცალიდან — ფასდაკლება, ერთიანი დიზაინი და ზომების მიხედვით დაშლილი შეკვეთა.</p>
+      <a href="#" style="align-self:flex-start;height:46px;padding:0 22px;border-radius:999px;background:#ef5f7a;color:#fff;display:flex;align-items:center;font-weight:600;font-size:14px" style-hover="color:#fff;background:#e24d69">გამოთვალე ფასი →</a>
+    </div>
+    <div style="display:flex;justify-content:center"><img src="assets/hoodie.png" alt="" style="width:100%;max-width:260px;border-radius:14px"></div>
+  </div>
+</section>
+
+<footer style="background:#0f1a2e;color:#c9cfdb">
+  <div style="max-width:1320px;margin:0 auto;padding:44px 20px 28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:28px">
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.6">
+      <div style="display:flex;align-items:center;gap:10px"><img src="assets/logo.png" alt="" style="width:30px;height:30px;border-radius:6px"><span style="font-family:'Noto Serif Georgian',serif;font-weight:700;letter-spacing:.16em;color:#fff">PRENTA</span></div>
+      <span>თბილისი, ჭავჭავაძის 12</span><span>+995 555 12 34 56</span><span>info@prenta.ge</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px"><span style="color:#fff;font-weight:700;margin-bottom:4px">პროდუქცია</span><a href="#" style="color:#c9cfdb">მაისურები და პოლოები</a><a href="#" style="color:#c9cfdb">ჰუდები და ბომბერები</a><a href="#" style="color:#c9cfdb">ჩანთები და კეპები</a><a href="#" style="color:#c9cfdb">ჭიქები</a></div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px"><span style="color:#fff;font-weight:700;margin-bottom:4px">სერვისი</span><a href="#" style="color:#c9cfdb">დიზაინის კონსტრუქტორი</a><a href="#" style="color:#c9cfdb">კორპორატიული შეკვეთები</a><a href="#" style="color:#c9cfdb">DTF ბეჭდვა</a></div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px"><span style="color:#fff;font-weight:700;margin-bottom:4px">დახმარება</span><a href="#" style="color:#c9cfdb">მიწოდება და ვადები</a><a href="#" style="color:#c9cfdb">დაბრუნება</a><a href="#" style="color:#c9cfdb">ხშირად დასმული კითხვები</a></div>
+  </div>
+  <div style="border-top:1px solid rgba(255,255,255,.08)"><div style="max-width:1320px;margin:0 auto;padding:16px 20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:12px;color:#8a93a6"><span>© 2026 Prenta · ყველა უფლება დაცულია</span><span>გადახდა: ბარათით, კურიერთან ან განვადებით</span></div></div>
+</footer>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:90;background:#16233b;color:#fff;padding:12px 18px;border-radius:999px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);white-space:nowrap">✓ {{ toast }}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const CATS=[
+{id:'tee',ka:'მაისური',short:'მაისური',en:'T-Shirt',base:35,img:'assets/tee.png',apparel:true},
+{id:'polo',ka:'პოლო',short:'პოლო',en:'Polo',base:45,apparel:true},
+{id:'ls',ka:'მაისური გრძელი მკლავით',short:'გრძელმკლავიანი მაისური',en:'Long Sleeve',base:55,img:'assets/longsleeve.png',apparel:true},
+{id:'polols',ka:'პოლო გრძელი მკლავით',short:'გრძელმკლავიანი პოლო',en:'LS Polo',base:65,apparel:true},
+{id:'hoodie',ka:'ჰუდი ჯიბით',short:'ჰუდი ჯიბით',en:'Hoodie',base:89,img:'assets/hoodie.png',apparel:true},
+{id:'zip',ka:'ჰუდი ელვაშესაკრავით',short:'ჰუდი ელვით',en:'Zip Hoodie',base:99,apparel:true},
+{id:'bomber',ka:'ბომბერი',short:'ბომბერი',en:'Bomber',base:119,apparel:true},
+{id:'bag',ka:'ჩანთა',short:'ჩანთა',en:'Tote Bag',base:29,img:'assets/tote.png'},
+{id:'cap',ka:'კეპი',short:'კეპი',en:'Cap',base:39,img:'assets/cap.png'},
+{id:'mug',ka:'ჭიქა',short:'ჭიქა',en:'Mug',base:25,img:'assets/mug.png'}];
+const NAMES=['ღამის ქუჩა','მთების ხაზი','ალუბლის გული','მზის ტალღა','ვარსკვლავი','დილის რგოლი','ანბანი','ვაზის ორნამენტი','ძველი თბილისი','კავკასიონი','ზღვის ქარი','ოქროს საწმისი','ბორჯღალი','ქვევრი','სუფრა','ნარიყალა','ფიროსმანი','ჩოხა','მთვარე','ბეისიქი'];
+const COLORS=[{id:'black',ka:'შავი',hex:'#1b1b1d',tint:'#e9e6e2',ink:'#6b6560'},{id:'white',ka:'თეთრი',hex:'#ffffff',tint:'#f3eee8',ink:'#a79c90'},{id:'navy',ka:'მუქი ლურჯი',hex:'#1c2a4a',tint:'#e3e6ee',ink:'#5d6782'},{id:'grey',ka:'ნაცრისფერი',hex:'#9b9ea4',tint:'#ececec',ink:'#7d8088'},{id:'beige',ka:'ბეჟი',hex:'#e6d8c3',tint:'#f4ece0',ink:'#a0896a'},{id:'red',ka:'წითელი',hex:'#c4343f',tint:'#f5e4e3',ink:'#a8565c'},{id:'green',ka:'მწვანე',hex:'#3f6b4f',tint:'#e3ece5',ink:'#5b7a66'},{id:'pink',ka:'ვარდისფერი',hex:'#ef5f7a',tint:'#fbe7eb',ink:'#c0667a'}];
+const SIZES=['XS','S','M','L','XL','XXL'];
+const PRODUCTS=[];
+CATS.forEach((c,ci)=>{for(let i=0;i<20;i++){
+  const h=(i*7+ci*13)%20;
+  const nc=2+((i+ci)%3);
+  const cols=[];for(let k=0;k<nc;k++){const col=COLORS[(i*3+ci+k*2)%COLORS.length];if(!cols.includes(col))cols.push(col);}
+  const price=c.base+((i*3+ci)%5)*5;
+  const sale=(i+ci)%6===3;
+  const sizes=c.apparel?SIZES.filter((s,k)=>k>=(i%2)&&k<=5-((i+ci)%2)):['ONE'];
+  PRODUCTS.push({id:c.id+'-'+i,cat:c,name:NAMES[h],price:sale?Math.round(price*0.8):price,oldPrice:price,sale,salePct:20,isNew:(i+ci)%7===0,pop:(i*37+ci*11)%100,order:ci*20+i,colors:cols,sizes});
+}});
+const ADD='M12 5v14M5 12h14', DONE='M5 12l5 5 9-10';
+
+class Component extends DCLogic{
+  state={w:typeof window!=='undefined'?window.innerWidth:1280,cats:[],colors:[],sizes:[],maxPrice:160,q:'',sort:'pop',flags:{sale:false,isNew:false},page:1,drawer:false,cart:0,added:{},fav:{},toast:''};
+  componentDidMount(){this.onR=()=>this.setState({w:window.innerWidth});window.addEventListener('resize',this.onR);}
+  componentWillUnmount(){window.removeEventListener('resize',this.onR);clearTimeout(this.tt);}
+  set(p){this.setState({...p,page:1});}
+  tog(key,v){const a=this.state[key];this.set({[key]:a.includes(v)?a.filter(x=>x!==v):[...a,v]});}
+  match(p,skipCat){const s=this.state;
+    if(!skipCat&&s.cats.length&&!s.cats.includes(p.cat.id))return false;
+    if(p.price>s.maxPrice)return false;
+    if(s.colors.length&&!p.colors.some(c=>s.colors.includes(c.id)))return false;
+    if(s.sizes.length&&!p.sizes.some(z=>s.sizes.includes(z)))return false;
+    if(s.flags.sale&&!p.sale)return false;
+    if(s.flags.isNew&&!p.isNew)return false;
+    if(s.q){const q=s.q.toLowerCase();if(!(p.name.toLowerCase().includes(q)||p.cat.ka.toLowerCase().includes(q)||p.cat.en.toLowerCase().includes(q)))return false;}
+    return true;}
+  flash(msg){clearTimeout(this.tt);this.setState({toast:msg});this.tt=setTimeout(()=>this.setState({toast:''}),1600);}
+  renderVals(){
+    const s=this.state,mob=s.w<1024,small=s.w<560,narrowNav=s.w<1140;
+    let list=PRODUCTS.filter(p=>this.match(p));
+    const sorters={pop:(a,b)=>b.pop-a.pop,new:(a,b)=>(b.isNew-a.isNew)||a.order-b.order,asc:(a,b)=>a.price-b.price,desc:(a,b)=>b.price-a.price};
+    list=[...list].sort(sorters[s.sort]);
+    const per=20,pagesN=Math.max(1,Math.ceil(list.length/per)),page=Math.min(s.page,pagesN);
+    const goto=n=>{this.setState({page:n});const el=document.getElementById('shop');if(el)window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-70,behavior:'smooth'});};
+    const pageItems=list.slice((page-1)*per,page*per).map(p=>{const c0=p.colors[0];const added=s.added[p.id];const fav=s.fav[p.id];return{
+      ...p,catKa:p.cat.ka,catEn:p.cat.en,img:p.cat.img||'',noImg:!p.cat.img,tint:p.cat.img?'#f3eee8':c0.tint,phInk:c0.ink,
+      favColor:fav?'#ef5f7a':'#16233b',favFill:fav?'#ef5f7a':'none',addBg:added?'#3f6b4f':'#16233b',addIcon:added?DONE:ADD,
+      onFav:()=>this.setState(st=>({fav:{...st.fav,[p.id]:!st.fav[p.id]}})),
+      onAdd:()=>{this.setState(st=>({cart:st.cart+1,added:{...st.added,[p.id]:true}}));this.flash(p.name+' — კალათაში დაემატა');}}});
+    const cntBase=PRODUCTS.filter(p=>this.match(p,true));
+    const catFilters=CATS.map(c=>{const on=s.cats.includes(c.id);return{ka:c.ka,count:cntBase.filter(p=>p.cat.id===c.id).length,boxBg:on?'#ef5f7a':'#fff',boxBorder:on?'#ef5f7a':'#cfc6bb',tick:on?'✓':'',onToggle:e=>{e.preventDefault();this.tog('cats',c.id);}}});
+    const catTiles=[{id:'all',short:'ყველა',en:'All',img:'',noImg:true},...CATS].map(c=>{const on=c.id==='all'?!s.cats.length:(s.cats.length===1&&s.cats[0]===c.id);return{short:c.short,en:c.en,img:c.img||'',noImg:!c.img,bg:on?'#fff':'transparent',border:on?'#ef5f7a':'#ece6df',onPick:()=>this.set({cats:c.id==='all'?[]:[c.id]})}});
+    const colorFilters=COLORS.map(c=>({...c,ring:s.colors.includes(c.id)?'#ef5f7a':'#ece6df',onToggle:()=>this.tog('colors',c.id)}));
+    const sizeFilters=[...SIZES,'ONE'].map(z=>{const on=s.sizes.includes(z);return{label:z==='ONE'?'ერთი ზომა':z,bg:on?'#16233b':'#fff',fg:on?'#fff':'#16233b',border:on?'#16233b':'#ece6df',onToggle:()=>this.tog('sizes',z)}});
+    const flagDefs=[['sale','ფასდაკლებით'],['isNew','მხოლოდ ახალი']];
+    const flagFilters=flagDefs.map(([k,l])=>({label:l,track:s.flags[k]?'#ef5f7a':'#d9d0c6',knob:s.flags[k]?'16px':'2px',onToggle:e=>{e.preventDefault();this.set({flags:{...s.flags,[k]:!s.flags[k]}});}}));
+    const chips=[];
+    s.cats.forEach(id=>{const c=CATS.find(x=>x.id===id);chips.push({label:c.ka,onRemove:()=>this.tog('cats',id)});});
+    s.colors.forEach(id=>{const c=COLORS.find(x=>x.id===id);chips.push({label:c.ka,onRemove:()=>this.tog('colors',id)});});
+    s.sizes.forEach(z=>chips.push({label:z==='ONE'?'ერთი ზომა':z,onRemove:()=>this.tog('sizes',z)}));
+    if(s.maxPrice<160)chips.push({label:'≤ '+s.maxPrice+' ₾',onRemove:()=>this.set({maxPrice:160})});
+    flagDefs.forEach(([k,l])=>{if(s.flags[k])chips.push({label:l,onRemove:()=>this.set({flags:{...s.flags,[k]:false}})});});
+    if(s.q)chips.push({label:'„'+s.q+'“',onRemove:()=>this.set({q:''})});
+    const favCount=Object.values(s.fav).filter(Boolean).length;
+    const title=s.cats.length===1?CATS.find(c=>c.id===s.cats[0]).ka:'ყველა პროდუქტი';
+    return{
+      noop:()=>{},navDisplay:narrowNav?'none':'flex',cartLabelDisplay:small?'none':'inline',isMobile:mob,
+      heroPad:mob?'36px 20px 28px':'48px 20px',heroCols:mob?'1fr':'1.1fr .9fr',heroImgMax:mob?'340px':'440px',
+      layoutCols:mob?'1fr':'250px minmax(0,1fr)',
+      asideDisplay:mob?(s.drawer?'flex':'none'):'flex',asidePos:mob?'fixed':'relative',asideTop:'0',asideBottom:mob?'0':'auto',asideW:mob?'min(340px,88vw)':'auto',asideMaxH:'none',asideOverflow:mob?'auto':'visible',asideRadius:mob?'0 16px 16px 0':'14px',
+      drawerOpen:mob&&s.drawer,openDrawer:()=>this.setState({drawer:true}),closeDrawer:()=>this.setState({drawer:false}),
+      tileW:small?'92px':'112px',cardMin:small?'150px':'180px',gridGap:small?'10px':'16px',
+      catTiles,catFilters,colorFilters,sizeFilters,flagFilters,
+      maxPrice:s.maxPrice,priceLabel:s.maxPrice>=160?'ყველა':'≤ '+s.maxPrice+' ₾',onPrice:e=>this.set({maxPrice:+e.target.value}),
+      q:s.q,onSearch:e=>this.set({q:e.target.value}),sort:s.sort,onSort:e=>this.set({sort:e.target.value}),
+      hasActive:chips.length>0,activeCount:chips.length,activeChips:chips,clearAll:()=>this.set({cats:[],colors:[],sizes:[],maxPrice:160,q:'',flags:{sale:false,isNew:false}}),
+      pageItems,isEmpty:list.length===0,pageTitle:title,resultLabel:list.length+' პროდუქტი',showResultsLabel:'ნახე '+list.length+' პროდუქტი',
+      hasPages:pagesN>1,pages:Array.from({length:pagesN},(_,i)=>({n:i+1,bg:i+1===page?'#16233b':'#fff',fg:i+1===page?'#fff':'#16233b',border:i+1===page?'#16233b':'#ece6df',onGo:()=>goto(i+1)})),
+      prevPage:()=>goto(Math.max(1,page-1)),nextPage:()=>goto(Math.min(pagesN,page+1)),
+      cartCount:s.cart,favCount,hasFav:favCount>0,toast:s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
+import useFavStore from '../store/favStore';
 import { useAuth } from '../context/auth-context';
 import api from '../lib/api';
 import logo from '../assets/prenta/LOGO_PRENTA.png';
@@ -8,6 +9,7 @@ import s from './Navbar.module.css';
 
 export default function Navbar() {
   const cartCount = useCartStore((st) => st.items.reduce((sum, it) => sum + (it.quantity || 1), 0));
+  const favCount = useFavStore((st) => st.ids.length);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuth();
@@ -56,6 +58,7 @@ export default function Navbar() {
           >
             კონსტრუქტორი
           </button>
+          <Link to="/shop#corporate" className={s.link}>კორპორატიული</Link>
         </nav>
 
         {/* ── Cart ──────────────────────────────────────────── */}
@@ -66,9 +69,18 @@ export default function Navbar() {
           >
             {isAuthenticated ? 'ანგარიში' : 'შესვლა'}
           </NavLink>
+          <Link to="/shop?fav=1" className={s.iconBtn} aria-label="რჩეულები" title="რჩეულები">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+              <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+            </svg>
+            {favCount > 0 && <span className={s.favBadge}>{favCount}</span>}
+          </Link>
           <Link to="/cart" className={s.cart} aria-label="კალათა">
-            <span>კალათა</span>
-            {cartCount > 0 && <span className={s.badge}>{cartCount}</span>}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+              <path d="M5 7h14l-1.5 12h-11z" /><path d="M9 7a3 3 0 0 1 6 0" />
+            </svg>
+            <span className={s.cartLabel}>კალათა</span>
+            <span className={s.badge}>{cartCount}</span>
           </Link>
         </div>
 
