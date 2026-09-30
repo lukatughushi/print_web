@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  phone        String?
+  role      Role     @default(CUSTOMER)
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id         String      @id @default(cuid())
+  name       String
+  category   Category
+  basePrice  Float
+  sizes      String[]
+  mockupUrl  String
+  isActive   Boolean     @default(true)
+  orderItems OrderItem[]
+  createdAt  DateTime    @default(now())
+}
+
+model Design {
+  id         String     @id @default(cuid())
+  userId     String?
+  canvasJson Json
+  previewUrl String
+  orderItem  OrderItem?
+  createdAt  DateTime   @default(now())
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String?
+  user          User?       @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+  totalPrice    Float
+  status        OrderStatus @default(PENDING)
+  customerName  String?
+  customerEmail String?
+  address       String
+  phone         String
+  notes         String?
+  createdAt     DateTime    @default(now())
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  designId  String? @unique
+  design    Design? @relation(fields: [designId], references: [id])
+  size      String
+  color     String?
+  quantity  Int
+  price     Float
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum Category {
+  TSHIRT
+  HOODIE
+  BAG
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PRINTING
+  READY_FOR_PICKUP
+  SHIPPED
+  COMPLETED
+  DELIVERED
+  CANCELLED
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  title     String?
+  subtitle  String?
+  ctaText   String?
+  ctaLink   String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model SiteSettings {
+  id                 String   @id @default(cuid())
+  announcementText   String?
+  announcementActive Boolean  @default(true)
+  heroTitle          String?
+  heroSubtitle       String?
+  heroCtaText        String?
+  heroCtaLink        String?
+  freeShipThreshold  Int      @default(150)
+  currency           String   @default("₾")
+  contactPhone       String?
+  contactEmail       String?
+  contactAddress     String?
+  updatedAt          DateTime @updatedAt
+}

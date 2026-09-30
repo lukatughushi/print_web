@@ -1,0 +1,33 @@
+# Render Blueprint: New → Blueprint → select this repo.
+# https://render.com/docs/blueprint-spec
+# rootDir scopes the service to backend/: only changes there trigger a deploy.
+services:
+  - type: web
+    name: printweb-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: MONGODB_URI
+        sync: false # set in the Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGINS
+        sync: false # e.g. https://your-app.vercel.app
+      - key: VERCEL_PREVIEW_PROJECT
+        sync: false
+      - key: MAX_UPLOAD_MB
+        value: "10"
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false

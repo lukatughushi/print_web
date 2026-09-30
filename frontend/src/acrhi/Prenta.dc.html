@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&amp;family=Noto+Serif+Georgian:wght@600;700&amp;family=Anton&amp;family=Bebas+Neue&amp;family=Playfair+Display:wght@700&amp;display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #FBF7F4; color: #16283F; font-family: 'Noto Sans Georgian', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #EF5F79; text-decoration: none; }
+  a:hover { color: #16283F; }
+  input, select, textarea, button { font-family: inherit; }
+  ::selection { background: #FFD9DF; }
+  @keyframes floatUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(239,95,121,.35); } 100% { box-shadow: 0 0 0 18px rgba(239,95,121,0); } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+  <header style="position: sticky; top: 0; z-index: 40; backdrop-filter: blur(14px); border-bottom: 1px solid #E9DFD8; background-color: #1D3850E0">
+    <div style="{{ headerInner }}">
+      <div onClick="{{ goLanding }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:0 0 auto">
+        <img src="uploads/LOGO_PRENTA.png" alt="Prenta" style="width:38px;height:38px;object-fit:contain;display:block">
+        <div style="font-family:'Playfair Display',serif;font-size:23px;letter-spacing:.16em;font-weight:700;color:#fff">PRENTA</div>
+      </div>
+      <nav style="{{ navWrap }}">
+        <div onClick="{{ goLanding }}" style="{{ nav.landing }}" style-hover="background:rgba(255,255,255,.12);color:#fff">მთავარი</div>
+        <div onClick="{{ goShop }}" style="{{ nav.shop }}" style-hover="background:rgba(255,255,255,.12);color:#fff">მაღაზია</div>
+        <div onClick="{{ goStudio }}" style="{{ nav.studio }}" style-hover="background:rgba(255,255,255,.12);color:#fff">კონსტრუქტორი</div>
+      </nav>
+      <div onClick="{{ goCart }}" style="position:relative;display:flex;align-items:center;gap:9px;padding:9px 16px;border-radius:999px;background:#EF5F79;color:#fff;font-size:14px;font-weight:600;cursor:pointer;flex:0 0 auto" style-hover="background:#fff;color:#16283F">
+        <span>კალათა</span>
+        <span style="{{ cartBadge }}">{{ cartCount }}</span>
+      </div>
+    </div>
+  </header>
+
+  <main style="flex:1 1 auto">
+
+    <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+
+      <div style="background:#EF5F79;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:600;letter-spacing:.02em">★ 2 400+ დაბეჭდილი შეკვეთა · ბეჭდვა 3 დღეში · მიწოდება მთელ საქართველოში</div>
+
+      <section style="background:linear-gradient(120deg,#16283F 0%,#274866 58%,#3B5F80 100%);color:#fff;position:relative;overflow:hidden">
+        <div style="position:absolute;width:420px;height:420px;border-radius:50%;background:#EF5F79;filter:blur(120px);opacity:.45;top:-140px;right:-80px"></div>
+        <div style="position:absolute;width:340px;height:340px;border-radius:50%;background:#2EC4A6;filter:blur(120px);opacity:.32;bottom:-150px;left:-90px"></div>
+        <div style="position:relative;max-width:1360px;margin:0 auto;padding:64px 24px 56px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:44px;align-items:center">
+          <div>
+            <h1 style="font-family:'Noto Serif Georgian',serif;font-size:clamp(36px,4.6vw,60px);line-height:1.06;margin:0 0 18px;letter-spacing:-.02em">დაბეჭდე საკუთარი დიზაინი<br><span style="color:#F4778C">მაისურზე, ჰუდზე, ჩანთაზე.</span></h1>
+            <p style="font-size:18px;line-height:1.6;color:#C6D4E2;max-width:48ch;margin:0 0 28px;text-wrap:pretty">ატვირთე სურათი ან დაწერე ტექსტი, აწყვე დიზაინი პირდაპირ ბრაუზერში და მიიღე მზა პროდუქტი 3 დღეში. მინიმალური შეკვეთა — 1 ცალი.</p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:30px">
+              <div onClick="{{ goStudio }}" style="padding:16px 30px;border-radius:999px;background:#EF5F79;color:#fff;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:#fff;color:#16283F">დაიწყე დიზაინი →</div>
+              <div onClick="{{ goShop }}" style="padding:16px 30px;border-radius:999px;border:1.5px solid rgba(255,255,255,.5);color:#fff;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:#fff;color:#16283F">მზა პროდუქცია</div>
+            </div>
+            <div style="display:flex;gap:26px;flex-wrap:wrap;font-size:14px;color:#C6D4E2">
+              <div onClick="{{ goShop }}" style="cursor:pointer;border-bottom:1px solid rgba(255,255,255,.3);padding-bottom:2px" style-hover="color:#fff">ნახე პოპულარული მაისურები</div>
+              <div onClick="{{ goStudio }}" style="cursor:pointer;border-bottom:1px solid rgba(255,255,255,.3);padding-bottom:2px" style-hover="color:#fff">როგორ მუშაობს ბეჭდვა</div>
+            </div>
+          </div>
+          <div style="position:relative;width:min(470px,96%);justify-self:center;aspect-ratio:1/1">
+            <img src="uploads/home_tshirt.png" alt="" style="position:absolute;left:0;top:6%;width:82%;transform:rotate(-9deg);filter:sepia(1) saturate(4) hue-rotate(315deg) brightness(.92) drop-shadow(0 18px 26px rgba(0,0,0,.35));opacity:.95">
+            <img src="uploads/home_tshirt.png" alt="" style="position:absolute;right:0;top:4%;width:82%;transform:rotate(9deg);filter:sepia(1) saturate(3) hue-rotate(120deg) brightness(.9) drop-shadow(0 18px 26px rgba(0,0,0,.35));opacity:.95">
+            <img src="uploads/home_tshirt.png" alt="დაბეჭდილი მაისური" style="position:absolute;left:50%;top:10%;width:88%;transform:translateX(-50%);display:block;filter:drop-shadow(0 30px 44px rgba(0,0,0,.45))">
+          </div>
+        </div>
+      </section>
+
+      <section style="background:#fff;border-bottom:1px solid #EDE3DC">
+        <div style="max-width:1360px;margin:0 auto;padding:44px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:30px">
+          <div>
+            <div style="font-family:'Playfair Display',serif;font-size:15px;letter-spacing:.2em;color:#EF5F79;margin-bottom:8px">01</div>
+            <div style="font-family:'Noto Serif Georgian',serif;font-size:22px;margin-bottom:6px">აწყვე დიზაინი</div>
+            <div style="color:#5A6B7E;line-height:1.6">ატვირთე ლოგო ან სურათი, დაამატე ტექსტი და მზა ემბლემები — წინ, უკან და სახელოებზე.</div>
+          </div>
+          <div>
+            <div style="font-family:'Playfair Display',serif;font-size:15px;letter-spacing:.2em;color:#EF5F79;margin-bottom:8px">02</div>
+            <div style="font-family:'Noto Serif Georgian',serif;font-size:22px;margin-bottom:6px">ნახე ფასი მაშინვე</div>
+            <div style="color:#5A6B7E;line-height:1.6">ფასი ცოცხლად ითვლება: პროდუქტი + ბეჭდვის ზონები + რაოდენობა. ფარული ხარჯების გარეშე.</div>
+          </div>
+          <div>
+            <div style="font-family:'Playfair Display',serif;font-size:15px;letter-spacing:.2em;color:#EF5F79;margin-bottom:8px">03</div>
+            <div style="font-family:'Noto Serif Georgian',serif;font-size:22px;margin-bottom:6px">მიიღე 3 დღეში</div>
+            <div style="color:#5A6B7E;line-height:1.6">ვბეჭდავთ, ვაფუთავთ და კურიერით ვაგზავნით მთელ საქართველოში. 150 ₾-დან უფასოდ.</div>
+          </div>
+        </div>
+      </section>
+
+      <section style="max-width:1360px;margin:0 auto;padding:56px 24px 8px">
+        <h2 style="font-family:'Noto Serif Georgian',serif;font-size:clamp(26px,3vw,34px);margin:0 0 6px">კატეგორიები</h2>
+        <p style="color:#8A98A6;margin:0 0 26px">ექვსი პროდუქტი, ყველა DTF ბეჭდვისთვის მომზადებული.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px">
+          <sc-for list="{{ productList }}" as="p" hint-placeholder-count="6">
+            <div onClick="{{ p.pick }}" style="background:#fff;border:1px solid #EDE3DC;border-radius:20px;padding:16px;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease" style-hover="transform:translateY(-4px);box-shadow:0 16px 34px rgba(22,40,63,.10)">
+              <img src="{{ p.photo }}" alt="{{ p.name }}" style="width:100%;aspect-ratio:1;object-fit:contain;display:block;background:#F7F3F0;border-radius:14px">
+              <div style="font-weight:700;font-size:16px;margin-top:10px">{{ p.name }}</div>
+              <div style="font-size:12px;color:#8A98A6;letter-spacing:.06em;text-transform:uppercase">{{ p.en }}</div>
+              <div style="margin-top:8px;font-weight:700;color:#EF5F79">{{ p.priceLabel }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="max-width:1360px;margin:0 auto;padding:52px 24px 8px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px">
+          <div>
+            <h2 style="font-family:'Noto Serif Georgian',serif;font-size:clamp(26px,3vw,34px);margin:0 0 4px">ბესთსელერები</h2>
+            <p style="color:#8A98A6;margin:0">ყველაზე ხშირად შეკვეთილი მზა დიზაინები.</p>
+          </div>
+          <div onClick="{{ goShop }}" style="font-weight:700;color:#EF5F79;cursor:pointer" style-hover="color:#16283F">ყველა პროდუქტი →</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px">
+          <sc-for list="{{ featured }}" as="it" hint-placeholder-count="6">
+            <div onClick="{{ it.open }}" style="background:#fff;border:1px solid #EDE3DC;border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease" style-hover="transform:translateY(-4px);box-shadow:0 18px 36px rgba(22,40,63,.10)">
+              <div style="{{ it.tile }}">
+                <img src="{{ it.photo }}" alt="{{ it.title }}" style="width:86%;aspect-ratio:1;object-fit:contain;display:block">
+              </div>
+              <div style="padding:14px 16px 18px">
+                <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8A98A6">{{ it.productName }}</div>
+                <div style="font-weight:700;font-size:16px;margin-top:4px">{{ it.title }}</div>
+                <div style="margin-top:10px;font-weight:700;color:#EF5F79">{{ it.priceLabel }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="max-width:1360px;margin:0 auto;padding:56px 24px">
+        <div style="background:#16283F;color:#fff;border-radius:26px;overflow:hidden;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:center;gap:0">
+          <div style="padding:clamp(28px,4vw,52px)">
+            <div style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#F4778C;margin-bottom:12px">კორპორატიული შეკვეთები</div>
+            <h3 style="font-family:'Noto Serif Georgian',serif;font-size:clamp(24px,2.6vw,32px);margin:0 0 14px;line-height:1.2">გუნდისთვის, ღონისძიებისთვის, ბრენდისთვის</h3>
+            <p style="color:#A8B7C6;line-height:1.65;margin:0 0 24px;text-wrap:pretty">10 ცალიდან — ფასდაკლება, ერთიანი დიზაინი და ზომების მიხედვით დაშლილი შეკვეთა. ჩვენ ვამზადებთ ნიმუშს, თქვენ ამტკიცებთ და ვბეჭდავთ.</p>
+            <div onClick="{{ goStudio }}" style="display:inline-block;padding:15px 28px;border-radius:999px;background:#EF5F79;color:#fff;font-weight:700;cursor:pointer" style-hover="background:#fff;color:#16283F">გამოთვალე ფასი →</div>
+          </div>
+          <img src="uploads/main_hoode.png" alt="ჰუდი" style="width:100%;max-width:420px;justify-self:center;display:block;padding:24px;box-sizing:border-box">
+        </div>
+      </section>
+
+      <section style="background:#fff;border-top:1px solid #EDE3DC;border-bottom:1px solid #EDE3DC">
+        <div style="max-width:1360px;margin:0 auto;padding:56px 24px">
+          <h2 style="font-family:'Noto Serif Georgian',serif;font-size:clamp(26px,3vw,34px);margin:0 0 26px">რატომ Prenta?</h2>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:28px">
+            <div>
+              <div style="font-weight:700;font-size:17px;margin-bottom:6px">ბრაუზერის კონსტრუქტორი</div>
+              <div style="color:#5A6B7E;line-height:1.6">ოთხი ბეჭდვის ზონა, ფენები, შრიფტები და ბეჭდვის საზღვარი — პროგრამის ჩამოტვირთვის გარეშე.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:17px;margin-bottom:6px">1 ცალიც ისეთივე ფასია</div>
+              <div style="color:#5A6B7E;line-height:1.6">მინიმალური შეკვეთა არ არსებობს. დაბეჭდე ერთი მაისური საჩუქრად ან 200 ცალი გუნდისთვის.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:17px;margin-bottom:6px">DTF ბეჭდვა</div>
+              <div style="color:#5A6B7E;line-height:1.6">ნათელი ფერები მუქ ქსოვილზეც, 50+ რეცხვის შემდეგაც არ სკდება და არ ცვივა.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:17px;margin-bottom:6px">ფასი გამჭვირვალედ</div>
+              <div style="color:#5A6B7E;line-height:1.6">პროდუქტი + ბეჭდვის ზონა × რაოდენობა. ჯამს ხედავ დიზაინის აწყობის დროსვე.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:17px;margin-bottom:6px">მიწოდება 2–3 დღეში</div>
+              <div style="color:#5A6B7E;line-height:1.6">კურიერი მთელ საქართველოში, 150 ₾-დან უფასოდ. თბილისში — მეორე დღეს.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:17px;margin-bottom:6px">დიზაინის დახმარება</div>
+              <div style="color:#5A6B7E;line-height:1.6">გვიგზავნი იდეას — ჩვენი დიზაინერი ბეჭდვისთვის ამზადებს ფაილს უფასოდ.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style="max-width:1360px;margin:0 auto;padding:56px 24px">
+        <h2 style="font-family:'Noto Serif Georgian',serif;font-size:clamp(26px,3vw,34px);margin:0 0 24px">რას ამბობენ მომხმარებლები</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px">
+          <div style="background:#fff;border:1px solid #EDE3DC;border-radius:20px;padding:24px">
+            <div style="color:#EF5F79;margin-bottom:12px">★★★★★</div>
+            <div style="line-height:1.65;color:#16283F;text-wrap:pretty">ბენდის მერჩი ვთხოვეთ 40 მაისურზე — ორ დღეში მზად იყო და ფერები ზუსტად ისეთია, როგორც ეკრანზე ვნახეთ.</div>
+            <div style="margin-top:14px;font-size:13px;color:#8A98A6">ნიკა, მუსიკოსი</div>
+          </div>
+          <div style="background:#fff;border:1px solid #EDE3DC;border-radius:20px;padding:24px">
+            <div style="color:#EF5F79;margin-bottom:12px">★★★★★</div>
+            <div style="line-height:1.65;color:#16283F;text-wrap:pretty">კონსტრუქტორი ისეთი მარტივია, რომ დედაჩემმაც აწყო შვილიშვილისთვის ჰუდი. ბეჭდვა რეცხვის შემდეგ არ შეცვლილა.</div>
+            <div style="margin-top:14px;font-size:13px;color:#8A98A6">ანა, თბილისი</div>
+          </div>
+          <div style="background:#fff;border:1px solid #EDE3DC;border-radius:20px;padding:24px">
+            <div style="color:#EF5F79;margin-bottom:12px">★★★★★</div>
+            <div style="line-height:1.65;color:#16283F;text-wrap:pretty">ჩვენი კაფესთვის 25 ჩანთა და 30 ჭიქა დავბეჭდეთ. ერთი შეკვეთით, ერთი ფასით — ძალიან მოსახერხებელია.</div>
+            <div style="margin-top:14px;font-size:13px;color:#8A98A6">გიორგი, კაფე „ჩრდილი“</div>
+          </div>
+        </div>
+      </section>
+
+      <section style="background:#EF5F79;color:#fff">
+        <div style="max-width:1360px;margin:0 auto;padding:56px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap">
+          <div>
+            <h2 style="font-family:'Noto Serif Georgian',serif;font-size:clamp(26px,3vw,36px);margin:0 0 8px">მზად ხარ დასაბეჭდად?</h2>
+            <div style="opacity:.9">დიზაინის აწყობა უფასოა — გადაიხდი მხოლოდ მაშინ, როცა შეკვეთას გააფორმებ.</div>
+          </div>
+          <div onClick="{{ goStudio }}" style="padding:17px 34px;border-radius:999px;background:#16283F;color:#fff;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:#fff;color:#16283F">კონსტრუქტორის გახსნა</div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isShop }}">
+      <section style="max-width:1360px;margin:0 auto;padding:40px 24px 60px">
+        <h1 style="font-family:'Noto Serif Georgian',serif;font-size:38px;margin:0 0 6px">მაღაზია</h1>
+        <p style="color:#8A98A6;margin:0 0 26px">მზა დიზაინები — შეუკვეთე პირდაპირ ან გახსენი კონსტრუქტორში და შეცვალე.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:26px">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="7">
+            <div onClick="{{ f.pick }}" style="{{ f.style }}" style-hover="border-color:#16283F">{{ f.label }}</div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,320px));gap:22px;justify-content:start">
+          <sc-for list="{{ shopItems }}" as="it" hint-placeholder-count="8">
+            <div onClick="{{ it.open }}" style="background:#fff;border:1px solid #EDE3DC;border-radius:22px;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease" style-hover="transform:translateY(-4px);box-shadow:0 18px 36px rgba(22,40,63,.10)">
+              <div style="{{ it.tile }}">
+                <img src="{{ it.photo }}" alt="{{ it.title }}" style="width:86%;aspect-ratio:1;object-fit:contain;display:block">
+              </div>
+              <div style="padding:14px 16px 18px">
+                <div style="font-weight:700;font-size:16px">{{ it.title }}</div>
+                <div style="font-size:12px;color:#8A98A6;letter-spacing:.05em;text-transform:uppercase;margin-top:2px">{{ it.en }}</div>
+                <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-weight:700;color:#EF5F79">{{ it.priceLabel }}</span>
+                  <span style="font-size:12px;color:#8A98A6">{{ it.productName }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isProduct }}">
+      <section style="max-width:1180px;margin:0 auto;padding:28px 24px 70px">
+        <div onClick="{{ goShop }}" style="font-size:14px;color:#8A98A6;cursor:pointer;margin-bottom:18px" style-hover="color:#EF5F79">← მაღაზიაში დაბრუნება</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px">
+          <div style="{{ detailTile }}">
+            <img src="{{ detail.photo }}" alt="{{ detail.title }}" style="width:84%;aspect-ratio:1;object-fit:contain;display:block">
+          </div>
+          <div>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8A98A6">{{ detail.productName }}</div>
+            <h1 style="font-family:'Noto Serif Georgian',serif;font-size:36px;margin:6px 0 4px;line-height:1.1">{{ detail.title }}</h1>
+            <div style="color:#8A98A6;margin-bottom:16px">{{ detail.en }}</div>
+            <div style="font-size:30px;font-weight:700;color:#EF5F79;margin-bottom:24px">{{ detail.priceLabel }}</div>
+            <p style="color:#5A6B7E;line-height:1.65;margin:0 0 26px;text-wrap:pretty">100% ბამბა, 190 გრ/მ². DTF ბეჭდვა — არ სკდება და არ ცვივა 50+ რეცხვის შემდეგ. მიწოდება 2–3 სამუშაო დღეში.</p>
+
+            <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8A98A6;margin-bottom:10px">ზომა</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
+              <sc-for list="{{ sizeOpts }}" as="s" hint-placeholder-count="5">
+                <div onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</div>
+              </sc-for>
+            </div>
+
+            <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8A98A6;margin-bottom:10px">რაოდენობა</div>
+            <div style="display:inline-flex;align-items:center;gap:2px;border:1px solid #E1D6CE;border-radius:999px;overflow:hidden;margin-bottom:28px">
+              <div onClick="{{ decQty }}" style="width:44px;height:44px;display:grid;place-items:center;cursor:pointer;font-size:20px" style-hover="background:#F3EEEA">−</div>
+              <div style="width:52px;text-align:center;font-weight:700">{{ qty }}</div>
+              <div onClick="{{ incQty }}" style="width:44px;height:44px;display:grid;place-items:center;cursor:pointer;font-size:20px" style-hover="background:#F3EEEA">+</div>
+            </div>
+
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div onClick="{{ addDetailToCart }}" style="padding:16px 30px;border-radius:999px;background:#16283F;color:#fff;font-weight:700;cursor:pointer" style-hover="background:#EF5F79">კალათაში დამატება</div>
+              <div onClick="{{ editDetail }}" style="padding:16px 30px;border-radius:999px;border:1.5px solid #16283F;font-weight:700;cursor:pointer" style-hover="background:#16283F;color:#fff">დიზაინის შეცვლა</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isStudio }}">
+      <section style="max-width:1500px;margin:0 auto;padding:20px 20px 60px;display:grid;grid-template-columns:{{ studioCols }};gap:20px;align-items:start">
+
+        <div style="background:#fff;border:1px solid #EDE3DC;border-radius:22px;padding:16px">
+          <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8A98A6;margin-bottom:12px">ბეჭდვის ზონა</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:22px">
+            <sc-for list="{{ zoneList }}" as="z" hint-placeholder-count="4">
+              <div onClick="{{ z.pick }}" style="{{ z.style }}">
+                <span>{{ z.label }}</span>
+                <span style="{{ z.dot }}">{{ z.count }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8A98A6;margin-bottom:10px">პროდუქტის ფერი</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px">
+            <sc-for list="{{ colorOpts }}" as="c" hint-placeholder-count="8">
+              <div onClick="{{ c.pick }}" style="{{ c.style }}"></div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8A98A6;margin-bottom:10px">ხედი</div>
+          <div onClick="{{ toggleGrid }}" style="{{ gridToggle }}" style-hover="border-color:#16283F">ბადე და საზღვარი</div>
+        </div>
+
+        <div style="background:linear-gradient(160deg,#F6F1ED,#EDE5DE);border:1px solid #EDE3DC;border-radius:22px;padding:26px;display:grid;place-items:center;min-height:520px;position:relative">
+          <div style="position:absolute;top:16px;left:20px;font-size:13px;color:#8A98A6">{{ studioCaption }}</div>
+          <div style="position:relative;width:min(430px,92%)">
+            <svg viewBox="0 0 400 480" style="width:100%;display:block;filter:drop-shadow(0 24px 34px rgba(22,40,63,.16))">
+              <path d="{{ garmentPath }}" fill="{{ garmentColor }}" stroke="rgba(0,0,0,.14)" stroke-width="2"></path>
+              <path d="{{ garmentDetail }}" fill="none" stroke="rgba(0,0,0,.14)" stroke-width="3"></path>
+            </svg>
+            <div ref="{{ printRef }}" onPointerDown="{{ deselect }}" style="{{ printAreaStyle }}">
+              <sc-for list="{{ layers }}" as="l" hint-placeholder-count="0">
+                <sc-if value="{{ l.isText }}">
+                  <div onPointerDown="{{ l.grab }}" style="{{ l.style }}">{{ l.text }}</div>
+                </sc-if>
+                <sc-if value="{{ l.isImage }}">
+                  <img onPointerDown="{{ l.grab }}" src="{{ l.src }}" style="{{ l.style }}" draggable="false">
+                </sc-if>
+              </sc-for>
+            </div>
+            <div style="{{ printLabelStyle }}">ბეჭდვის არე · {{ printSizeLabel }}</div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #EDE3DC;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:4px;background:#F3EEEA;border-radius:12px;padding:4px">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+              <div onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ tabProduct }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ productList }}" as="p" hint-placeholder-count="6">
+                <div onClick="{{ p.pick }}" style="{{ p.row }}">
+                  <span style="font-weight:600">{{ p.name }}</span>
+                  <span style="font-size:12px;color:#8A98A6">{{ p.priceLabel }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8A98A6">ზომა</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <sc-for list="{{ sizeOpts }}" as="s" hint-placeholder-count="5">
+                <div onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tabArt }}">
+            <label style="display:block;border:2px dashed #D9CCC3;border-radius:16px;padding:22px 14px;text-align:center;cursor:pointer;background:#FBF7F4" style-hover="border-color:#EF5F79;background:#FFF4F6">
+              <div style="font-weight:700;margin-bottom:4px">სურათის ატვირთვა</div>
+              <div style="font-size:12px;color:#8A98A6">PNG, JPG ან SVG · მინ. 1500px</div>
+              <input type="file" accept="image/*" onChange="{{ onUpload }}" style="display:none">
+            </label>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8A98A6">მზა ემბლემები</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+              <sc-for list="{{ artOpts }}" as="a" hint-placeholder-count="10">
+                <div onClick="{{ a.add }}" style="aspect-ratio:1;border:1px solid #EDE3DC;border-radius:12px;display:grid;place-items:center;cursor:pointer;background:#FBF7F4;padding:8px" style-hover="border-color:#EF5F79;background:#FFF4F6">
+                  <img src="{{ a.src }}" style="width:100%;display:block">
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tabText }}">
+            <input value="{{ draftText }}" onChange="{{ onDraftText }}" placeholder="დაწერე ტექსტი…" style="width:100%;padding:13px 14px;border:1px solid #E1D6CE;border-radius:12px;font-size:15px;outline:none">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ fontOpts }}" as="f" hint-placeholder-count="5">
+                <div onClick="{{ f.pick }}" style="{{ f.style }}">{{ f.label }}</div>
+              </sc-for>
+            </div>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8A98A6">ფერი</div>
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
+              <sc-for list="{{ inkOpts }}" as="c" hint-placeholder-count="8">
+                <div onClick="{{ c.pick }}" style="{{ c.style }}"></div>
+              </sc-for>
+            </div>
+            <label style="display:flex;align-items:center;gap:9px;font-size:14px;cursor:pointer">
+              <input type="checkbox" checked="{{ draftOutline }}" onChange="{{ toggleOutline }}" style="width:17px;height:17px;accent-color:#EF5F79">
+              <span>თეთრი გარსი (outline)</span>
+            </label>
+            <div onClick="{{ addText }}" style="padding:14px;border-radius:12px;background:#EF5F79;color:#fff;font-weight:700;text-align:center;cursor:pointer" style-hover="background:#16283F">ტექსტის დამატება</div>
+          </sc-if>
+
+          <sc-if value="{{ tabLayers }}">
+            <sc-if value="{{ noLayers }}">
+              <div style="padding:26px 12px;text-align:center;color:#8A98A6;font-size:14px;border:1px dashed #E1D6CE;border-radius:14px">ამ ზონაზე ფენები ჯერ არ არის</div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ layerRows }}" as="r" hint-placeholder-count="0">
+                <div onClick="{{ r.select }}" style="{{ r.style }}">
+                  <span style="flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.label }}</span>
+                  <span onClick="{{ r.up }}" style="padding:2px 6px;border-radius:6px;cursor:pointer" style-hover="background:#EDE3DC">↑</span>
+                  <span onClick="{{ r.down }}" style="padding:2px 6px;border-radius:6px;cursor:pointer" style-hover="background:#EDE3DC">↓</span>
+                  <span onClick="{{ r.remove }}" style="padding:2px 6px;border-radius:6px;cursor:pointer;color:#EF5F79" style-hover="background:#FFE7EB">✕</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasSel }}">
+            <div style="border-top:1px solid #EDE3DC;padding-top:14px;display:flex;flex-direction:column;gap:10px">
+              <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8A98A6">არჩეული ფენა</div>
+              <label style="font-size:13px;color:#5A6B7E">ზომა
+                <input type="range" min="6" max="90" value="{{ selSize }}" onChange="{{ onSelSize }}" style="width:100%;accent-color:#EF5F79">
+              </label>
+              <label style="font-size:13px;color:#5A6B7E">დახრა
+                <input type="range" min="-45" max="45" value="{{ selRot }}" onChange="{{ onSelRot }}" style="width:100%;accent-color:#EF5F79">
+              </label>
+              <div style="display:flex;gap:8px">
+                <div onClick="{{ centerSel }}" style="flex:1;padding:10px;border:1px solid #E1D6CE;border-radius:10px;text-align:center;font-size:13px;cursor:pointer" style-hover="border-color:#16283F">ცენტრში</div>
+                <div onClick="{{ removeSel }}" style="flex:1;padding:10px;border:1px solid #FFD3DB;color:#EF5F79;border-radius:10px;text-align:center;font-size:13px;cursor:pointer" style-hover="background:#FFF4F6">წაშლა</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="margin-top:auto;border-top:1px solid #EDE3DC;padding-top:14px">
+            <div style="display:flex;justify-content:space-between;font-size:14px;color:#5A6B7E;margin-bottom:4px"><span>{{ basePriceLabelName }}</span><span>{{ basePriceLabel }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;color:#5A6B7E;margin-bottom:4px"><span>ბეჭდვა · {{ printedZones }} ზონა</span><span>{{ printCostLabel }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;color:#5A6B7E;margin-bottom:10px"><span>რაოდენობა</span><span>× {{ qty }}</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+              <span style="font-weight:700">ჯამი</span>
+              <span style="font-family:'Playfair Display',serif;font-size:28px;color:#EF5F79">{{ studioTotalLabel }}</span>
+            </div>
+            <div style="display:inline-flex;align-items:center;border:1px solid #E1D6CE;border-radius:999px;overflow:hidden;margin-bottom:10px">
+              <div onClick="{{ decQty }}" style="width:38px;height:38px;display:grid;place-items:center;cursor:pointer" style-hover="background:#F3EEEA">−</div>
+              <div style="width:44px;text-align:center;font-weight:700">{{ qty }}</div>
+              <div onClick="{{ incQty }}" style="width:38px;height:38px;display:grid;place-items:center;cursor:pointer" style-hover="background:#F3EEEA">+</div>
+            </div>
+            <div onClick="{{ addStudioToCart }}" style="padding:15px;border-radius:12px;background:#16283F;color:#fff;font-weight:700;text-align:center;cursor:pointer" style-hover="background:#EF5F79">კალათაში დამატება</div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isCart }}">
+      <section style="max-width:1080px;margin:0 auto;padding:40px 24px 70px">
+        <h1 style="font-family:'Noto Serif Georgian',serif;font-size:36px;margin:0 0 24px">კალათა</h1>
+        <sc-if value="{{ cartEmpty }}">
+          <div style="background:#fff;border:1px solid #EDE3DC;border-radius:22px;padding:60px 24px;text-align:center">
+            <div style="font-size:18px;font-weight:700;margin-bottom:8px">კალათა ცარიელია</div>
+            <div style="color:#8A98A6;margin-bottom:24px">დაიწყე შენი დიზაინით ან აირჩიე მზა პროდუქტი.</div>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+              <div onClick="{{ goStudio }}" style="padding:14px 26px;border-radius:999px;background:#EF5F79;color:#fff;font-weight:700;cursor:pointer" style-hover="background:#16283F">კონსტრუქტორი</div>
+              <div onClick="{{ goShop }}" style="padding:14px 26px;border-radius:999px;border:1.5px solid #16283F;font-weight:700;cursor:pointer" style-hover="background:#16283F;color:#fff">მაღაზია</div>
+            </div>
+          </div>
+        </sc-if>
+        <div style="display:grid;grid-template-columns:{{ cartCols }};gap:22px;align-items:start">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ cartItems }}" as="it" hint-placeholder-count="0">
+              <div style="background:#fff;border:1px solid #EDE3DC;border-radius:20px;padding:14px;display:flex;gap:16px;align-items:center">
+                <div style="{{ it.thumbTile }}">
+                  <img src="{{ it.photo }}" alt="{{ it.title }}" style="width:86%;height:86%;object-fit:contain;display:block">
+                </div>
+                <div style="flex:1 1 auto;min-width:0">
+                  <div style="font-weight:700;font-size:16px">{{ it.title }}</div>
+                  <div style="font-size:13px;color:#8A98A6;margin-top:2px">{{ it.meta }}</div>
+                  <div style="font-size:13px;color:#8A98A6">{{ it.zonesLabel }}</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-weight:700;color:#EF5F79;margin-bottom:8px">{{ it.priceLabel }}</div>
+                  <div style="display:inline-flex;align-items:center;border:1px solid #E1D6CE;border-radius:999px;overflow:hidden">
+                    <div onClick="{{ it.dec }}" style="width:32px;height:32px;display:grid;place-items:center;cursor:pointer" style-hover="background:#F3EEEA">−</div>
+                    <div style="width:34px;text-align:center;font-size:14px;font-weight:700">{{ it.qty }}</div>
+                    <div onClick="{{ it.inc }}" style="width:32px;height:32px;display:grid;place-items:center;cursor:pointer" style-hover="background:#F3EEEA">+</div>
+                  </div>
+                  <div onClick="{{ it.remove }}" style="font-size:12px;color:#8A98A6;cursor:pointer;margin-top:8px" style-hover="color:#EF5F79">წაშლა</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ cartHasItems }}">
+            <div style="background:#fff;border:1px solid #EDE3DC;border-radius:20px;padding:20px;position:sticky;top:92px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:#5A6B7E"><span>პროდუქცია</span><span>{{ subtotalLabel }}</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:12px;color:#5A6B7E"><span>მიწოდება</span><span>{{ shippingLabel }}</span></div>
+              <div style="border-top:1px solid #EDE3DC;padding-top:12px;display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font-weight:700">ჯამი</span>
+                <span style="font-family:'Playfair Display',serif;font-size:28px;color:#EF5F79">{{ totalLabel }}</span>
+              </div>
+              <div onClick="{{ goCheckout }}" style="margin-top:16px;padding:15px;border-radius:12px;background:#16283F;color:#fff;font-weight:700;text-align:center;cursor:pointer" style-hover="background:#EF5F79">შეკვეთის გაფორმება</div>
+              <div style="font-size:12px;color:#8A98A6;text-align:center;margin-top:10px">{{ freeShipNote }}</div>
+            </div>
+          </sc-if>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isCheckout }}">
+      <section style="max-width:1000px;margin:0 auto;padding:40px 24px 70px">
+        <div onClick="{{ goCart }}" style="font-size:14px;color:#8A98A6;cursor:pointer;margin-bottom:14px" style-hover="color:#EF5F79">← კალათა</div>
+        <h1 style="font-family:'Noto Serif Georgian',serif;font-size:36px;margin:0 0 24px">შეკვეთის გაფორმება</h1>
+        <div style="display:grid;grid-template-columns:{{ cartCols }};gap:22px;align-items:start">
+          <div style="background:#fff;border:1px solid #EDE3DC;border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px">
+              <label style="font-size:13px;color:#5A6B7E">სახელი და გვარი
+                <input value="{{ f.name }}" onChange="{{ setName }}" placeholder="ნინო ბერიძე" style="{{ inputStyle }}">
+              </label>
+              <label style="font-size:13px;color:#5A6B7E">ტელეფონი
+                <input value="{{ f.phone }}" onChange="{{ setPhone }}" placeholder="+995 5xx xx xx xx" style="{{ inputStyle }}">
+              </label>
+              <label style="font-size:13px;color:#5A6B7E">ქალაქი
+                <input value="{{ f.city }}" onChange="{{ setCity }}" placeholder="თბილისი" style="{{ inputStyle }}">
+              </label>
+              <label style="font-size:13px;color:#5A6B7E">მისამართი
+                <input value="{{ f.addr }}" onChange="{{ setAddr }}" placeholder="ჭავჭავაძის 12, ბ. 4" style="{{ inputStyle }}">
+              </label>
+            </div>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8A98A6;margin-top:6px">გადახდა</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ payOpts }}" as="p" hint-placeholder-count="3">
+                <div onClick="{{ p.pick }}" style="{{ p.style }}">
+                  <span style="{{ p.radio }}"></span>
+                  <span>{{ p.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ formError }}">
+              <div style="background:#FFF4F6;color:#C8395A;border-radius:12px;padding:12px 14px;font-size:14px">{{ formError }}</div>
+            </sc-if>
+            <div onClick="{{ placeOrder }}" style="margin-top:6px;padding:16px;border-radius:12px;background:#EF5F79;color:#fff;font-weight:700;text-align:center;cursor:pointer" style-hover="background:#16283F">{{ payLabel }}</div>
+          </div>
+          <div style="background:#fff;border:1px solid #EDE3DC;border-radius:20px;padding:20px;position:sticky;top:92px">
+            <div style="font-weight:700;margin-bottom:12px">შეკვეთა</div>
+            <sc-for list="{{ cartItems }}" as="it" hint-placeholder-count="0">
+              <div style="display:flex;justify-content:space-between;gap:12px;font-size:14px;color:#5A6B7E;margin-bottom:8px">
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.title }} × {{ it.qty }}</span>
+                <span style="flex:0 0 auto">{{ it.priceLabel }}</span>
+              </div>
+            </sc-for>
+            <div style="display:flex;justify-content:space-between;margin:12px 0 0;color:#5A6B7E"><span>მიწოდება</span><span>{{ shippingLabel }}</span></div>
+            <div style="border-top:1px solid #EDE3DC;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:baseline">
+              <span style="font-weight:700">ჯამი</span>
+              <span style="font-family:'Playfair Display',serif;font-size:26px;color:#EF5F79">{{ totalLabel }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isDone }}">
+      <section style="max-width:640px;margin:0 auto;padding:80px 24px;text-align:center;animation:floatUp .5s ease both">
+        <div style="width:82px;height:82px;border-radius:50%;background:#DFF6F0;color:#127F69;display:grid;place-items:center;font-size:38px;margin:0 auto 22px">✓</div>
+        <h1 style="font-family:'Noto Serif Georgian',serif;font-size:36px;margin:0 0 10px">შეკვეთა მიღებულია</h1>
+        <p style="color:#5A6B7E;line-height:1.6;margin:0 0 8px">შეკვეთის ნომერი <strong>{{ orderNo }}</strong>. დაგიკავშირდებით {{ f.phone }} ნომერზე დადასტურებისთვის.</p>
+        <p style="color:#8A98A6;margin:0 0 30px">მიწოდება 2–3 სამუშაო დღეში · {{ f.city }}</p>
+        <div onClick="{{ goShop }}" style="display:inline-block;padding:15px 30px;border-radius:999px;background:#16283F;color:#fff;font-weight:700;cursor:pointer" style-hover="background:#EF5F79">გაგრძელება</div>
+      </section>
+    </sc-if>
+
+  </main>
+
+  <footer style="background:#16283F;color:#A8B7C6">
+    <div style="max-width:1360px;margin:0 auto;padding:52px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:32px">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <img src="uploads/LOGO_PRENTA.png" alt="Prenta" style="width:30px;height:30px;object-fit:contain;display:block">
+          <span style="font-family:'Playfair Display',serif;font-size:20px;letter-spacing:.16em;color:#fff">PRENTA</span>
+        </div>
+        <div style="line-height:1.7;font-size:14px">ბეჭდვა მაისურებზე, ჰუდებზე, ჩანთებზე და ჭიქებზე.<br>თბილისი, ჭავჭავაძის 12<br>+995 555 12 34 56<br>info@prenta.ge</div>
+      </div>
+      <div>
+        <div style="color:#fff;font-weight:700;margin-bottom:12px">პროდუქცია</div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:14px">
+          <div onClick="{{ goShop }}" style="cursor:pointer" style-hover="color:#F4778C">მაისურები</div>
+          <div onClick="{{ goShop }}" style="cursor:pointer" style-hover="color:#F4778C">ჰუდები</div>
+          <div onClick="{{ goShop }}" style="cursor:pointer" style-hover="color:#F4778C">ჩანთები</div>
+          <div onClick="{{ goShop }}" style="cursor:pointer" style-hover="color:#F4778C">ქუდები და ჭიქები</div>
+        </div>
+      </div>
+      <div>
+        <div style="color:#fff;font-weight:700;margin-bottom:12px">სერვისი</div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:14px">
+          <div onClick="{{ goStudio }}" style="cursor:pointer" style-hover="color:#F4778C">დიზაინის კონსტრუქტორი</div>
+          <div style="cursor:default">კორპორატიული შეკვეთები</div>
+          <div style="cursor:default">DTF ბეჭდვა</div>
+          <div style="cursor:default">ბეჭდვის მაკეტის მოთხოვნები</div>
+        </div>
+      </div>
+      <div>
+        <div style="color:#fff;font-weight:700;margin-bottom:12px">დახმარება</div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:14px">
+          <div style="cursor:default">მიწოდება და ვადები</div>
+          <div style="cursor:default">დაბრუნება</div>
+          <div style="cursor:default">ხშირად დასმული კითხვები</div>
+          <div style="cursor:default">კონტაქტი</div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px solid rgba(255,255,255,.12)">
+      <div style="max-width:1360px;margin:0 auto;padding:18px 24px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px">
+        <span>© 2026 Prenta · ყველა უფლება დაცულია</span>
+        <span>გადახდა: ბარათით, კურიერთან ან განვადებით</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;currency&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;₾&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;freeShipFrom&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:150,&quot;min&quot;:0,&quot;max&quot;:500,&quot;step&quot;:10,&quot;unit&quot;:&quot;₾&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;printZonePrice&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:8,&quot;min&quot;:0,&quot;max&quot;:40,&quot;step&quot;:1,&quot;unit&quot;:&quot;₾&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;landing&quot;,&quot;options&quot;:[&quot;landing&quot;,&quot;shop&quot;,&quot;studio&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  P = {
+    tee:   { name:'მაისური', en:'T-Shirt', base:35, photo:'uploads/pasted-1787915935815-0.png', zones:['front','back','left','right'],
+      path:'M148,44 C148,80 252,80 252,44 L292,56 L372,104 L326,168 L296,146 L296,452 L104,452 L104,146 L74,168 L28,104 L108,56 Z',
+      detail:'M148,44 C162,74 238,74 252,44',
+      areas:{ front:{x:36,y:32,w:28,h:34}, back:{x:36,y:30,w:28,h:38}, left:{x:12,y:23,w:12,h:10}, right:{x:76,y:23,w:12,h:10} } },
+    hoodie:{ name:'ჰუდი', en:'Hoodie', base:89, photo:'uploads/main_hoode.png', zones:['front','back','left','right'],
+      path:'M150,58 C150,96 250,96 250,58 L294,70 L374,118 L330,184 L300,162 L300,458 L100,458 L100,162 L70,184 L26,118 L106,70 Z M134,66 C112,4 288,4 266,66 C242,110 158,110 134,66 Z',
+      detail:'M150,58 C168,104 232,104 250,58 M132,326 h136 v66 h-136 z M196,96 L192,190 M204,96 L208,190',
+      areas:{ front:{x:36,y:40,w:28,h:26}, back:{x:36,y:32,w:28,h:38}, left:{x:13,y:26,w:12,h:10}, right:{x:75,y:26,w:12,h:10} } },
+    long:  { name:'გრძელმკლავიანი', en:'Long Sleeve', base:55, photo:'uploads/pasted-1787916350490-0.png', zones:['front','back','left','right'],
+      path:'M148,44 C148,80 252,80 252,44 L296,58 L366,112 L326,304 L286,294 L292,452 L108,452 L114,294 L74,304 L34,112 L104,58 Z',
+      detail:'M148,44 C162,74 238,74 252,44',
+      areas:{ front:{x:36,y:32,w:28,h:34}, back:{x:36,y:30,w:28,h:38}, left:{x:13,y:42,w:13,h:13}, right:{x:74,y:42,w:13,h:13} } },
+    tote:  { name:'ჩანთა', en:'Tote Bag', base:29, photo:'uploads/main_bag.png', zones:['front','back'],
+      path:'M108,150 h184 v306 h-184 z',
+      detail:'M150,150 C150,86 250,86 250,150',
+      areas:{ front:{x:33,y:38,w:34,h:34}, back:{x:33,y:38,w:34,h:34} } },
+    cap:   { name:'ქუდი', en:'Cap', base:39, photo:'uploads/pasted-1787916252760-0.png', zones:['front','back'],
+      path:'M100,300 C100,178 300,178 300,300 Z M96,294 C150,338 300,334 336,296 L336,310 C300,350 150,352 96,308 Z',
+      detail:'M100,300 C160,318 250,318 300,300',
+      areas:{ front:{x:38,y:46,w:24,h:12}, back:{x:38,y:42,w:24,h:12} } },
+    mug:   { name:'ჭიქა', en:'Mug', base:25, photo:'uploads/pasted-1787916319779-0.png', zones:['front','back'],
+      path:'M108,148 h150 v232 a22,22 0 0 1 -22,22 h-106 a22,22 0 0 1 -22,-22 z',
+      detail:'M262,188 c58,4 58,110 0,112',
+      areas:{ front:{x:31,y:36,w:28,h:34}, back:{x:31,y:36,w:28,h:34} } }
+  };
+  ZONES = { front:'წინა მხარე', back:'უკანა მხარე', left:'მარცხენა სახელო', right:'მარჯვენა სახელო' };
+  COLORS = ['#FFFFFF','#17181C','#24405F','#F4778C','#2EC4A6','#FFC95C','#E8DED1','#B9BEC6'];
+  INKS = ['#17181C','#FFFFFF','#EF5F79','#2EC4A6','#FFC95C','#24405F','#8B5CF6','#FF7A3D'];
+  FONTS = [
+    { id:'Anton', label:'ANTON · დისპლეი' },
+    { id:'Bebas Neue', label:'BEBAS · კონდენსი' },
+    { id:'Playfair Display', label:'Playfair · სერიფი' },
+    { id:'Noto Serif Georgian', label:'ქართული სერიფი' },
+    { id:'Noto Sans Georgian', label:'ქართული სანსი' }
+  ];
+  SHAPES = {
+    bolt:'M232 20 L96 250 h96 l-24 210 176-250h-100z',
+    heart:'M256 448 C60 320 40 200 128 148 C182 116 240 148 256 196 C272 148 330 116 384 148 C472 200 452 320 256 448Z',
+    star:'M256 32 L316 196 L488 196 L350 296 L402 464 L256 362 L110 464 L162 296 L24 196 L196 196Z',
+    sun:'M256 150a106 106 0 1 0 .1 212 106 106 0 0 0-.1-212ZM236 20h40v88h-40Zm0 384h40v88h-40ZM20 236h88v40H20Zm384 0h88v40h-88ZM66 94l28-28 62 62-28 28Zm290 290 28-28 62 62-28 28Zm90-290-28-28-62 62 28 28ZM156 384l-28-28-62 62 28 28Z',
+    wave:'M16 300c60-90 120-90 180 0s120 90 180 0 60-60 120-30v90c-60-30-60 0-120 30s-120 30-180-60-120-90-180 0Z',
+    mountain:'M32 420 L190 150 L280 290 L330 220 L480 420Z',
+    crown:'M48 400 L80 150 L176 250 L256 96 L336 250 L432 150 L464 400Z',
+    ring:'M256 40a216 216 0 1 0 .1 432 216 216 0 0 0-.1-432Zm0 72a144 144 0 1 1-.1 288 144 144 0 0 1 .1-288Z',
+    diamond:'M256 32 L480 256 L256 480 L32 256Z',
+    arrow:'M256 40 L440 260 H330 v212 h-148 V260 H72Z'
+  };
+  SIZES = ['XS','S','M','L','XL','2XL'];
+
+  state = {
+    screen:'landing', product:'tee', color:'#FFFFFF', size:'M', qty:1, zone:'front',
+    layers:{ front:[], back:[], left:[], right:[] },
+    sel:null, grid:true, tab:'product', filter:'all',
+    draftText:'PRENTA', draftFont:'Anton', draftInk:'#17181C', draftOutline:false,
+    cart:[], detailId:null, pay:'cash', form:{ name:'', phone:'', city:'', addr:'' },
+    error:'', orderNo:'', shop:null, uid:1, narrow:false, phone:false
+  };
+
+  componentDidMount(){
+    this.printRef = React.createRef();
+    this.setState({ shop:this.buildShop(), narrow: window.innerWidth < 1080, phone: window.innerWidth < 700,
+      screen: this.startScreen() });
+    this._rs = () => this.setState({ narrow: window.innerWidth < 1080, phone: window.innerWidth < 700 });
+    window.addEventListener('resize', this._rs);
+  }
+  componentWillUnmount(){ window.removeEventListener('resize', this._rs); }
+
+  art(shape, color){
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="' + color + '"><path d="' + this.SHAPES[shape] + '"/></svg>');
+  }
+  money(n){ return Math.round(n) + ' ' + (this.props.currency ?? '₾'); }
+  nid(){ const n = this.state.uid; this.state.uid = n + 1; return 'l' + n; }
+
+  buildShop(){
+    const mk = (id, product, color, title, en, shape, artColor, text, font, ink, price) => ({
+      id, product, color, title, en, price,
+      layers:{ front:[
+        { id:id+'a', kind:'image', src:this.art(shape, artColor), x:50, y:36, size:44, rot:0 },
+        { id:id+'b', kind:'text', text, font, ink, outline:false, x:50, y:76, size:17, rot:0 }
+      ], back:[], left:[], right:[] }
+    });
+    return [
+      mk('s1','tee','#17181C','ღამის ჭექა','Night Bolt','bolt','#FFC95C','THUNDER','Anton','#FFFFFF',49),
+      mk('s2','tee','#FFFFFF','მთების ხაზი','Ridge Line','mountain','#24405F','KAZBEGI','Bebas Neue','#24405F',49),
+      mk('s3','hoodie','#24405F','ალუბლის გული','Cherry Heart','heart','#F4778C','ძალიან','Noto Serif Georgian','#FFFFFF',105),
+      mk('s4','tote','#E8DED1','მზის ტალღა','Sun Wave','sun','#FF7A3D','SUNDAY','Anton','#17181C',39),
+      mk('s5','cap','#2EC4A6','ვარსკვლავი','Star Cap','star','#FFFFFF','★','Anton','#FFFFFF',49),
+      mk('s6','mug','#FFFFFF','დილის რგოლი','Morning Ring','ring','#EF5F79','ყავა','Noto Serif Georgian','#17181C',35),
+      mk('s7','long','#B9BEC6','ტალღა','Wave Long','wave','#24405F','FLOW','Bebas Neue','#24405F',69),
+      mk('s8','hoodie','#F4778C','გვირგვინი','Crown','crown','#FFFFFF','PRENTA','Anton','#FFFFFF',105),
+      mk('s9','tee','#FFC95C','რომბი','Prism','diamond','#17181C','PRISM','Bebas Neue','#17181C',49),
+      mk('s10','tee','#2EC4A6','ისარი','Upward','arrow','#FFFFFF','ზემოთ','Noto Sans Georgian','#FFFFFF',49)
+    ];
+  }
+
+  layerStyle(l, selected, draggable){
+    if (l.kind === 'text'){
+      const s = {
+        position:'absolute', left:l.x+'%', top:l.y+'%',
+        transform:'translate(-50%,-50%) rotate('+l.rot+'deg)',
+        fontFamily:"'"+l.font+"', sans-serif", fontSize:l.size+'cqw', lineHeight:1.05,
+        color:l.ink, whiteSpace:'nowrap', letterSpacing:'.04em', userSelect:'none',
+        WebkitTextStroke: l.outline ? Math.max(1, l.size*0.05)+'px #FFFFFF' : '0',
+        paintOrder:'stroke fill'
+      };
+      if (draggable){ s.cursor='grab'; s.touchAction='none'; }
+      if (selected){ s.outline='1.5px dashed #EF5F79'; s.outlineOffset='5px'; }
+      return s;
+    }
+    const s = {
+      position:'absolute', left:l.x+'%', top:l.y+'%', width:l.size+'%',
+      transform:'translate(-50%,-50%) rotate('+l.rot+'deg)', userSelect:'none', display:'block'
+    };
+    if (draggable){ s.cursor='grab'; s.touchAction='none'; }
+    if (selected){ s.outline='1.5px dashed #EF5F79'; s.outlineOffset='5px'; }
+    return s;
+  }
+  previewLayers(list){
+    return (list||[]).map(l => Object.assign({}, l, {
+      isText: l.kind==='text', isImage: l.kind!=='text', style:this.layerStyle(l, false, false)
+    }));
+  }
+  boxStyle(a, extra){
+    return Object.assign({ position:'absolute', left:a.x+'%', top:a.y+'%', width:a.w+'%', height:a.h+'%',
+      containerType:'inline-size', overflow:'hidden' }, extra||{});
+  }
+
+  printedZoneCount(layers){ return Object.keys(layers).filter(k => (layers[k]||[]).length > 0).length; }
+  startScreen(){
+    const ok = ['landing','shop','studio','cart','checkout'];
+    const h = (window.location.hash || '').replace('#','');
+    if (ok.indexOf(h) >= 0) return h;
+    return this.props.startScreen ?? 'landing';
+  }
+  zonePrice(){ return this.props.printZonePrice ?? 8; }
+  shipFrom(){ return this.props.freeShipFrom ?? 150; }
+  designPrice(product, layers){
+    return this.P[product].base + this.printedZoneCount(layers) * this.zonePrice();
+  }
+
+  // ---- drag ----
+  grab(l, e){
+    e.preventDefault(); e.stopPropagation();
+    const box = this.printRef && this.printRef.current;
+    if (!box) return;
+    const r = box.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY, ox = l.x, oy = l.y, zone = this.state.zone, id = l.id;
+    this.setState({ sel:id });
+    const move = ev => {
+      const nx = Math.max(2, Math.min(98, ox + (ev.clientX - sx) / r.width * 100));
+      const ny = Math.max(2, Math.min(98, oy + (ev.clientY - sy) / r.height * 100));
+      this.setState(s => ({ layers: Object.assign({}, s.layers, {
+        [zone]: s.layers[zone].map(x => x.id===id ? Object.assign({}, x, { x:nx, y:ny }) : x) }) }));
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  }
+  addLayer(l){
+    const z = this.state.zone;
+    this.setState(s => ({ layers: Object.assign({}, s.layers, { [z]: s.layers[z].concat([l]) }), sel:l.id }));
+  }
+  patchSel(patch){
+    const z = this.state.zone, id = this.state.sel;
+    this.setState(s => ({ layers: Object.assign({}, s.layers, {
+      [z]: s.layers[z].map(x => x.id===id ? Object.assign({}, x, patch) : x) }) }));
+  }
+  removeLayer(id){
+    const z = this.state.zone;
+    this.setState(s => ({ layers: Object.assign({}, s.layers, { [z]: s.layers[z].filter(x => x.id!==id) }),
+      sel: s.sel===id ? null : s.sel }));
+  }
+  moveLayer(id, dir){
+    const z = this.state.zone;
+    this.setState(s => {
+      const arr = s.layers[z].slice(), i = arr.findIndex(x => x.id===id), j = i + dir;
+      if (i < 0 || j < 0 || j >= arr.length) return null;
+      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+      return { layers: Object.assign({}, s.layers, { [z]: arr }) };
+    });
+  }
+
+  pill(active){
+    return { padding:'9px 16px', borderRadius:'999px', fontSize:'14px', fontWeight:600, cursor:'pointer',
+      border:'1px solid ' + (active ? '#16283F' : '#E1D6CE'), background: active ? '#16283F' : '#fff',
+      color: active ? '#fff' : '#16283F' };
+  }
+
+  renderVals(){
+    const s = this.state, P = this.P[s.product], shop = s.shop || [];
+    const go = v => () => this.setState({ screen:v, error:'' });
+    const navStyle = k => ({ padding: s.phone ? '7px 12px' : '9px 15px', borderRadius:'999px',
+      fontSize: s.phone ? '14px' : '15px', fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', flex:'0 0 auto',
+      background: s.screen===k ? 'rgba(255,255,255,.14)' : 'transparent', color: s.screen===k ? '#fff' : '#B9C7D6' });
+
+    const zoneLayers = s.layers[s.zone] || [];
+    const selLayer = zoneLayers.find(l => l.id === s.sel) || null;
+    const area = P.areas[s.zone] || P.areas.front;
+    const printed = this.printedZoneCount(s.layers);
+    const studioUnit = this.designPrice(s.product, s.layers);
+
+    const cartItems = s.cart.map((it, i) => {
+      const pp = this.P[it.product];
+      return {
+        title: it.title, qty: it.qty, priceLabel: this.money(it.price * it.qty),
+        meta: pp.name + ' · ' + it.size,
+        zonesLabel: it.zones.length ? 'ბეჭდვა: ' + it.zones.map(z => this.ZONES[z]).join(', ') : 'ბეჭდვის გარეშე',
+        photo: pp.photo,
+        thumbTile: { flex:'0 0 auto', width:'92px', height:'104px', borderRadius:'14px', background:'#F3EEEA', display:'grid', placeItems:'center' },
+        inc: () => this.setState(st => ({ cart: st.cart.map((c,j) => j===i ? Object.assign({}, c, { qty:c.qty+1 }) : c) })),
+        dec: () => this.setState(st => ({ cart: st.cart.map((c,j) => j===i ? Object.assign({}, c, { qty:Math.max(1,c.qty-1) }) : c) })),
+        remove: () => this.setState(st => ({ cart: st.cart.filter((c,j) => j!==i) }))
+      };
+    });
+    const subtotal = s.cart.reduce((a,c) => a + c.price*c.qty, 0);
+    const shipFrom = this.shipFrom();
+    const shipping = subtotal >= shipFrom || subtotal === 0 ? 0 : 10;
+
+    const mkShopCard = it => {
+      const pp = this.P[it.product];
+      return {
+        id: it.id, title: it.title, en: it.en, priceLabel: this.money(it.price), productName: pp.name, photo: pp.photo,
+        path: pp.path, detail: pp.detail, color: it.color,
+        printBox: this.boxStyle(pp.areas.front), layers: this.previewLayers(it.layers.front),
+        tile: { background:'#F3EEEA', aspectRatio:'1/1', display:'grid', placeItems:'center' },
+        open: () => this.setState({ screen:'product', detailId:it.id, qty:1, size:'M' })
+      };
+    };
+    const filtered = s.filter === 'all' ? shop : shop.filter(x => x.product === s.filter);
+    const detailItem = shop.find(x => x.id === s.detailId) || shop[0] || null;
+
+    const vals = {
+      // nav / shell
+      nav: { landing:navStyle('landing'), shop:navStyle('shop'), studio:navStyle('studio') },
+      headerInner: s.phone
+        ? { maxWidth:'1360px', margin:'0 auto', padding:'10px 14px', display:'flex', flexWrap:'wrap',
+            alignItems:'center', justifyContent:'space-between', rowGap:'8px', columnGap:'12px' }
+        : { maxWidth:'1360px', margin:'0 auto', padding:'14px 24px', display:'flex', alignItems:'center',
+            flexWrap:'wrap', gap:'12px 28px' },
+      navWrap: s.phone
+        ? { order:3, flex:'1 1 100%', display:'flex', gap:'6px', flexWrap:'nowrap', overflowX:'auto',
+            minWidth:0, scrollbarWidth:'none' }
+        : { display:'flex', gap:'6px', flex:'1 1 200px', flexWrap:'wrap', minWidth:0 },
+      goLanding: go('landing'), goShop: go('shop'), goStudio: go('studio'), goCart: go('cart'),
+      goCheckout: () => this.setState({ screen:'checkout', error:'' }),
+      cartCount: s.cart.reduce((a,c) => a + c.qty, 0),
+      cartBadge: { minWidth:'22px', height:'22px', borderRadius:'999px', background:'rgba(0,0,0,.22)', display:'grid', placeItems:'center', fontSize:'12px', padding:'0 6px' },
+      isLanding: s.screen==='landing', isShop: s.screen==='shop', isProduct: s.screen==='product',
+      isStudio: s.screen==='studio', isCart: s.screen==='cart', isCheckout: s.screen==='checkout', isDone: s.screen==='done',
+
+      // landing
+      heroPath: this.P.tee.path, heroDetail: this.P.tee.detail,
+      heroArtBox: this.boxStyle(this.P.tee.areas.front, { display:'flex', flexDirection:'column', justifyContent:'center' }),
+      heroArt: this.art('bolt','#EF5F79'),
+      productList: Object.keys(this.P).map(k => ({
+        key:k, name:this.P[k].name, en:this.P[k].en, path:this.P[k].path, photo:this.P[k].photo,
+        priceLabel: this.money(this.P[k].base) + '-დან',
+        pick: () => this.setState({ product:k, screen:'studio', zone:'front', sel:null,
+          layers: { front:s.layers.front, back:s.layers.back, left:s.layers.left, right:s.layers.right } }),
+        row: { display:'flex', alignItems:'center', justifyContent:'space-between', gap:'8px', padding:'11px 13px',
+          borderRadius:'11px', fontSize:'14px', cursor:'pointer',
+          border:'1px solid ' + (s.product===k ? '#EF5F79' : '#EDE3DC'), background: s.product===k ? '#FFF4F6' : '#FBF7F4' }
+      })),
+      featured: shop.slice(0,6).map(mkShopCard),
+
+      // shop
+      filters: [{ k:'all', label:'ყველა' }].concat(Object.keys(this.P).map(k => ({ k, label:this.P[k].name }))).map(f => ({
+        label:f.label, style:this.pill(s.filter===f.k), pick: () => this.setState({ filter:f.k })
+      })),
+      shopItems: filtered.map(mkShopCard),
+
+      // product detail
+      detail: detailItem ? Object.assign(mkShopCard(detailItem), { priceLabel: this.money(detailItem.price * s.qty) }) : null,
+      detailTile: { background:'#F3EEEA', borderRadius:'24px', aspectRatio:'1/1', display:'grid', placeItems:'center' },
+      sizeOpts: this.SIZES.map(z => ({ label:z, style:this.pill(s.size===z), pick: () => this.setState({ size:z }) })),
+      qty: s.qty,
+      incQty: () => this.setState(st => ({ qty: st.qty+1 })),
+      decQty: () => this.setState(st => ({ qty: Math.max(1, st.qty-1) })),
+      addDetailToCart: () => {
+        if (!detailItem) return;
+        this.setState(st => ({ screen:'cart', cart: st.cart.concat([{
+          product:detailItem.product, color:detailItem.color, size:st.size, qty:st.qty,
+          price:detailItem.price, title:detailItem.title, zones:['front'], layers:detailItem.layers }]) }));
+      },
+      editDetail: () => detailItem && this.setState({
+        screen:'studio', product:detailItem.product, color:detailItem.color, zone:'front', sel:null, tab:'art',
+        layers:{ front:detailItem.layers.front.map(l => Object.assign({}, l, { id:l.id+'-c' })), back:[], left:[], right:[] } }),
+
+      // studio
+      studioCols: s.narrow ? '1fr' : '210px minmax(0,1fr) 320px',
+      cartCols: s.narrow ? '1fr' : 'minmax(0,1fr) 320px',
+      zoneList: P.zones.map(z => {
+        const n = (s.layers[z] || []).length;
+        return { label:this.ZONES[z], count:n, pick: () => this.setState({ zone:z, sel:null }),
+          style: { display:'flex', alignItems:'center', justifyContent:'space-between', gap:'8px', padding:'11px 13px',
+            borderRadius:'12px', fontSize:'14px', fontWeight:600, cursor:'pointer',
+            background: s.zone===z ? '#16283F' : '#FBF7F4', color: s.zone===z ? '#fff' : '#16283F',
+            border:'1px solid ' + (s.zone===z ? '#16283F' : '#EDE3DC') },
+          dot: { minWidth:'22px', height:'22px', borderRadius:'999px', display:'grid', placeItems:'center', fontSize:'12px',
+            background: n ? '#EF5F79' : (s.zone===z ? 'rgba(255,255,255,.15)' : '#EDE3DC'), color: n ? '#fff' : (s.zone===z ? '#fff' : '#8A98A6') } };
+      }),
+      colorOpts: this.COLORS.map(c => ({ pick: () => this.setState({ color:c }),
+        style: { aspectRatio:'1', borderRadius:'10px', background:c, cursor:'pointer',
+          border:'2px solid ' + (s.color===c ? '#EF5F79' : 'rgba(0,0,0,.12)'),
+          boxShadow: s.color===c ? '0 0 0 3px #FFE7EB' : 'none' } })),
+      toggleGrid: () => this.setState(st => ({ grid: !st.grid })),
+      gridToggle: Object.assign(this.pill(s.grid), { textAlign:'center', padding:'11px 12px' }),
+      garmentPath: P.path, garmentDetail: P.detail, garmentColor: s.color,
+      studioCaption: P.name + ' · ' + this.ZONES[s.zone],
+      printSizeLabel: s.zone==='left' || s.zone==='right' ? '10 × 8 სმ' : '30 × 40 სმ',
+      printAreaStyle: this.boxStyle(area, {
+        border: s.grid ? '1.5px dashed rgba(239,95,121,.75)' : '1.5px dashed rgba(0,0,0,0)',
+        backgroundImage: s.grid ? 'linear-gradient(rgba(22,40,63,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(22,40,63,.09) 1px, transparent 1px)' : 'none',
+        backgroundSize: '12.5% 12.5%', touchAction:'none'
+      }),
+      printLabelStyle: { position:'absolute', left:area.x+'%', top:'calc(' + (area.y + area.h) + '% + 6px)',
+        fontSize:'11px', color:'#8A98A6', letterSpacing:'.04em', opacity: s.grid ? 1 : 0, transition:'opacity .2s ease' },
+      printRef: this.printRef,
+      deselect: () => this.setState({ sel:null }),
+      layers: zoneLayers.map(l => Object.assign({}, l, {
+        isText: l.kind==='text', isImage: l.kind!=='text',
+        style: this.layerStyle(l, s.sel===l.id, true),
+        grab: e => this.grab(l, e)
+      })),
+      tabs: [['product','პროდუქტი'],['art','სურათი'],['text','ტექსტი'],['layers','ფენები']].map(([k,label]) => ({
+        label, pick: () => this.setState({ tab:k }),
+        style: { flex:1, textAlign:'center', padding:'9px 4px', borderRadius:'9px', fontSize:'13px', fontWeight:600, cursor:'pointer',
+          background: s.tab===k ? '#fff' : 'transparent', color: s.tab===k ? '#16283F' : '#8A98A6',
+          boxShadow: s.tab===k ? '0 2px 8px rgba(22,40,63,.10)' : 'none' } })),
+      tabProduct: s.tab==='product', tabArt: s.tab==='art', tabText: s.tab==='text', tabLayers: s.tab==='layers',
+      artOpts: Object.keys(this.SHAPES).map(k => ({ src:this.art(k,'#16283F'),
+        add: () => this.addLayer({ id:this.nid(), kind:'image', src:this.art(k, s.draftInk), x:50, y:45, size:46, rot:0 }) })),
+      onUpload: e => {
+        const f = e.target.files && e.target.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = ev => this.addLayer({ id:this.nid(), kind:'image', src:ev.target.result, x:50, y:45, size:60, rot:0 });
+        r.readAsDataURL(f);
+      },
+      draftText: s.draftText,
+      onDraftText: e => this.setState({ draftText: e.target.value }),
+      fontOpts: this.FONTS.map(f => ({ label:f.label, pick: () => this.setState({ draftFont:f.id }),
+        style: { padding:'10px 12px', borderRadius:'10px', fontSize:'15px', cursor:'pointer', fontFamily:"'"+f.id+"', sans-serif",
+          border:'1px solid ' + (s.draftFont===f.id ? '#EF5F79' : '#EDE3DC'), background: s.draftFont===f.id ? '#FFF4F6' : '#FBF7F4' } })),
+      inkOpts: this.INKS.map(c => ({ pick: () => this.setState({ draftInk:c }),
+        style: { aspectRatio:'1', borderRadius:'8px', background:c, cursor:'pointer',
+          border:'2px solid ' + (s.draftInk===c ? '#EF5F79' : 'rgba(0,0,0,.12)') } })),
+      draftOutline: s.draftOutline,
+      toggleOutline: () => this.setState(st => ({ draftOutline: !st.draftOutline })),
+      addText: () => this.addLayer({ id:this.nid(), kind:'text', text: s.draftText || 'PRENTA',
+        font:s.draftFont, ink:s.draftInk, outline:s.draftOutline, x:50, y:50, size:18, rot:0 }),
+      noLayers: zoneLayers.length === 0,
+      layerRows: zoneLayers.slice().reverse().map(l => ({
+        label: l.kind==='text' ? '„' + l.text + '“' : 'სურათი',
+        select: () => this.setState({ sel:l.id }),
+        up: e => { e.stopPropagation(); this.moveLayer(l.id, 1); },
+        down: e => { e.stopPropagation(); this.moveLayer(l.id, -1); },
+        remove: e => { e.stopPropagation(); this.removeLayer(l.id); },
+        style: { display:'flex', alignItems:'center', gap:'6px', padding:'10px 12px', borderRadius:'10px', fontSize:'14px', cursor:'pointer',
+          border:'1px solid ' + (s.sel===l.id ? '#EF5F79' : '#EDE3DC'), background: s.sel===l.id ? '#FFF4F6' : '#FBF7F4' } })),
+      hasSel: !!selLayer,
+      selSize: selLayer ? selLayer.size : 20,
+      selRot: selLayer ? selLayer.rot : 0,
+      onSelSize: e => this.patchSel({ size: Number(e.target.value) }),
+      onSelRot: e => this.patchSel({ rot: Number(e.target.value) }),
+      centerSel: () => this.patchSel({ x:50, y:50 }),
+      removeSel: () => selLayer && this.removeLayer(selLayer.id),
+      basePriceLabelName: P.name,
+      basePriceLabel: this.money(P.base),
+      printedZones: printed,
+      printCostLabel: this.money(printed * this.zonePrice()),
+      studioTotalLabel: this.money(studioUnit * s.qty),
+      addStudioToCart: () => {
+        const zones = Object.keys(s.layers).filter(k => s.layers[k].length);
+        this.setState(st => ({ screen:'cart', cart: st.cart.concat([{
+          product:st.product, color:st.color, size:st.size, qty:st.qty,
+          price:this.designPrice(st.product, st.layers),
+          title:'ჩემი დიზაინი · ' + this.P[st.product].name,
+          zones, layers:{ front:st.layers.front.slice() } }]) }));
+      },
+
+      // cart / checkout
+      cartItems, cartEmpty: s.cart.length===0, cartHasItems: s.cart.length>0,
+      subtotalLabel: this.money(subtotal),
+      shippingLabel: shipping ? this.money(shipping) : 'უფასო',
+      totalLabel: this.money(subtotal + shipping),
+      freeShipNote: subtotal >= shipFrom ? 'მიწოდება უფასოა' : 'კიდევ ' + this.money(shipFrom - subtotal) + ' უფასო მიწოდებამდე',
+      f: s.form,
+      inputStyle: { width:'100%', marginTop:'6px', padding:'13px 14px', border:'1px solid #E1D6CE', borderRadius:'12px',
+        fontSize:'15px', outline:'none', color:'#16283F', background:'#FBF7F4' },
+      setName: e => { const v = e.target.value; this.setState(st => ({ form: Object.assign({}, st.form, { name:v }) })); },
+      setPhone: e => { const v = e.target.value; this.setState(st => ({ form: Object.assign({}, st.form, { phone:v }) })); },
+      setCity: e => { const v = e.target.value; this.setState(st => ({ form: Object.assign({}, st.form, { city:v }) })); },
+      setAddr: e => { const v = e.target.value; this.setState(st => ({ form: Object.assign({}, st.form, { addr:v }) })); },
+      payOpts: [['cash','გადახდა კურიერთან'],['card','ბარათით ონლაინ'],['bog','ბანკის განვადება']].map(([k,label]) => ({
+        label, pick: () => this.setState({ pay:k }),
+        style: { display:'flex', alignItems:'center', gap:'10px', padding:'13px 14px', borderRadius:'12px', fontSize:'15px', cursor:'pointer',
+          border:'1px solid ' + (s.pay===k ? '#EF5F79' : '#E1D6CE'), background: s.pay===k ? '#FFF4F6' : '#FBF7F4' },
+        radio: { width:'16px', height:'16px', borderRadius:'50%', flex:'0 0 auto',
+          border:'2px solid ' + (s.pay===k ? '#EF5F79' : '#C9BCB2'), background: s.pay===k ? '#EF5F79' : 'transparent',
+          boxShadow: s.pay===k ? 'inset 0 0 0 2px #fff' : 'none' } })),
+      payLabel: 'შეკვეთის დადასტურება · ' + this.money(subtotal + shipping),
+      formError: s.error,
+      placeOrder: () => {
+        const f = s.form;
+        if (!f.name.trim() || !f.phone.trim() || !f.city.trim() || !f.addr.trim()){
+          this.setState({ error:'შეავსე ყველა ველი — სახელი, ტელეფონი, ქალაქი და მისამართი.' }); return;
+        }
+        this.setState({ screen:'done', error:'', cart:[], orderNo:'PR-' + (1000 + Math.floor(Math.random()*8999)) });
+      },
+      orderNo: s.orderNo
+    };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

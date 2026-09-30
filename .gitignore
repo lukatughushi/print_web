@@ -1,0 +1,26 @@
+# Dependencies & build output (all packages)
+node_modules/
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# Environment — only the examples are committed
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Legacy API runtime data
+legacy/server/uploads/
+
+# Editor / OS / local tooling
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+**/.claude/settings.local.json
+.vercel/

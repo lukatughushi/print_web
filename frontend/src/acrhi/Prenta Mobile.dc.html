@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #EDE5DE; font-family: 'Noto Sans Georgian', system-ui, sans-serif; color: #16283F; }
+  a { color: #EF5F79; text-decoration: none; }
+  a:hover { color: #16283F; }
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:36px 24px 60px">
+  <div style="max-width:1180px;margin:0 auto">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <img src="uploads/LOGO_PRENTA.png" alt="Prenta" style="width:34px;height:34px;object-fit:contain;display:block">
+      <div style="font-family:'Playfair Display',serif;font-size:22px;letter-spacing:.16em">PRENTA</div>
+    </div>
+    <h1 style="font-size:28px;margin:0 0 6px">მობაილ ვერსია</h1>
+    <p style="color:#5A6B7E;margin:0 0 24px;max-width:60ch;text-wrap:pretty">ცოცხალი საიტი ტელეფონის ეკრანზე — შეგიძლია პირდაპირ ჩარჩოში დააწკაპუნო, გადაახვიო და დიზაინიც ააწყო.</p>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px">
+      <sc-for list="{{ screens }}" as="s" hint-placeholder-count="4">
+        <div onClick="{{ s.pick }}" style="{{ s.style }}" style-hover="border-color:#16283F">{{ s.label }}</div>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start">
+      <div style="width:400px;flex:0 0 auto">
+        <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="400px,860px">
+          <iframe src="{{ src }}" title="Prenta mobile" style="width:100%;height:100%;border:0;display:block"></iframe>
+        </x-import>
+      </div>
+      <div style="flex:1 1 300px;min-width:260px">
+        <div style="background:#fff;border:1px solid #E1D6CE;border-radius:20px;padding:22px">
+          <div style="font-weight:700;margin-bottom:14px">როგორ ნახო მობაილზე თავად</div>
+          <div style="display:flex;flex-direction:column;gap:14px;color:#5A6B7E;line-height:1.6;font-size:15px">
+            <div><strong style="color:#16283F">1 · ბრაუზერის ფანჯარა</strong><br>უბრალოდ შეამცირე ფანჯრის სიგანე 500px-მდე — განლაგება თავისით გადაეწყობა ერთ სვეტად.</div>
+            <div><strong style="color:#16283F">2 · Chrome DevTools</strong><br>F12 → Toggle device toolbar (Cmd/Ctrl + Shift + M) → აირჩიე iPhone.</div>
+            <div><strong style="color:#16283F">3 · ეს გვერდი</strong><br>ჩარჩო ზუსტად 390 × 844-ია (iPhone 15) — ზემოთ ღილაკებით გადართე ეკრანები.</div>
+          </div>
+        </div>
+        <div style="background:#16283F;color:#A8B7C6;border-radius:20px;padding:22px;margin-top:16px;line-height:1.6;font-size:15px">
+          <div style="color:#fff;font-weight:700;margin-bottom:8px">კონსტრუქტორი ტელეფონზე</div>
+          ვიწრო ეკრანზე კონსტრუქტორის სამი პანელი ერთმანეთის ქვემოთ ეწყობა: ზონები → ტილო → ხელსაწყოები. დიზაინის გადატანა თითით მუშაობს.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { screen: 'landing' };
+  renderVals(){
+    const opts = [['landing','მთავარი'],['shop','მაღაზია'],['studio','კონსტრუქტორი'],['cart','კალათა']];
+    return {
+      src: 'Prenta.dc.html?startScreen=' + this.state.screen + '#' + this.state.screen,
+      screens: opts.map(([k,label]) => ({
+        label, pick: () => this.setState({ screen:k }),
+        style: { padding:'10px 18px', borderRadius:'999px', fontSize:'14px', fontWeight:600, cursor:'pointer',
+          border:'1px solid ' + (this.state.screen===k ? '#16283F' : '#D6C9BF'),
+          background: this.state.screen===k ? '#16283F' : '#fff',
+          color: this.state.screen===k ? '#fff' : '#16283F' }
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>
