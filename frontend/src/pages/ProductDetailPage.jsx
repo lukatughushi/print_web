@@ -7,7 +7,7 @@ import { ProductImage } from '../components/ProductCard';
 import s from './storefront.module.css';
 
 // Categories the design constructor has a tab for (see DesignPage CATEGORIES).
-const DESIGNABLE = new Set(['TSHIRT', 'HOODIE', 'BAG', 'CAP']);
+const DESIGNABLE = new Set(['TSHIRT', 'POLO', 'LONGSLEEVE', 'POLO_LONGSLEEVE', 'HOODIE', 'ZIP_HOODIE', 'BAG', 'CAP', 'MUG']);
 
 export default function ProductDetailPage() {
   const { id } = useParams();

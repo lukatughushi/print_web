@@ -39,6 +39,11 @@ const MODEL_URLS = {
   hoodie_zip: '/models/hoodie_zip.glb',
   cap: '/models/cap_main.glb',
   tote: '/models/tote_main.glb',
+  polo: '/models/polo-print-zones.glb',
+  polo_ls: '/models/long-sleeve-polo-print.glb',
+  longsleeve: '/models/long-sleeve-tshirt-print.glb',
+  mug: '/models/mug-print-zones.glb',
+  pillow: '/models/pillow-print.glb',
 };
 
 // Per-model tweaks. Every model needs a FRONT_PRINT mesh or material;
@@ -54,11 +59,24 @@ const MODEL_URLS = {
 //               surface's true proportions, covers the WHOLE surface. For
 //               wide, short panels like a cap: designs keep their shape and
 //               can fill the entire printable area.
-//  fabricMaterial: name prefix of the garment's fabric material. When set,
+//  wrapPrint:  name of a print surface that wraps all the way around (mug).
+//               It becomes the single front print, edited as an unrolled
+//               label that spans the whole circumference.
+//  wrapCenterU: texture u (0..1) that the label's centre is printed at;
+//               the label seam then sits half a turn away from it.
+//  wrapGapU:   unprinted fraction of a turn on each side of the seam (e.g.
+//               where a mug handle is attached).
+//  scale:      optional size multiplier on top of the automatic fit.
+//  flipV:      the print surfaces' UV v-axis runs bottom→top (the other
+//               models run top→bottom), so it is mirrored on load.
+//               true = both sides, or a list of sides, e.g. ['back'].
+//  fabricMaterial: name prefix (or list of prefixes) of the garment's fabric
+//               materials. When set,
 //               every other non-print part (e.g. a zipper) is hardware: it
 //               keeps HARDWARE_COLOR instead of taking the garment colour.
 const MODEL_OPTIONS = {
-  male: { rotationY: 0, printFit: 'stretch' },
+  // tshirt-male.glb: FRONT_PRINT has standard UVs, print_back flipped ones.
+  male: { rotationY: 0, printFit: 'stretch', flipV: ['back'] },
   // hoodie.glb: front print ~27x25 cm, back ~22x31 cm.
   hoodie: { rotationY: 0, printFit: 'band' },
   // Front print is split around the zipper (merged on load, see
@@ -69,10 +87,32 @@ const MODEL_OPTIONS = {
   cap: { rotationY: Math.PI, printFit: 'band' },
   // tote_main.glb: square-ish front/back print panels, front faces +Z.
   tote: { rotationY: 0, printFit: 'band' },
+  // polo-print-zones.glb: front ~29x44 cm, back ~32x46 cm (close to the
+  // editor's proportions). Collar (rib) and body (jersey) take the colour;
+  // the buttons keep HARDWARE_COLOR.
+  polo: { rotationY: 0, printFit: 'stretch', flipV: true, fabricMaterial: ['rib', 'jersey'] },
+  // long-sleeve-polo-print.glb: same layout as the polo (flipped UVs);
+  // pique body/sleeves and rib collar/cuffs take the colour, buttons don't.
+  polo_ls: { rotationY: 0, printFit: 'stretch', flipV: true, fabricMaterial: ['pique', 'rib'] },
+  // long-sleeve-tshirt-print.glb: same layout as polo_ls, without buttons.
+  longsleeve: { rotationY: 0, printFit: 'stretch', flipV: true },
+  // pillow-print.glb: ~33x49 cm front/back panels, flipped UVs.
+  pillow: { rotationY: 0, printFit: 'stretch', flipV: true },
+  // mug-print-zones.glb: one 360° print_wrap zone, UV seam at the handle
+  // (+X), which is attached ±11.6° around it. The label runs all the way
+  // round except ±16° at the handle (≈328° printable), so its edges sit
+  // beside the handle. Shown handle-right, small enough that the unrolled
+  // label (π × diameter) fits on screen (see WRAP_LABEL_SPREAD).
+  mug: { rotationY: 0, printFit: 'band', flipV: true, wrapPrint: 'print_wrap', wrapGapU: 0.045 },
 };
 
 const PRINT_MATERIAL_NAME = 'FRONT_PRINT';
 const BACK_PRINT_MATERIAL_NAME = 'BACK_PRINT';
+// Other exporters' names for the same surfaces (e.g. polo-print-zones.glb).
+const PRINT_NAME_ALIASES = {
+  front: [PRINT_MATERIAL_NAME, 'print_front'],
+  back: [BACK_PRINT_MATERIAL_NAME, 'print_back'],
+};
 
 // Colour of non-fabric parts such as zippers (see MODEL_OPTIONS.fabricMaterial).
 const HARDWARE_COLOR = '#000000';
@@ -80,15 +120,40 @@ const HARDWARE_COLOR = '#000000';
 // texture = a · canvas + b, per axis, in 0..1 units. Identity = 'stretch'.
 const IDENTITY_MAPPING = { ax: 1, bx: 0, ay: 1, by: 0 };
 
-// All garments are normalized to roughly the same visual size.
-// This is UNIFORM scaling, so it never distorts the model.
-const TARGET_MODEL_SIZE = 1.55;
+// Every model is scaled (uniformly, never distorted) so that on load it fills
+// the same share of the viewer, whatever the model's shape and the screen
+// size: FIT_HEIGHT of the view's height or FIT_WIDTH of its width, whichever
+// is reached first. Recomputed when the viewer is resized.
+const CAMERA_DISTANCE = 2.25;
+const CAMERA_FOV = 38;
+const FIT_HEIGHT = 0.84;
+const FIT_WIDTH = 0.82;
+// A 360° label (mug) is edited as an unrolled strip that can stick out to
+// one side of the object by up to ~1.6× its printable width; fit that strip.
+const WRAP_LABEL_SPREAD = 1.6;
+
+// Uniform scale that fits a box of raw size (w, h, d) into the view,
+// accounting for perspective (the front face sits closer to the camera).
+function fitScale({ w, h, d }, aspect) {
+  const tan = Math.tan(THREE.MathUtils.degToRad(CAMERA_FOV / 2));
+  const visH = 2 * CAMERA_DISTANCE * tan;
+  const visW = visH * aspect;
+  const along = (extent, visible, fill) =>
+    (fill * visible * CAMERA_DISTANCE) /
+    (extent * CAMERA_DISTANCE + (fill * visible * d) / 2);
+  return Math.min(along(h, visH, FIT_HEIGHT), along(w, visW, FIT_WIDTH));
+}
 
 useGLTF.preload(MODEL_URLS.male);
 useGLTF.preload(MODEL_URLS.hoodie);
 useGLTF.preload(MODEL_URLS.hoodie_zip);
 useGLTF.preload(MODEL_URLS.cap);
 useGLTF.preload(MODEL_URLS.tote);
+useGLTF.preload(MODEL_URLS.polo);
+useGLTF.preload(MODEL_URLS.polo_ls);
+useGLTF.preload(MODEL_URLS.longsleeve);
+useGLTF.preload(MODEL_URLS.mug);
+useGLTF.preload(MODEL_URLS.pillow);
 
 /* =========================================================
    HELPERS
@@ -108,14 +173,44 @@ function matchesPrintName(object, material, name) {
 
 // 'front' | 'back' | null
 function printSideOf(object, material) {
-  if (matchesPrintName(object, material, PRINT_MATERIAL_NAME)) return 'front';
-  if (matchesPrintName(object, material, BACK_PRINT_MATERIAL_NAME)) return 'back';
+  for (const side of ['front', 'back']) {
+    if (PRINT_NAME_ALIASES[side].some((name) => matchesPrintName(object, material, name))) return side;
+  }
   return null;
+}
+
+// A 360° print surface (MODEL_OPTIONS.wrapPrint) is the model's single
+// front print: the editor shows it as an unrolled label (see
+// PrintAreaProjector), so artwork can be placed anywhere around the object.
+function markWrapPrint(root, name, centerU, gapU) {
+  root.traverse((object) => {
+    if (!object.isMesh || !matchesPrintName(object, object.material, name)) return;
+    object.name = PRINT_MATERIAL_NAME;
+    object.userData.wrapPrint = true;
+    object.userData.wrapCenterU = centerU ?? 0.5;
+    object.userData.wrapGapU = gapU ?? 0;
+  });
+}
+
+// Mirror the UV v-coordinate within its own range (see MODEL_OPTIONS.flipV).
+// Works on a copy: the geometry is shared with the cached GLB scene.
+function flipUvV(mesh) {
+  const geometry = mesh.geometry.clone();
+  const uv = geometry.attributes.uv;
+  const bounds = computeUvBounds(geometry);
+  if (!uv || !bounds) return;
+  for (let i = 0; i < uv.count; i += 1) {
+    uv.setY(i, bounds.minV + bounds.maxV - uv.getY(i));
+  }
+  uv.needsUpdate = true;
+  mesh.geometry = geometry;
 }
 
 // Non-print part that must not take the garment colour (e.g. a zipper).
 function isHardware(material, fabricMaterial) {
-  return !!fabricMaterial && !String(material?.name || '').startsWith(fabricMaterial);
+  if (!fabricMaterial) return false;
+  const name = String(material?.name || '');
+  return ![].concat(fabricMaterial).some((prefix) => name.startsWith(prefix));
 }
 
 /**
@@ -509,6 +604,17 @@ function usePrintSurface({
 
     const tex = new THREE.CanvasTexture(correctedCanvas || designCanvas);
     applyPrintTextureProps(tex, uvBounds);
+    // 360° label: the canvas covers the turn minus the gap at the seam
+    // (wrapGapU), centred on wrapCenterU. Outside it the texture's edge
+    // (plain garment colour) is clamped, so the gap stays unprinted.
+    if (mesh.userData.wrapPrint) {
+      const shift = (mesh.userData.wrapCenterU ?? 0.5) - 0.5;
+      const gap = mesh.userData.wrapGapU ?? 0;
+      const k = 1 / (1 - 2 * gap);
+      tex.wrapS = shift ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+      tex.repeat.x *= k;
+      tex.offset.x = (tex.offset.x - shift - gap) * k;
+    }
     tex.anisotropy = 8;
     tex.needsUpdate = true;
     return tex;
@@ -549,7 +655,7 @@ function GarmentMesh({
   const { scene } = useGLTF(modelUrl);
 
   const options = MODEL_OPTIONS[productType] ?? {};
-  const { rotationY = 0, fabricMaterial } = options;
+  const { rotationY = 0, fabricMaterial, flipV = false, scale = 1, wrapPrint, wrapCenterU, wrapGapU } = options;
 
   const {
     model,
@@ -558,11 +664,15 @@ function GarmentMesh({
     backPrintMesh,
     backPrintUvBounds,
     modelCenter,
-    normalizationScale,
+    modelSize,
+    wrapDiameter,
   } = useMemo(() => {
     // Clone the loaded GLB so colour/texture changes never mutate
     // the cached original scene returned by useGLTF.
     const root = scene.clone(true);
+
+    // A 360° print zone (mug) is the front print, edited as an unrolled label.
+    if (wrapPrint) markWrapPrint(root, wrapPrint, wrapCenterU, wrapGapU);
 
     // Split print areas (e.g. either side of a zipper) become one surface.
     mergeSplitPrintPanels(root, PRINT_MATERIAL_NAME);
@@ -597,6 +707,8 @@ function GarmentMesh({
         const side = printSideOf(object, material);
 
         if (side) {
+          const flipSide = flipV === true || (Array.isArray(flipV) && flipV.includes(side));
+          if (flipSide && found[side].mesh !== object) flipUvV(object);
           found[side].mesh = object;
           found[side].uvBounds =
             computeUvBounds(object.geometry) ||
@@ -624,12 +736,15 @@ function GarmentMesh({
     box.getCenter(center);
     box.getSize(size);
 
-    const maxDimension = Math.max(
-      size.x,
-      size.y,
-      size.z,
-      1e-6
-    );
+    // Diameter of a 360° label, to fit its unrolled strip on screen.
+    let wrapDiameter = 0;
+    if (found.front.mesh?.userData.wrapPrint) {
+      const labelBox = new THREE.Box3().setFromObject(found.front.mesh);
+      wrapDiameter = Math.max(
+        labelBox.max.x - labelBox.min.x,
+        labelBox.max.z - labelBox.min.z
+      );
+    }
 
     return {
       model: root,
@@ -638,9 +753,25 @@ function GarmentMesh({
       backPrintMesh: found.back.mesh,
       backPrintUvBounds: found.back.uvBounds,
       modelCenter: center,
-      normalizationScale: TARGET_MODEL_SIZE / maxDimension,
+      modelSize: size,
+      wrapDiameter,
     };
-  }, [scene]);
+  }, [scene, flipV, wrapPrint, wrapCenterU, wrapGapU]);
+
+  // Scale that fits the model (as turned by rotationY) into the viewer.
+  const viewSize = useThree((state) => state.size);
+  const aspect = viewSize.width / Math.max(1, viewSize.height);
+  const normalizationScale = useMemo(() => {
+    const cos = Math.abs(Math.cos(rotationY));
+    const sin = Math.abs(Math.sin(rotationY));
+    let w = cos * modelSize.x + sin * modelSize.z;
+    const d = sin * modelSize.x + cos * modelSize.z;
+    if (wrapDiameter) {
+      const printable = Math.PI * wrapDiameter * (1 - 2 * (wrapGapU ?? 0));
+      w = Math.max(w, printable * WRAP_LABEL_SPREAD);
+    }
+    return fitScale({ w: Math.max(w, 1e-6), h: Math.max(modelSize.y, 1e-6), d }, aspect) * scale;
+  }, [modelSize, wrapDiameter, wrapGapU, rotationY, aspect, scale]);
 
   // Make the real print meshes available to the screen-space projector.
   useLayoutEffect(() => {
@@ -1250,10 +1381,21 @@ function PrintAreaProjector({
         .normalize();
 
     // Correctly hides the editor when viewing the garment from back.
+    // A 360° label (mug) always has a side facing the camera.
+    const isWrap =
+      !!mesh.userData.wrapPrint;
+
     const visible =
+      isWrap ||
       worldNormal.dot(
         toCamera
       ) > 0.15;
+
+    // Texture u of the label point closest to the camera (wrap only).
+    let frontDepth = Infinity;
+    let frontU = 0.5;
+    // Texture x (0..1) of the label point facing the camera (wrap only).
+    let focusTexX = null;
 
     let minX = Infinity;
     let minY = Infinity;
@@ -1352,6 +1494,11 @@ function PrintAreaProjector({
         sumVV += v * v;
         sumY += y;
         sumVY += v * y;
+
+        if (isWrap && scratch.vertex.z < frontDepth) {
+          frontDepth = scratch.vertex.z;
+          frontU = u;
+        }
       }
     }
 
@@ -1384,8 +1531,24 @@ function PrintAreaProjector({
         ? (n * sumVY - sumV * sumY) / denomV
         : 0;
 
-      // Only trust a fit that keeps the artwork upright and unmirrored.
-      if (bx > 1 && by > 1) {
+      if (isWrap) {
+        // Unrolled label: the full circumference (π × the on-screen
+        // diameter), positioned so the point facing the camera sits at the
+        // object's centre. Height still follows the (linear) fit.
+        if (by > 1) {
+          spanTop = (sumY - by * sumV) / n;
+          spanHeight = by;
+        }
+        // Canvas x of that point, after the label rotation (wrapCenterU)
+        // and with the unprinted gap at the seam (wrapGapU) left out.
+        const shift = (mesh.userData.wrapCenterU ?? 0.5) - 0.5;
+        const gap = mesh.userData.wrapGapU ?? 0;
+        const frontX = ((((frontU - shift) % 1) + 1) % 1 - gap) / (1 - 2 * gap);
+        focusTexX = frontX;
+        spanWidth = Math.PI * (maxX - minX) * (1 - 2 * gap);
+        spanLeft = (minX + maxX) / 2 - frontX * spanWidth;
+      } else if (bx > 1 && by > 1) {
+        // Only trust a fit that keeps the artwork upright and unmirrored.
         spanLeft = (sumX - bx * sumU) / n;
         spanWidth = bx;
         spanTop = (sumY - by * sumV) / n;
@@ -1407,6 +1570,11 @@ function PrintAreaProjector({
       width: spanWidth * mapping.ax,
       height: spanHeight * mapping.ay,
       visible,
+      // Wrap labels: canvas x (0..1) currently facing the viewer, so new
+      // artwork can be placed where the customer can see it.
+      ...(focusTexX !== null
+        ? { focusX: (focusTexX - mapping.bx) / (mapping.ax || 1) }
+        : {}),
     };
 
     const prev =
@@ -1529,9 +1697,9 @@ export default function ShirtViewer3D({
           position: [
             0,
             0,
-            2.25,
+            CAMERA_DISTANCE,
           ],
-          fov: 38,
+          fov: CAMERA_FOV,
           near: 0.01,
           far: 100,
         }}

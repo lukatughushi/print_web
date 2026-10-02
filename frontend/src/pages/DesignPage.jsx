@@ -17,12 +17,16 @@ import s from './DesignPage.module.css';
 
 /* ── Product images ──────────────────────────────────────── */
 import tshirtFront from '../assets/Product_img/basic_tshirt_front.png';
+import tshirtBack from '../assets/Product_img/basic_tshirt_back.png';
+import longSleeveFront from '../assets/Product_img/long_sleeve_front.png';
+import longSleeveBack from '../assets/Product_img/long_sleeve_back.png';
 import hoodieFront from '../assets/Product_img/hoodies_sweatshirt_front.png';
 import hoodieBack from '../assets/Product_img/hoodies_sweatshirt_back.png';
 import hat from '../assets/Product_img/hat.png';
 import bagFront from '../assets/Product_img/bag_front.png';
 import bagBack from '../assets/Product_img/bag_back.png';
 import pillow from '../assets/Product_img/pillow.png';
+import mug from '../assets/shop/mug.png';
 
 /* ── Men's t-shirt images ────────────────────────────────── */
 import manWhite from '../assets/mans_tshirts/man_white.png';
@@ -32,31 +36,13 @@ import manRed from '../assets/mans_tshirts/man_red.png';
 import manBlue from '../assets/mans_tshirts/man_blue.png';
 import manGreen from '../assets/mans_tshirts/man_green.png';
 
-/* ── Women's t-shirt images ──────────────────────────────── */
-import womanWhite from '../assets/product_women/white.png';
-import womanBlack from '../assets/product_women/black.png';
-import womanGrey from '../assets/product_women/grey.png';
-import womanRed from '../assets/product_women/red.png';
-import womanBlue from '../assets/product_women/blue.png';
-import womanGreen from '../assets/product_women/green.png';
-
 const TSHIRT_IMAGES = {
-  man: {
-    white: manWhite,
-    black: manBlack,
-    grey: manGrey,
-    red: manRed,
-    blue: manBlue,
-    green: manGreen,
-  },
-  woman: {
-    white: womanWhite,
-    black: womanBlack,
-    grey: womanGrey,
-    red: womanRed,
-    blue: womanBlue,
-    green: womanGreen,
-  },
+  white: manWhite,
+  black: manBlack,
+  grey: manGrey,
+  red: manRed,
+  blue: manBlue,
+  green: manGreen,
 };
 
 const COLOR_FILTERS = {
@@ -84,31 +70,69 @@ const GEO = {
 const CATEGORIES = [
   {
     id: 'tshirt',
+    // Line icon for the product picker.
+    icon: 'M8 3 4 5 2 9l3 2 1-1v11h12V10l1 1 3-2-2-4-4-2c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z',
     label: 'მაისური',
     // Product.category this tab orders from (null = not sold yet).
     category: 'TSHIRT',
     front: tshirtFront,
-    back: null,
-    hasBack: false,
+    back: tshirtBack,
+    hasBack: true,
+  },
+  {
+    id: 'polo',
+    // Line icon for the product picker.
+    icon: 'M8 3 4 5 2 9l3 2 1-1v11h12V10l1 1 3-2-2-4-4-2M8 3l4 4 4-4M12 7v4M11 9h2',
+    label: 'პოლო',
+    category: 'POLO',
+    front: tshirtFront,
+    back: tshirtBack,
+    hasBack: true,
+  },
+  {
+    id: 'longsleeve',
+    // Line icon for the product picker.
+    icon: 'M8 3 5 4 3 9l-1 11h3l1-8v9h12v-9l1 8h3L21 9l-2-5-3-1c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z',
+    label: 'გრძელმკლავიანი მაისური',
+    category: 'LONGSLEEVE',
+    front: longSleeveFront,
+    back: longSleeveBack,
+    hasBack: true,
+  },
+  {
+    id: 'polo_ls',
+    // Line icon for the product picker.
+    icon: 'M8 3 5 4 3 9l-1 11h3l1-8v9h12v-9l1 8h3L21 9l-2-5-3-1M8 3l4 4 4-4M12 7v4',
+    label: 'გრძელმკლავიანი პოლო',
+    category: 'POLO_LONGSLEEVE',
+    front: longSleeveFront,
+    back: longSleeveBack,
+    hasBack: true,
   },
   {
     id: 'hoodie',
-    label: 'ჰუდი',
+    // Line icon for the product picker.
+    icon: 'M9 4c0-1 1.3-2 3-2s3 1 3 2l4 2 2 4-1 10h-3l-1-8v9H8v-9l-1 8H4L3 10l2-4 4-2zM9 4c0 2.5 1.3 4 3 4s3-1.5 3-4M10 15h4',
+    label: 'ჰუდი ჯიბით',
     category: 'HOODIE',
     front: hoodieFront,
     back: hoodieBack,
     hasBack: true,
   },
   {
-    id: 'hat',
-    label: 'კეპი',
-    category: 'CAP',
-    front: hat,
-    back: null,
-    hasBack: false,
+    id: 'zip_hoodie',
+    // Line icon for the product picker.
+    icon: 'M9 4c0-1 1.3-2 3-2s3 1 3 2l4 2 2 4-1 10h-3l-1-8v9H8v-9l-1 8H4L3 10l2-4 4-2zM9 4c0 2.5 1.3 4 3 4s3-1.5 3-4M12 8v13',
+    label: 'ჰუდი ელვით',
+    category: 'ZIP_HOODIE',
+    front: hoodieFront,
+    back: hoodieBack,
+    hasBack: true,
   },
   {
     id: 'bag',
+    // Line icon for the product picker.
+    icon: 'M5 9h14l-1 12H6L5 9zM9 9V7a3 3 0 0 1 6 0v2',
     label: 'ჩანთა',
     category: 'BAG',
     front: bagFront,
@@ -116,12 +140,35 @@ const CATEGORIES = [
     hasBack: true,
   },
   {
+    id: 'hat',
+    // Line icon for the product picker.
+    icon: 'M3 16c0-5 4-9 9-9s9 4 9 9H3zM3 16h-1M12 7V5M14 16c2 0 6 .5 8 2',
+    label: 'კეპი',
+    category: 'CAP',
+    front: hat,
+    back: null,
+    hasBack: false,
+  },
+  {
+    id: 'mug',
+    // Line icon for the product picker.
+    icon: 'M5 6h11v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6zM16 9h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2',
+    label: 'ჭიქა',
+    category: 'MUG',
+    // One 360° label (no separate back side).
+    front: mug,
+    back: null,
+    hasBack: false,
+  },
+  {
     id: 'pillow',
+    // Line icon for the product picker.
+    icon: 'M4 6c3 1 13 1 16 0-1 4-1 8 0 12-3-1-13-1-16 0 1-4 1-8 0-12z',
     label: 'ბალიშის პირი',
     category: null,
     front: pillow,
-    back: null,
-    hasBack: false,
+    back: pillow,
+    hasBack: true,
   },
 ];
 
@@ -129,21 +176,20 @@ const CATEGORIES = [
 // Tabs not listed here use the flat product image instead.
 const MODEL_TYPE_BY_TAB = {
   tshirt: 'male',
+  polo: 'polo',
+  polo_ls: 'polo_ls',
+  longsleeve: 'longsleeve',
+  mug: 'mug',
   hoodie: 'hoodie',
+  zip_hoodie: 'hoodie_zip',
   hat: 'cap',
   bag: 'tote',
+  pillow: 'pillow',
 };
-
-// Hoodie styles. All belong to the hoodie product; each has its own 3D model
-// and its own design.
-const HOODIE_STYLES = [
-  { id: 'pocket', label: 'ჯიბით', model: 'hoodie' },
-  { id: 'zip', label: 'ელვით', model: 'hoodie_zip' },
-];
 
 // 3D models with a BACK_PRINT surface. On these the Front/Back buttons also
 // switch which side's design is being edited.
-const BACK_PRINT_MODELS = new Set(['cap', 'hoodie', 'hoodie_zip', 'tote']);
+const BACK_PRINT_MODELS = new Set(['male', 'cap', 'hoodie', 'hoodie_zip', 'tote', 'polo', 'polo_ls', 'longsleeve', 'pillow']);
 
 const EMPTY_SIDE = { images: [], textObjects: [] };
 const EMPTY_DESIGN = { front: EMPTY_SIDE, back: EMPTY_SIDE };
@@ -304,6 +350,14 @@ const TEXT_DEFAULT_Y = 220;
 
 const NUDGE_STEP = 5;
 const NUDGE_STEP_SHIFT = 20;
+
+// Left x that centres an object of width `w` on the visible side of a 360°
+// label (printRect.focusX from the 3D viewer); `fallback` everywhere else.
+function placeX(printRect, w, fallback) {
+  const focus = printRect?.focusX;
+  if (typeof focus !== 'number' || !Number.isFinite(focus)) return fallback;
+  return Math.max(0, Math.min(CANVAS_WIDTH - w, focus * CANVAS_WIDTH - w / 2));
+}
 
 function fitBox(naturalW, naturalH, box = UPLOAD_BOX) {
   const aspect = (naturalW || 1) / (naturalH || 1);
@@ -760,22 +814,13 @@ export default function DesignPage() {
   const [side, setSide] =
     useState('front');
 
-  const [hoodieStyle, setHoodieStyle] =
-    useState(HOODIE_STYLES[0].id);
-
-  // 3D model shown for the active tab (the hoodie tab depends on its style).
+  // 3D model shown for the active tab (one model per product).
   const modelType =
-    activeTab === 'hoodie'
-      ? (HOODIE_STYLES.find(
-          (st) => st.id === hoodieStyle
-        ) ?? HOODIE_STYLES[0]).model
-      : MODEL_TYPE_BY_TAB[activeTab];
+    MODEL_TYPE_BY_TAB[activeTab];
 
-  // Designs and undo history are kept per product AND per model variant.
+  // Designs and undo history are kept per product.
   const designKey =
-    activeTab === 'hoodie'
-      ? `hoodie:${hoodieStyle}`
-      : activeTab;
+    activeTab;
 
   const [view3d, setView3d] =
     useState('front');
@@ -796,9 +841,6 @@ export default function DesignPage() {
     shirtColor,
     setShirtColor,
   ] = useState('white');
-
-  const [gender, setGender] =
-    useState('man');
 
   const [size, setSize] =
     useState('M');
@@ -1244,12 +1286,6 @@ export default function DesignPage() {
       manRed,
       manBlue,
       manGreen,
-      womanWhite,
-      womanBlack,
-      womanGrey,
-      womanRed,
-      womanBlue,
-      womanGreen,
     ];
 
     imagesToPreload.forEach(
@@ -1273,12 +1309,8 @@ export default function DesignPage() {
 
   const currentSrc =
     activeTab === 'tshirt'
-      ? TSHIRT_IMAGES[
-          gender
-        ][shirtColor] ??
-        TSHIRT_IMAGES[
-          gender
-        ].white
+      ? TSHIRT_IMAGES[shirtColor] ??
+        TSHIRT_IMAGES.white
       : side === 'back' &&
         activeCat.back
       ? activeCat.back
@@ -1322,17 +1354,6 @@ export default function DesignPage() {
     setSide('front');
     setView3d('front');
     setFlipPhase('');
-    setSelectedId(null);
-    setPrintRect(null);
-  }
-
-  // Hoodie style = different 3D model with its own design; reset the view
-  // like a tab switch.
-  function switchHoodieStyle(id) {
-    if (id === hoodieStyle) return;
-    setHoodieStyle(id);
-    setView3d('front');
-    setView3dResetKey((n) => n + 1);
     setSelectedId(null);
     setPrintRect(null);
   }
@@ -1455,14 +1476,21 @@ export default function DesignPage() {
       ? product
       : null;
 
+  // A product without sizes (cap, bag) is one size: no size picker.
+  const oneSize =
+    !!orderProduct && !orderProduct.sizes?.length;
+
   const sizeOptions =
     orderProduct?.sizes?.length
       ? orderProduct.sizes
+      : oneSize
+      ? []
       : SIZES;
 
   // Fall back to the middle size when the chosen one isn't offered.
-  const selectedSize =
-    sizeOptions.includes(size)
+  const selectedSize = oneSize
+    ? ''
+    : sizeOptions.includes(size)
       ? size
       : sizeOptions[
           Math.floor(
@@ -1483,7 +1511,8 @@ export default function DesignPage() {
     const created = {
       id,
       text,
-      x: TEXT_DEFAULT_X,
+      // Rough text width: ~0.6 em per character.
+      x: placeX(printRect, text.length * fontSize * 0.6, TEXT_DEFAULT_X),
       y: TEXT_DEFAULT_Y,
       fontSize,
       rotation: 0,
@@ -1585,9 +1614,11 @@ export default function DesignPage() {
 
         const x =
           clampPos(
-            (CANVAS_WIDTH -
-              width) /
-              2
+            placeX(
+              printRect,
+              width,
+              (CANVAS_WIDTH - width) / 2
+            )
           );
 
         const y =
@@ -1930,8 +1961,7 @@ export default function DesignPage() {
             }
           : {}),
         garment: activeTab,
-        ...(activeTab === 'tshirt' ? { gender } : {}),
-        ...(activeTab === 'hoodie' ? { hoodieStyle, model: modelType } : {}),
+        ...(modelType ? { model: modelType } : {}),
         garmentColor: shirtHex,
         printArea: {
           width: CANVAS_WIDTH,
@@ -2184,15 +2214,6 @@ export default function DesignPage() {
           .filter(Boolean)
           .join(' + ')}`;
 
-  const variantLabel =
-    activeTab === 'tshirt'
-      ? gender === 'man'
-        ? 'კაცი'
-        : 'ქალი'
-      : activeTab === 'hoodie'
-      ? HOODIE_STYLES.find((st) => st.id === hoodieStyle)?.label
-      : null;
-
   const thumbSrc = activeTab === 'tshirt' ? currentSrc : activeCat.front;
   const thumbFilter =
     activeTab === 'tshirt' ? 'none' : COLOR_FILTERS[shirtColor] ?? 'none';
@@ -2240,24 +2261,25 @@ export default function DesignPage() {
                 <div className={s.panelSub}>აირჩიეთ ტიპი და მოდელი</div>
               </div>
 
-              <div className={s.productGrid}>
+              <div className={s.productList}>
                 {CATEGORIES.map((c) => {
                   const from = c.category ? fromPrice(c.category) : null;
+                  const active = activeTab === c.id;
                   return (
                     <button
                       key={c.id}
                       type="button"
-                      className={`${s.productCard} ${
-                        activeTab === c.id ? s.productCardActive : ''
-                      }`}
-                      aria-pressed={activeTab === c.id}
+                      className={`${s.productRow} ${active ? s.productRowActive : ''}`}
+                      aria-pressed={active}
                       onClick={() => switchTab(c.id)}
                     >
-                      <span className={s.productThumb}>
-                        <img src={c.front} alt="" draggable={false} />
+                      <span className={s.productIcon} aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                          <path d={c.icon} />
+                        </svg>
                       </span>
-                      <span className={s.productCardName}>{c.label}</span>
-                      <span className={s.productCardPrice}>
+                      <span className={s.productRowName}>{c.label}</span>
+                      <span className={s.productRowPrice}>
                         {from !== null ? `${from} ₾-დან` : 'მალე'}
                       </span>
                     </button>
@@ -2265,50 +2287,7 @@ export default function DesignPage() {
                 })}
               </div>
 
-              {activeTab === 'tshirt' && (
-                <div className={s.field}>
-                  <div className={s.fieldLabel}>სქესი</div>
-                  <div className={s.segment} role="group" aria-label="სქესი">
-                    {[
-                      ['man', 'კაცი'],
-                      ['woman', 'ქალი'],
-                    ].map(([id, label]) => (
-                      <button
-                        key={id}
-                        type="button"
-                        aria-pressed={gender === id}
-                        className={`${s.segmentBtn} ${
-                          gender === id ? s.segmentBtnActive : ''
-                        }`}
-                        onClick={() => setGender(id)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {activeTab === 'hoodie' && (
-                <div className={s.field}>
-                  <div className={s.fieldLabel}>მოდელი</div>
-                  <div className={s.chips} role="group" aria-label="ჰუდის სტილი">
-                    {HOODIE_STYLES.map((st) => (
-                      <button
-                        key={st.id}
-                        type="button"
-                        aria-pressed={hoodieStyle === st.id}
-                        className={`${s.chip} ${
-                          hoodieStyle === st.id ? s.chipActive : ''
-                        }`}
-                        onClick={() => switchHoodieStyle(st.id)}
-                      >
-                        {st.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </>
           )}
 
@@ -3213,7 +3192,7 @@ export default function DesignPage() {
                 {orderProduct ? orderProduct.name : activeCat.label}
               </div>
               <div className={s.orderMeta}>
-                {[activeCat.label, variantLabel].filter(Boolean).join(' · ')}
+                {activeCat.label}
               </div>
             </div>
           </div>
@@ -3232,7 +3211,7 @@ export default function DesignPage() {
             {orderProduct && (
               <div className={s.summaryRow}>
                 <span>{GEO.size}</span>
-                <b>{selectedSize}</b>
+                <b>{oneSize ? 'ერთი ზომა' : selectedSize}</b>
               </div>
             )}
             <div className={s.summaryRow}>
