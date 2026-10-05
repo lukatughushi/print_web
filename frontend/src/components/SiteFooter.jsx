@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import logo from '../assets/prenta/LOGO_PRENTA.png';
+import logo from '../assets/prenta/logo_prenta.webp';
 import s from './SiteFooter.module.css';
 
 const DEFAULTS = {

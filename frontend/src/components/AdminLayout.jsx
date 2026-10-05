@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth-context';
 import styles from './AdminLayout.module.css';
-import logo from '../assets/prenta/LOGO_PRENTA.png';
+import logo from '../assets/prenta/logo_prenta.webp';
 
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: '▦' },

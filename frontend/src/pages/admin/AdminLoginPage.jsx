@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/auth-context';
 import { getErrorMessage } from '../../lib/api';
 import styles from './AdminLoginPage.module.css';
-import logo from '../../assets/prenta/LOGO_PRENTA.png';
+import logo from '../../assets/prenta/logo_prenta.webp';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();

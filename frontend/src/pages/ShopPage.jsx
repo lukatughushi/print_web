@@ -12,7 +12,7 @@ import {
 import ProductCard, { ProductImage } from '../components/ProductCard';
 import SiteFooter from '../components/SiteFooter';
 import useFavStore from '../store/favStore';
-import corpImg from '../assets/prenta/main_hoode.png';
+import corpImg from '../assets/prenta/main_hoode.webp';
 import s from './ShopPage.module.css';
 
 // Layout follows src/acrhi/Prenta Shop.dc.html.

@@ -1,11 +1,10 @@
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AuthProvider from './context/AuthProvider';
 import Navbar from './components/Navbar';
 import Toast from './components/Toast';
-import AdminLayout from './components/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
-import DesignPage from './pages/DesignPage';
 import ShopPage from './pages/ShopPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
@@ -13,22 +12,45 @@ import CheckoutPage from './pages/CheckoutPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AccountPage from './pages/AccountPage';
-import AdminLoginPage from './pages/admin/AdminLoginPage';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminOrders from './pages/AdminOrders';
-import AdminProducts from './pages/AdminProducts';
-import AdminUsers from './pages/AdminUsers';
-import BannersPage from './pages/admin/BannersPage';
-import SettingsPage from './pages/admin/SettingsPage';
+
+// Heavy or rarely used pages load on demand, so the storefront doesn't
+// download the 3D/editor libraries (three.js, Konva) or the admin panel.
+const loadDesignPage = () => import('./pages/DesignPage');
+const DesignPage = lazy(loadDesignPage);
+const AdminLayout = lazy(() => import('./components/AdminLayout'));
+const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminOrders = lazy(() => import('./pages/AdminOrders'));
+const AdminProducts = lazy(() => import('./pages/AdminProducts'));
+const AdminUsers = lazy(() => import('./pages/AdminUsers'));
+const BannersPage = lazy(() => import('./pages/admin/BannersPage'));
+const SettingsPage = lazy(() => import('./pages/admin/SettingsPage'));
+
+// Fetch the constructor code once the current page is idle, so opening it
+// later is instant without slowing down the first page load.
+function usePrefetchDesignPage() {
+  useEffect(() => {
+    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 2500));
+    const cancel = window.cancelIdleCallback || clearTimeout;
+    const handle = idle(() => { loadDesignPage().catch(() => {}); });
+    return () => cancel(handle);
+  }, []);
+}
+
+function PageLoading() {
+  return <div style={{ minHeight: '60vh' }} aria-busy="true" />;
+}
 
 function AppContent() {
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith('/admin');
+  usePrefetchDesignPage();
 
   return (
     <>
       {!isAdmin && <Navbar />}
       <Toast />
+      <Suspense fallback={<PageLoading />}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
@@ -61,6 +83,7 @@ function AppContent() {
           </Route>
         </Route>
       </Routes>
+      </Suspense>
     </>
   );
 }

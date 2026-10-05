@@ -2,12 +2,12 @@ import { API_URL } from './config';
 
 export const API_BASE = API_URL;
 
-import imgTshirt from '../assets/shop/tshirt.png';
-import imgLongsleeve from '../assets/shop/longsleeve.png';
-import imgHoodie from '../assets/shop/hoodie.png';
-import imgBag from '../assets/shop/bag.png';
-import imgCap from '../assets/shop/cap.png';
-import imgMug from '../assets/shop/mug.png';
+import imgTshirt from '../assets/shop/tshirt.webp';
+import imgLongsleeve from '../assets/shop/longsleeve.webp';
+import imgHoodie from '../assets/shop/hoodie.webp';
+import imgBag from '../assets/shop/bag.webp';
+import imgCap from '../assets/shop/cap.webp';
+import imgMug from '../assets/shop/mug.webp';
 
 // Storefront categories, in menu order. `code` is Product.category (must match
 // backend/src/database/catalog.ts). `img` is a neutral cut-out that is tinted

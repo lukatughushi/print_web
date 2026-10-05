@@ -4,7 +4,7 @@ import useCartStore from '../store/cartStore';
 import useFavStore from '../store/favStore';
 import { useAuth } from '../context/auth-context';
 import api from '../lib/api';
-import logo from '../assets/prenta/LOGO_PRENTA.png';
+import logo from '../assets/prenta/logo_prenta.webp';
 import s from './Navbar.module.css';
 
 export default function Navbar() {

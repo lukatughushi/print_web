@@ -6,8 +6,8 @@ import ProductCard, { ProductImage } from '../components/ProductCard';
 import SiteFooter from '../components/SiteFooter';
 import s from './HomePage.module.css';
 
-import heroTshirt from '../assets/prenta/home_tshirt.png';
-import mainHoodie from '../assets/prenta/main_hoode.png';
+import heroTshirt from '../assets/prenta/home_tshirt.webp';
+import mainHoodie from '../assets/prenta/main_hoode.webp';
 
 import { API_URL as API_BASE } from '../lib/config';
 
@@ -218,7 +218,7 @@ export default function HomePage() {
             <div className={s.heroArt}>
               <img className={s.heroArtBack} src={heroTshirt} alt="" />
               <img className={s.heroArtMid} src={heroTshirt} alt="" />
-              <img className={s.heroArtFront} src={heroTshirt} alt="დაბეჭდილი მაისური" />
+              <img className={s.heroArtFront} src={heroTshirt} alt="დაბეჭდილი მაისური" fetchPriority="high" />
             </div>
           </div>
         </section>

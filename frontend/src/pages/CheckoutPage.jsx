@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import useCartStore from '../store/cartStore';
 import { money, shippingFor } from '../lib/catalog';
-import { renderPrintFile } from '../lib/shirtTexture';
 import s from './storefront.module.css';
 
 const PAY_OPTS = [
@@ -19,6 +18,9 @@ async function buildDesign(item) {
   const canvas = typeof item.canvasJson === 'string' ? JSON.parse(item.canvasJson) : item.canvasJson;
   let printUrl = null;
   try {
+    // Loaded on demand: shirtTexture pulls in three.js, which the rest of
+    // the storefront doesn't need.
+    const { renderPrintFile } = await import('../lib/shirtTexture');
     printUrl = await renderPrintFile(canvas);
   } catch {
     // The order still carries the layers; admins can re-create the print file.

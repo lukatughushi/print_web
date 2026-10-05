@@ -144,16 +144,6 @@ function fitScale({ w, h, d }, aspect) {
   return Math.min(along(h, visH, FIT_HEIGHT), along(w, visW, FIT_WIDTH));
 }
 
-useGLTF.preload(MODEL_URLS.male);
-useGLTF.preload(MODEL_URLS.hoodie);
-useGLTF.preload(MODEL_URLS.hoodie_zip);
-useGLTF.preload(MODEL_URLS.cap);
-useGLTF.preload(MODEL_URLS.tote);
-useGLTF.preload(MODEL_URLS.polo);
-useGLTF.preload(MODEL_URLS.polo_ls);
-useGLTF.preload(MODEL_URLS.longsleeve);
-useGLTF.preload(MODEL_URLS.mug);
-useGLTF.preload(MODEL_URLS.pillow);
 
 /* =========================================================
    HELPERS

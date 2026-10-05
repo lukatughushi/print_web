@@ -26,7 +26,7 @@ import hat from '../assets/Product_img/hat.png';
 import bagFront from '../assets/Product_img/bag_front.png';
 import bagBack from '../assets/Product_img/bag_back.png';
 import pillow from '../assets/Product_img/pillow.png';
-import mug from '../assets/shop/mug.png';
+import mug from '../assets/shop/mug.webp';
 
 /* ── Men's t-shirt images ────────────────────────────────── */
 import manWhite from '../assets/mans_tshirts/man_white.png';
