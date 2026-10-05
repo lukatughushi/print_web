@@ -1,261 +1,201 @@
-import { useState, useEffect, useRef } from 'react';
-import adminApi from '../../lib/adminApi';
-import s from './BannersPage.module.css';
+import { useEffect, useRef, useState } from 'react';
+import api from '../../lib/api';
+import { assetUrl } from '../../lib/catalog';
+import { getErrorMessage, uploadImage } from './adminShared';
+import s from './Admin.module.css';
 
-import { API_URL as API_BASE } from '../../lib/config';
+const EMPTY = { image: '', imageUrl: '', title: '', subtitle: '', ctaText: '', ctaLink: '', isActive: true };
 
-const emptyForm = { title: '', subtitle: '', ctaText: '', ctaLink: '' };
+function BannerForm({ banner, onClose, onSaved }) {
+  const [form, setForm] = useState(banner ? { ...EMPTY, ...banner } : EMPTY);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const fileRef = useRef(null);
+  const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+
+  const pickImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setBusy(true);
+    setError('');
+    try {
+      const id = await uploadImage(file);
+      setForm((f) => ({ ...f, image: id, imageUrl: `/api/files/${id}` }));
+    } catch (err) {
+      setError(getErrorMessage(err, 'ფოტო ვერ აიტვირთა'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.image) return setError('ატვირთე ბანერის ფოტო');
+    const payload = {
+      image: form.image,
+      title: form.title.trim(),
+      subtitle: form.subtitle.trim(),
+      ctaText: form.ctaText.trim(),
+      ctaLink: form.ctaLink.trim(),
+      isActive: form.isActive,
+    };
+    setBusy(true);
+    setError('');
+    try {
+      const { data } = banner
+        ? await api.patch(`/api/banners/${banner.id}`, payload)
+        : await api.post('/api/banners', payload);
+      onSaved(data, !banner);
+    } catch (err) {
+      setError(getErrorMessage(err, 'შენახვა ვერ მოხერხდა'));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className={s.backdrop} onClick={onClose} aria-hidden="true" />
+      <form className={s.drawer} onSubmit={submit} role="dialog" aria-label="ბანერი">
+        <div className={s.drawerHead}>
+          <h2 className={s.drawerTitle}>{banner ? 'ბანერის რედაქტირება' : 'ახალი ბანერი'}</h2>
+          <button type="button" className={s.iconBtn} onClick={onClose} aria-label="დახურვა">✕</button>
+        </div>
+        <div className={s.drawerBody}>
+          {error && <div className={s.error}>{error}</div>}
+          <div className={s.card}>
+            <div className={s.upload}>
+              <div className={`${s.uploadPreview} ${s.uploadWide}`}>
+                {form.imageUrl ? <img src={assetUrl(form.imageUrl)} alt="" /> : 'ფოტო არ არის'}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <span className={s.hint}>რეკომენდებული: ჰორიზონტალური, ≥ 1600 px სიგანე (JPG/WebP)</span>
+                <button type="button" className={`${s.btnGhost} ${s.btnSm}`} disabled={busy} onClick={() => fileRef.current?.click()}>
+                  {form.image ? 'ფოტოს შეცვლა' : 'ფოტოს ატვირთვა'}
+                </button>
+                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={pickImage} />
+              </div>
+            </div>
+          </div>
+          <div className={`${s.card} ${s.section}`}>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="b-title">სათაური</label>
+              <input id="b-title" className={s.input} value={form.title} onChange={(e) => set('title', e.target.value)} />
+            </div>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="b-sub">ქვესათაური</label>
+              <textarea id="b-sub" className={s.textarea} value={form.subtitle} onChange={(e) => set('subtitle', e.target.value)} />
+            </div>
+            <div className={s.formGrid}>
+              <div className={s.field}>
+                <label className={s.label} htmlFor="b-cta">ღილაკის ტექსტი</label>
+                <input id="b-cta" className={s.input} value={form.ctaText} onChange={(e) => set('ctaText', e.target.value)} placeholder="მაგ. ნახე ფასდაკლებები" />
+              </div>
+              <div className={s.field}>
+                <label className={s.label} htmlFor="b-link">ღილაკის ბმული</label>
+                <input id="b-link" className={s.input} value={form.ctaLink} onChange={(e) => set('ctaLink', e.target.value)} placeholder="/shop?sale=1" />
+              </div>
+            </div>
+            <button type="button" className={s.switchLabel} style={{ border: 0, background: 'none', padding: 0, font: 'inherit' }} onClick={() => set('isActive', !form.isActive)}>
+              <span className={`${s.switch} ${form.isActive ? s.switchOn : ''}`} /> ჩანს მთავარ გვერდზე
+            </button>
+          </div>
+        </div>
+        <div className={s.drawerFoot}>
+          <button type="button" className={s.btnGhost} onClick={onClose}>გაუქმება</button>
+          <button type="submit" className={s.btnPrimary} disabled={busy}>{busy ? 'ინახება…' : 'შენახვა'}</button>
+        </div>
+      </form>
+    </>
+  );
+}
 
 export default function BannersPage() {
-  const [banners, setBanners]         = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [showModal, setShowModal]     = useState(false);
-  const [editingBanner, setEditing]   = useState(null); // null = add mode
-  const [form, setForm]               = useState(emptyForm);
-  const [imageFile, setImageFile]     = useState(null);
-  const [imagePreview, setPreview]    = useState('');
-  const [saving, setSaving]           = useState(false);
-  const [modalError, setModalError]   = useState('');
-  const [dragOver, setDragOver]       = useState(false);
-  const fileRef                        = useRef(null);
+  const [banners, setBanners] = useState(null);
+  const [error, setError] = useState('');
+  const [editing, setEditing] = useState(null);
 
-  useEffect(() => { fetchBanners(); }, []);
+  useEffect(() => {
+    api.get('/api/banners/all')
+      .then((r) => setBanners(r.data))
+      .catch((e) => setError(getErrorMessage(e, 'ბანერები ვერ ჩაიტვირთა')));
+  }, []);
 
-  async function fetchBanners() {
-    try {
-      const { data } = await adminApi.get('/api/admin/banners');
-      setBanners(data);
-    } catch {
-      setBanners([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function openAdd() {
-    setEditing(null);
-    setForm(emptyForm);
-    setImageFile(null);
-    setPreview('');
-    setModalError('');
-    setShowModal(true);
-  }
-
-  function openEdit(banner) {
-    setEditing(banner);
-    setForm({
-      title:    banner.title    ?? '',
-      subtitle: banner.subtitle ?? '',
-      ctaText:  banner.ctaText  ?? '',
-      ctaLink:  banner.ctaLink  ?? '',
-    });
-    setImageFile(null);
-    setPreview('');
-    setModalError('');
-    setShowModal(true);
-  }
-
-  function closeModal() { setShowModal(false); setEditing(null); }
-
-  function handleFile(file) {
-    if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      setModalError('მხოლოდ jpg, png ან webp ფორმატი.'); return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setModalError('სურათი უნდა იყოს 10 MB-ზე ნაკლები.'); return;
-    }
-    setImageFile(file);
-    setModalError('');
-    const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target.result);
-    reader.readAsDataURL(file);
-  }
-
-  async function handleSave() {
-    if (!editingBanner && !imageFile) { setModalError('გთხოვთ ატვირთოთ სურათი.'); return; }
-    setSaving(true); setModalError('');
-    try {
-      const fd = new FormData();
-      if (imageFile) fd.append('image', imageFile);
-      fd.append('title',    form.title);
-      fd.append('subtitle', form.subtitle);
-      fd.append('ctaText',  form.ctaText);
-      fd.append('ctaLink',  form.ctaLink);
-
-      if (editingBanner) {
-        const { data } = await adminApi.patch(`/api/admin/banners/${editingBanner.id}`, fd);
-        setBanners(prev => prev.map(b => b.id === editingBanner.id ? data : b));
-      } else {
-        const { data } = await adminApi.post('/api/admin/banners', fd);
-        setBanners(prev => [...prev, data]);
-      }
-      closeModal();
-    } catch (err) {
-      setModalError(err.response?.data?.error || 'შენახვა ვერ მოხდა.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleToggle(id, current) {
-    try {
-      const { data } = await adminApi.patch(`/api/admin/banners/${id}`, { isActive: !current });
-      setBanners(prev => prev.map(b => b.id === id ? data : b));
-    } catch {}
-  }
-
-  async function handleDelete(id) {
-    if (!confirm('გსურთ ამ ბანერის წაშლა?')) return;
-    try {
-      await adminApi.delete(`/api/admin/banners/${id}`);
-      setBanners(prev => prev.filter(b => b.id !== id));
-    } catch {}
-  }
-
-  async function handleReorder(idx, direction) {
+  const move = async (index, dir) => {
     const next = [...banners];
-    const swap = direction === 'up' ? idx - 1 : idx + 1;
-    [next[idx], next[swap]] = [next[swap], next[idx]];
-    const reordered = next.map((b, i) => ({ ...b, order: i }));
-    setBanners(reordered);
+    const [b] = next.splice(index, 1);
+    next.splice(index + dir, 0, b);
+    setBanners(next);
     try {
-      await adminApi.patch('/api/admin/banners/reorder', reordered.map(b => ({ id: b.id, order: b.order })));
-    } catch {
-      fetchBanners();
+      const { data } = await api.patch('/api/banners/reorder', { ids: next.map((x) => x.id) });
+      setBanners(data);
+    } catch (e) {
+      setError(getErrorMessage(e, 'თანმიმდევრობა ვერ შეინახა'));
     }
-  }
+  };
 
-  if (loading) return <div className={s.loading}>Loading…</div>;
+  const toggle = async (b) => {
+    try {
+      const { data } = await api.patch(`/api/banners/${b.id}`, { isActive: !b.isActive });
+      setBanners((list) => list.map((x) => (x.id === b.id ? data : x)));
+    } catch (e) {
+      setError(getErrorMessage(e, 'ვერ შეიცვალა'));
+    }
+  };
+
+  const remove = async (b) => {
+    if (!window.confirm('წავშალო ბანერი? ფოტოც წაიშლება.')) return;
+    try {
+      await api.delete(`/api/banners/${b.id}`);
+      setBanners((list) => list.filter((x) => x.id !== b.id));
+    } catch (e) {
+      setError(getErrorMessage(e, 'წაშლა ვერ მოხერხდა'));
+    }
+  };
+
+  const saved = (b, isNew) => {
+    setBanners((list) => (isNew ? [...list, b] : list.map((x) => (x.id === b.id ? b : x))));
+    setEditing(null);
+  };
 
   return (
     <div className={s.page}>
-      {/* ── Header ─────────────────────────────────────── */}
-      <div className={s.header}>
-        <h1 className={s.title}>ბანერის მართვა</h1>
-        <button className={s.addBtn} onClick={openAdd} disabled={banners.length >= 3}>
-          + ბანერის დამატება
-        </button>
+      <div className={s.head}>
+        <div>
+          <h1 className={s.title}>ბანერები</h1>
+          <p className={s.sub}>მთავარი გვერდის სლაიდერი. თუ არცერთი ბანერი არ ჩანს, მთავარ გვერდზე სტანდარტული ბანერი გამოჩნდება.</p>
+        </div>
+        <button type="button" className={s.btnPrimary} onClick={() => setEditing('new')}>+ ახალი ბანერი</button>
       </div>
 
-      <p className={s.hint}>
-        მაქსიმუმ 3 ბანერი. გამოჩნდება მთავარ გვერდის სლაიდერში.
-      </p>
+      {error && <div className={s.error}>{error}</div>}
+      {!banners && !error && <div className={s.loading}>იტვირთება…</div>}
+      {banners && banners.length === 0 && <div className={s.empty}>ბანერები ჯერ არ არის.</div>}
 
-      {/* ── Banner list ────────────────────────────────── */}
-      {banners.length === 0 ? (
-        <div className={s.empty}>ბანერი ჯერ არ არის დამატებული.</div>
-      ) : (
-        <div className={s.list}>
-          {banners.map((banner, idx) => (
-            <div key={banner.id} className={s.card}>
-              <img
-                src={`${API_BASE}${banner.imageUrl}?t=${banner.id}`}
-                alt={banner.title || 'Banner'}
-                className={s.thumb}
-              />
-
-              <div className={s.info}>
-                <p className={s.cardTitle}>{banner.title || <span className={s.dim}>სათაური არ არის</span>}</p>
-                {banner.subtitle && <p className={s.cardSub}>{banner.subtitle}</p>}
-                {banner.ctaText && <p className={s.cardCta}>CTA: {banner.ctaText}</p>}
+      {banners?.length > 0 && (
+        <div className={s.bannerList}>
+          {banners.map((b, i) => (
+            <div key={b.id} className={`${s.bannerRow} ${b.isActive ? '' : s.bannerHidden}`}>
+              <div className={s.bannerImg}><img src={assetUrl(b.imageUrl)} alt="" /></div>
+              <div style={{ minWidth: 0 }}>
+                <div className={s.strong}>{b.title || <span className={s.muted}>სათაურის გარეშე</span>}</div>
+                {b.subtitle && <div className={s.muted} style={{ fontSize: 13 }}>{b.subtitle}</div>}
+                {b.ctaText && <div style={{ fontSize: 12.5, marginTop: 4 }}>ღილაკი: {b.ctaText} → <span className={s.muted}>{b.ctaLink || '/'}</span></div>}
               </div>
-
-              <div className={s.controls}>
-                {/* Active toggle */}
-                <label className={s.toggle} title={banner.isActive ? 'გამორთვა' : 'ჩართვა'}>
-                  <input
-                    type="checkbox"
-                    checked={banner.isActive}
-                    onChange={() => handleToggle(banner.id, banner.isActive)}
-                  />
-                  <span className={s.toggleTrack}><span className={s.toggleThumb} /></span>
-                </label>
-
-                <button className={s.editBtn} onClick={() => openEdit(banner)}>რედ.</button>
-                <button className={s.deleteBtn} onClick={() => handleDelete(banner.id)}>წაშ.</button>
-
-                {/* Reorder */}
-                <div className={s.orderBtns}>
-                  <button className={s.orderBtn} disabled={idx === 0}               onClick={() => handleReorder(idx, 'up')}>↑</button>
-                  <button className={s.orderBtn} disabled={idx === banners.length - 1} onClick={() => handleReorder(idx, 'down')}>↓</button>
-                </div>
+              <div className={s.bannerActions}>
+                <button type="button" className={s.iconBtn} disabled={i === 0} onClick={() => move(i, -1)} aria-label="ზემოთ">↑</button>
+                <button type="button" className={s.iconBtn} disabled={i === banners.length - 1} onClick={() => move(i, 1)} aria-label="ქვემოთ">↓</button>
+                <button type="button" className={`${s.switch} ${b.isActive ? s.switchOn : ''}`} onClick={() => toggle(b)} aria-pressed={b.isActive} aria-label="ჩანს" />
+                <button type="button" className={`${s.btnGhost} ${s.btnSm}`} onClick={() => setEditing(b)}>რედაქტირება</button>
+                <button type="button" className={s.iconBtn} onClick={() => remove(b)} aria-label="წაშლა">🗑</button>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* ── Modal ──────────────────────────────────────── */}
-      {showModal && (
-        <div className={s.overlay} onClick={e => { if (e.target === e.currentTarget) closeModal(); }}>
-          <div className={s.modal}>
-            <div className={s.modalHead}>
-              <h2 className={s.modalTitle}>
-                {editingBanner ? 'ბანერის რედაქტირება' : 'ახალი ბანერი'}
-              </h2>
-              <button className={s.closeBtn} onClick={closeModal}>✕</button>
-            </div>
-
-            {/* Upload zone */}
-            <div
-              className={`${s.dropZone} ${dragOver ? s.dropOver : ''}`}
-              onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
-              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onClick={() => fileRef.current?.click()}
-            >
-              {imagePreview ? (
-                <img src={imagePreview} alt="Preview" className={s.dropPreview} />
-              ) : editingBanner?.imageUrl ? (
-                <img src={`${API_BASE}${editingBanner.imageUrl}`} alt="Current" className={s.dropPreview} />
-              ) : (
-                <div className={s.dropPlaceholder}>
-                  <span className={s.dropIcon}>🖼️</span>
-                  <span className={s.dropText}>გადმოიდო ან დააჭირე სურათის ასარჩევად</span>
-                  <span className={s.dropSub}>jpg · png · webp · max 10 MB</span>
-                </div>
-              )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                style={{ display: 'none' }}
-                onChange={e => handleFile(e.target.files[0])}
-              />
-            </div>
-
-            {/* Form fields */}
-            <div className={s.fields}>
-              {[
-                { key: 'title',    label: 'სათაური',       placeholder: 'მაგ. ახალი კოლექცია' },
-                { key: 'subtitle', label: 'ქვესათაური',    placeholder: 'მაგ. 30%-მდე ფასდაკლება' },
-                { key: 'ctaText',  label: 'ღილაკის ტექსტი', placeholder: 'მაგ. შეკვეთა' },
-                { key: 'ctaLink',  label: 'ბმული',          placeholder: 'https://…', type: 'url' },
-              ].map(({ key, label, placeholder, type }) => (
-                <label key={key} className={s.fieldLabel}>
-                  {label}
-                  <input
-                    type={type || 'text'}
-                    className={s.fieldInput}
-                    value={form[key]}
-                    placeholder={placeholder}
-                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                  />
-                </label>
-              ))}
-            </div>
-
-            {modalError && <p className={s.modalError}>{modalError}</p>}
-
-            <div className={s.modalActions}>
-              <button className={s.cancelBtn} onClick={closeModal}>გაუქმება</button>
-              <button className={s.saveBtn} onClick={handleSave} disabled={saving}>
-                {saving ? 'შენახვა…' : 'შენახვა'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {editing && (
+        <BannerForm key={editing === 'new' ? 'new' : editing.id} banner={editing === 'new' ? null : editing} onClose={() => setEditing(null)} onSaved={saved} />
       )}
     </div>
   );

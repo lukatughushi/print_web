@@ -40,9 +40,20 @@ npm run dev            # API on :3000/api, web on :5173
 | POST | `/files` (multipart field `file`) | JWT, stored in GridFS |
 | GET | `/files/:id` | public |
 | DELETE | `/files/:id` | owner or admin |
+| POST | `/orders` | public guest checkout (server prices it; 409 `PRICE_CHANGED`, 400 `INVALID_SIZE`) |
+| GET | `/orders/mine` | JWT (orders with the user's e-mail) |
+| GET / PATCH | `/orders[/:id]` | admin (`?status=&q=`; PATCH `status`, `adminNote`) |
+| GET | `/settings` | public storefront settings (texts, shipping, contacts) |
+| PATCH | `/settings` | admin |
+| GET | `/banners` | public (active, ordered) |
+| GET `/banners/all` · POST · PATCH `/:id` · PATCH `/reorder` · DELETE `/:id` | `/banners…` | admin |
+| GET | `/admin/stats`, `/admin/products`, `/admin/users` | admin |
+| PATCH | `/admin/users/:id/role` | admin |
 | GET | `/health` | public (Render health check) |
 
 Routes require a JWT by default; mark exceptions with `@Public()` and restrict with `@Roles(Role.Admin)`.
+
+The admin panel lives at `/admin` (log in at `/admin/login` with an admin account).
 Socket.IO runs on the same port — connect with `io(API_ORIGIN, { auth: { token } })`.
 
 ## Deployment

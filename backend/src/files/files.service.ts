@@ -57,6 +57,25 @@ export class FilesService implements OnModuleInit {
     };
   }
 
+  /** Stores generated content (e.g. an order's print file) without a request upload. */
+  uploadBuffer(buffer: Buffer, filename: string, contentType: string, ownerId = 'system') {
+    return new Promise<string>((resolve, reject) => {
+      const stream = this.bucket.openUploadStream(filename, {
+        metadata: { ownerId, contentType },
+      });
+      Readable.from(buffer)
+        .pipe(stream)
+        .on('error', reject)
+        .on('finish', () => resolve(stream.id.toString()));
+    });
+  }
+
+  /** Deletes a file by id regardless of owner; missing files are ignored. */
+  async removeById(id?: string | null) {
+    if (!id || !isValidObjectId(id)) return;
+    await this.bucket.delete(new mongo.ObjectId(id)).catch(() => undefined);
+  }
+
   async remove(id: string, user: AuthUser) {
     const file = await this.findFile(id);
     if (user.role !== Role.Admin && file.metadata?.ownerId !== user.id) {

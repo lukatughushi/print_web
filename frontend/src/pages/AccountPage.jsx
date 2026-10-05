@@ -1,9 +1,25 @@
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../lib/api';
 import { useAuth } from '../context/auth-context';
+
+const STATUS_LABELS = {
+  PENDING: 'მიღებულია',
+  PRINTING: 'ბეჭდვაში',
+  READY_FOR_PICKUP: 'მზადაა',
+  SHIPPED: 'გზაშია',
+  COMPLETED: 'ჩაბარებულია',
+  CANCELLED: 'გაუქმებულია',
+};
 
 export default function AccountPage() {
   const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
+  const [orders, setOrders] = useState(null);
+
+  useEffect(() => {
+    api.get('/api/orders/mine').then((r) => setOrders(r.data)).catch(() => setOrders([]));
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -59,6 +75,34 @@ export default function AccountPage() {
             გასვლა
           </button>
         </div>
+      </section>
+
+      <section className="mt-8 rounded-3xl border border-line bg-white p-8 shadow-sm">
+        <h2 className="text-lg font-bold text-navy">ჩემი შეკვეთები</h2>
+        {orders === null && <p className="mt-4 text-ink">იტვირთება…</p>}
+        {orders?.length === 0 && (
+          <p className="mt-4 text-ink">
+            შეკვეთები ჯერ არ გაქვს. <Link to="/shop" className="font-semibold text-coral">მაღაზიაში გადასვლა →</Link>
+          </p>
+        )}
+        {orders?.length > 0 && (
+          <ul className="mt-4 divide-y divide-line">
+            {orders.map((o) => (
+              <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <div>
+                  <div className="font-semibold text-navy">{o.number}</div>
+                  <div className="text-sm text-ink">
+                    {new Date(o.createdAt).toLocaleDateString('ka-GE')} · {o.items.reduce((n, it) => n + it.quantity, 0)} ცალი
+                  </div>
+                </div>
+                <span className="rounded-full bg-coral/10 px-3 py-1 text-sm font-semibold text-coral">
+                  {STATUS_LABELS[o.status] ?? o.status}
+                </span>
+                <span className="font-bold text-navy">{Math.round(o.total)} ₾</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </main>
   );

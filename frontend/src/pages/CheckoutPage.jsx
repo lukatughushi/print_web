@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../lib/api';
+import api, { getErrorMessage } from '../lib/api';
 import useCartStore from '../store/cartStore';
-import { money, shippingFor } from '../lib/catalog';
+import { money, priceOf, shippingFor } from '../lib/catalog';
 import s from './storefront.module.css';
 
 const PAY_OPTS = [
@@ -25,7 +25,12 @@ async function buildDesign(item) {
   } catch {
     // The order still carries the layers; admins can re-create the print file.
   }
-  return { canvasJson: canvas, previewUrl: item.previewUrl || null, printUrl };
+  return {
+    canvasJson: canvas,
+    ...(item.previewUrl ? { previewUrl: item.previewUrl } : {}),
+    ...(printUrl ? { printUrl } : {}),
+    ...(canvas?.model ? { model: canvas.model } : {}),
+  };
 }
 
 async function fetchLiveCatalog() {
@@ -66,9 +71,10 @@ export default function CheckoutPage() {
         unavailableIds.push(it.productId);
         return;
       }
-      if (p.basePrice !== it.basePrice) {
-        changed.push({ name: p.name, from: it.basePrice, to: p.basePrice });
-        updateItem(i, { basePrice: p.basePrice, productName: p.name });
+      const livePrice = priceOf(p);
+      if (livePrice !== it.basePrice) {
+        changed.push({ name: p.name, from: it.basePrice, to: livePrice });
+        updateItem(i, { basePrice: livePrice, productName: p.name });
       }
       // With only one size on offer there is nothing to ask the customer.
       if (p.sizes.length === 1 && it.size !== p.sizes[0]) {
@@ -92,7 +98,8 @@ export default function CheckoutPage() {
   const sizeOptionsFor = (it) => priceCheck.sizesById[it.productId];
   const hasBadSize = (it) => {
     const sizes = sizeOptionsFor(it);
-    return Boolean(sizes) && !sizes.includes(it.size);
+    // Products without sizes (cap, bag, mug) are one size.
+    return Boolean(sizes?.length) && !sizes.includes(it.size);
   };
   const needsSize = items.some(hasBadSize);
 
@@ -126,7 +133,7 @@ export default function CheckoutPage() {
     try {
       const orderItems = await Promise.all(items.map(async (it) => ({
         productId: it.productId,
-        size: it.size || 'M',
+        size: it.size || '',
         quantity: it.quantity || 1,
         ...(it.shirtColor ? { color: it.shirtColor } : {}),
         ...(it.canvasJson ? { design: await buildDesign(it) } : {}),
@@ -138,13 +145,13 @@ export default function CheckoutPage() {
         customerEmail: form.email.trim(),
         address: `${form.city}, ${form.addr}`,
         phone: form.phone.trim(),
-        notes: `გადახდა: ${pay}`,
+        payment: pay,
         // The server refuses the order (409) if its own total differs.
         expectedTotal: total,
       };
 
       const { data } = await api.post('/api/orders', payload);
-      setDone({ orderNo: `PR-${data.id.slice(-6).toUpperCase()}` });
+      setDone({ orderNo: data.number || `PR-${data.id.slice(-6).toUpperCase()}` });
       clear();
     } catch (err) {
       const code = err.response?.data?.code;
@@ -157,7 +164,7 @@ export default function CheckoutPage() {
         await fetchLiveCatalog().then(applyLivePrices).catch(() => {});
         setError('ზოგიერთი ზომა აღარ არის ხელმისაწვდომი. აირჩიე ახალი ზომა.');
       } else {
-        setError(err.response?.data?.error || 'შეკვეთის გაფორმება ვერ მოხერხდა. სცადე ხელახლა.');
+        setError(getErrorMessage(err, 'შეკვეთის გაფორმება ვერ მოხერხდა. სცადე ხელახლა.'));
       }
     } finally {
       setPlacing(false);

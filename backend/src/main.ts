@@ -1,11 +1,14 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { buildCorsOptions } from './config/cors';
 import { SocketIoAdapter } from './realtime/socket-io.adapter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Orders carry the design's print-ready PNG and layers (several MB).
+  app.useBodyParser('json', { limit: '30mb' });
 
   app.setGlobalPrefix('api');
   app.enableCors(buildCorsOptions());

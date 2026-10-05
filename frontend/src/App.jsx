@@ -19,10 +19,10 @@ const loadDesignPage = () => import('./pages/DesignPage');
 const DesignPage = lazy(loadDesignPage);
 const AdminLayout = lazy(() => import('./components/AdminLayout'));
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const AdminOrders = lazy(() => import('./pages/AdminOrders'));
-const AdminProducts = lazy(() => import('./pages/AdminProducts'));
-const AdminUsers = lazy(() => import('./pages/AdminUsers'));
+const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage'));
+const AdminOrders = lazy(() => import('./pages/admin/OrdersPage'));
+const AdminProducts = lazy(() => import('./pages/admin/ProductsPage'));
+const AdminUsers = lazy(() => import('./pages/admin/UsersPage'));
 const BannersPage = lazy(() => import('./pages/admin/BannersPage'));
 const SettingsPage = lazy(() => import('./pages/admin/SettingsPage'));
 
