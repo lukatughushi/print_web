@@ -9,6 +9,7 @@ import { useAuth } from '../context/auth-context';
 import useToast from '../store/toastStore';
 import { priceOf } from '../lib/catalog';
 import ShirtViewer3D from '../components/ShirtViewer3D';
+import { WEBGL_AVAILABLE } from '../lib/webgl';
 import {
   createShirtCanvas,
   renderShirtCanvas,
@@ -946,11 +947,19 @@ export default function DesignPage() {
   const supportsBackPrint =
     BACK_PRINT_MODELS.has(modelType);
 
-  const editSide =
-    supportsBackPrint &&
-    view3d === 'back'
+  // 3D needs WebGL; without it (or if the 3D view crashes) the flat photos
+  // are used, where the Front/Back buttons flip `side` instead of the camera.
+  const [glFailed, setGlFailed] = useState(false);
+  const is3D =
+    activeTab in MODEL_TYPE_BY_TAB && WEBGL_AVAILABLE && !glFailed;
+
+  const editSide = is3D
+    ? supportsBackPrint && view3d === 'back'
       ? 'back'
-      : 'front';
+      : 'front'
+    : side === 'back'
+    ? 'back'
+    : 'front';
 
   const images =
     designs[editSide].images;
@@ -1379,11 +1388,12 @@ export default function DesignPage() {
         c.id === activeTab
     ) ?? CATEGORIES[0];
 
-  const is3D =
-    activeTab in MODEL_TYPE_BY_TAB;
+  // Coloured t-shirt photos exist for the front; other views are tinted.
+  const tshirtPhoto =
+    activeTab === 'tshirt' && side !== 'back';
 
   const currentSrc =
-    activeTab === 'tshirt'
+    tshirtPhoto
       ? TSHIRT_IMAGES[shirtColor] ??
         TSHIRT_IMAGES.white
       : side === 'back' &&
@@ -1392,7 +1402,7 @@ export default function DesignPage() {
       : activeCat.front;
 
   const activeFilter =
-    is3D
+    is3D || tshirtPhoto
       ? 'none'
       : COLOR_FILTERS[
           shirtColor
@@ -3260,6 +3270,7 @@ export default function DesignPage() {
                   }
                   backDesignRev={backDesignRev}
                   printSide={editSide}
+                  onUnavailable={() => setGlFailed(true)}
                 />
               ) : (
                 <img

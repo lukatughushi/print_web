@@ -1620,6 +1620,10 @@ class GLErrorBoundary extends Component {
     };
   }
 
+  componentDidCatch() {
+    this.props.onError?.();
+  }
+
   render() {
     if (
       this.state.failed
@@ -1652,6 +1656,8 @@ export default function ShirtViewer3D({
   backDesignRev = 0,
   // Which print surface the editor overlay (onPrintAreaChange) follows.
   printSide = 'front',
+  // Called when 3D can't be drawn here, so the page can show a flat view.
+  onUnavailable,
 }) {
   const { t } = useI18n();
   const printMeshRef =
@@ -1667,6 +1673,7 @@ export default function ShirtViewer3D({
 
   return (
     <GLErrorBoundary
+      onError={onUnavailable}
       fallback={
         <div
           style={{
