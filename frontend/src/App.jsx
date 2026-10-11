@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import AuthProvider from './context/AuthProvider';
 import Navbar from './components/Navbar';
 import FavoritesSync from './components/FavoritesSync';
+import ScrollToTop from './components/ScrollToTop';
 import Toast from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
@@ -55,6 +56,7 @@ function AppContent() {
       {!isAdmin && <Navbar />}
       <Toast />
       <FavoritesSync />
+      <ScrollToTop />
       <Suspense fallback={<PageLoading />}>
       <Routes>
         <Route path="/" element={<HomePage />} />
