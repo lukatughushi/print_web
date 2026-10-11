@@ -5,11 +5,14 @@ import useCartStore from '../store/cartStore';
 import { CATEGORY_BY_CODE, COLORS, GENDERS, isOnSale, money, priceOf } from '../lib/catalog';
 import { ProductImage } from '../components/ProductCard';
 import s from './storefront.module.css';
+import { useI18n } from '../i18n/i18n-context';
+import { productName, productText } from '../i18n/products';
 
 // Categories the design constructor has a tab for (see DesignPage CATEGORIES).
 const DESIGNABLE = new Set(['TSHIRT', 'POLO', 'LONGSLEEVE', 'POLO_LONGSLEEVE', 'HOODIE', 'ZIP_HOODIE', 'BAG', 'CAP', 'MUG']);
 
 export default function ProductDetailPage() {
+  const { t, lang } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
   const addItem = useCartStore((st) => st.addItem);
@@ -37,14 +40,14 @@ export default function ProductDetailPage() {
     return (
       <main className={s.page}>
         <div className={s.wrapNarrow}>
-          <div className={s.back} onClick={() => navigate('/shop')}>← მაღაზიაში დაბრუნება</div>
-          <div className={s.status}>{error}</div>
+          <div className={s.back} onClick={() => navigate('/shop')}>{t('← მაღაზიაში დაბრუნება')}</div>
+          <div className={s.status}>{t(error)}</div>
         </div>
       </main>
     );
   }
   if (!product) {
-    return <main className={s.page}><div className={s.wrapNarrow}><div className={s.status}>იტვირთება…</div></div></main>;
+    return <main className={s.page}><div className={s.wrapNarrow}><div className={s.status}>{t('იტვირთება…')}</div></div></main>;
   }
 
   const cat = CATEGORY_BY_CODE[product.category];
@@ -69,8 +72,8 @@ export default function ProductDetailPage() {
     <main className={s.page}>
       <div className={s.wrapNarrow}>
         <nav className={s.crumbs}>
-          <Link to="/">მთავარი</Link> / <Link to="/shop">მაღაზია</Link>
-          {cat && <> / <Link to={`/shop?cat=${cat.code}`}>{cat.label}</Link></>}
+          <Link to="/">{t('მთავარი')}</Link> / <Link to="/shop">{t('მაღაზია')}</Link>
+          {cat && <> / <Link to={`/shop?cat=${cat.code}`}>{t(cat.label)}</Link></>}
         </nav>
 
         <div className={s.detailGrid}>
@@ -80,33 +83,33 @@ export default function ProductDetailPage() {
           </div>
 
           <div>
-            <div className={s.kicker}>{cat?.label || product.category}</div>
-            <h1 className={s.detailTitle}>{product.name}</h1>
+            <div className={s.kicker}>{cat?.label ? t(cat.label) : product.category}</div>
+            <h1 className={s.detailTitle}>{productName(product.name, lang)}</h1>
             <div className={s.detailPriceRow}>
               <span className={s.detailPrice}>{money(price * qty, settings.currency)}</span>
               {sale && <span className={s.detailOld}>{money(product.oldPrice * qty, settings.currency)}</span>}
             </div>
 
             <p className={s.detailText}>
-              {product.description || 'DTF ბეჭდვა — არ სკდება და არ ცვივა 50+ რეცხვის შემდეგ.'}
+              {productText(product.description, lang) || t('DTF ბეჭდვა — არ სკდება და არ ცვივა 50+ რეცხვის შემდეგ.')}
             </p>
 
             <dl className={s.specs}>
-              {product.material && <><dt>მასალა</dt><dd>{product.material}</dd></>}
-              {product.gender && <><dt>ვისთვის</dt><dd>{GENDERS[product.gender] || product.gender}</dd></>}
-              <dt>მიწოდება</dt><dd>2–3 სამუშაო დღე</dd>
+              {product.material && <><dt>{t('მასალა')}</dt><dd>{productText(product.material, lang)}</dd></>}
+              {product.gender && <><dt>{t('ვისთვის')}</dt><dd>{GENDERS[product.gender] ? t(GENDERS[product.gender]) : product.gender}</dd></>}
+              <dt>{t('მიწოდება')}</dt><dd>{t('2–3 სამუშაო დღე')}</dd>
             </dl>
 
             {product.colors?.length > 0 && (
               <>
-                <div className={s.fieldLabel}>ფერი: <span className={s.fieldValue}>{COLORS[color]?.name || color}</span></div>
+                <div className={s.fieldLabel}>{t('ფერი:')} <span className={s.fieldValue}>{COLORS[color] ? t(COLORS[color].name) : color}</span></div>
                 <div className={s.colorRow}>
                   {product.colors.map((c) => (
                     <button
                       key={c}
                       type="button"
-                      title={COLORS[c]?.name || c}
-                      aria-label={COLORS[c]?.name || c}
+                      title={COLORS[c] ? t(COLORS[c].name) : c}
+                      aria-label={COLORS[c] ? t(COLORS[c].name) : c}
                       aria-pressed={c === color}
                       className={`${s.colorSwatch} ${c === color ? s.colorSwatchActive : ''}`}
                       style={{ background: COLORS[c]?.hex || c }}
@@ -119,7 +122,7 @@ export default function ProductDetailPage() {
 
             {product.sizes?.length > 0 && (
               <>
-                <div className={s.fieldLabel}>ზომა</div>
+                <div className={s.fieldLabel}>{t('ზომა')}</div>
                 <div className={s.sizeRow}>
                   {product.sizes.map((z) => (
                     <div
@@ -136,17 +139,17 @@ export default function ProductDetailPage() {
               </>
             )}
 
-            <div className={s.fieldLabel}>რაოდენობა</div>
+            <div className={s.fieldLabel}>{t('რაოდენობა')}</div>
             <div className={`${s.qty}`} style={{ marginBottom: 28 }}>
-              <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="კლება">−</button>
+              <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label={t('კლება')}>−</button>
               <span>{qty}</span>
-              <button type="button" onClick={() => setQty((q) => q + 1)} aria-label="მატება">+</button>
+              <button type="button" onClick={() => setQty((q) => q + 1)} aria-label={t('მატება')}>+</button>
             </div>
 
             <div className={s.actions}>
-              <button className={s.btnDark} onClick={addToCart}>კალათაში დამატება</button>
+              <button className={s.btnDark} onClick={addToCart}>{t('კალათაში დამატება')}</button>
               {DESIGNABLE.has(product.category) && (
-                <button className={s.btnOutline} onClick={() => navigate(`/design/${product.id}`)}>დიზაინის შექმნა</button>
+                <button className={s.btnOutline} onClick={() => navigate(`/design/${product.id}`)}>{t('დიზაინის შექმნა')}</button>
               )}
             </div>
           </div>

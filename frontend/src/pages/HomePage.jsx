@@ -18,6 +18,7 @@ import corpSushi from '../assets/corp/sushi.webp';
 import corpVlog from '../assets/corp/vlog-1.webp';
 import corpFestival from '../assets/corp/festival-1.webp';
 import corpDelfi from '../assets/corp/delfi-1.webp';
+import { useI18n } from '../i18n/i18n-context';
 
 
 /* ── Static defaults (overridden by /api/settings) ─────────── */
@@ -61,6 +62,7 @@ const STATS = [
 
 
 export default function HomePage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   /* ── Settings ───────────────────────────────────────────── */
@@ -115,7 +117,7 @@ export default function HomePage() {
     <div className={s.page}>
 
       {settings.announcementActive && settings.announcementText && (
-        <div className={s.announce}>{settings.announcementText}</div>
+        <div className={s.announce}>{t(settings.announcementText)}</div>
       )}
 
       {/* ── Hero ─────────────────────────────────────────── */}
@@ -123,37 +125,37 @@ export default function HomePage() {
         <div className={s.heroGlow} />
         <div className={s.heroInner}>
           <div className={s.heroCopy}>
-            <span className={s.pill}><span className={s.pillBadge}>ახალი</span>ბეჭდვა 1 ცალიდანაც</span>
-            <h1 className={s.heroTitle}>შენი იდეა. <br /><span>ჩვენი ბეჭდვა.</span></h1>
+            <span className={s.pill}><span className={s.pillBadge}>{t('ახალი')}</span>{t('ბეჭდვა 1 ცალიდანაც')}</span>
+            <h1 className={s.heroTitle}>{t('შენი იდეა.')} <br /><span>{t('ჩვენი ბეჭდვა.')}</span></h1>
             <p className={s.heroText}>
-              ატვირთე სურათი, ლოგო ან ტექსტი — დავბეჭდავთ მაისურზე, ჰუდზე, ჩანთაზე, კეპზე ან ჭიქაზე და მოგიტანთ 3 დღეში.
+              {t('ატვირთე სურათი, ლოგო ან ტექსტი — დავბეჭდავთ მაისურზე, ჰუდზე, ჩანთაზე, კეპზე ან ჭიქაზე და მოგიტანთ 3 დღეში.')}
             </p>
             <div className={s.heroCtas}>
               <button type="button" className={`${s.btn} ${s.btnPink} ${s.btnLg}`} onClick={goDesign}>
-                {settings.heroCtaText} →
+                {t(settings.heroCtaText)} →
               </button>
-              <Link to="/shop" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>მზა პროდუქცია</Link>
+              <Link to="/shop" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>{t('მზა პროდუქცია')}</Link>
             </div>
             <div className={s.proof}>
               <div className={s.avatars}>
                 {[corpSushi, corpRoofing, corpVlog].map((src) => <img key={src} src={src} alt="" />)}
               </div>
               <div className={s.proofText}>
-                <b>2 400+</b> დაბეჭდილი შეკვეთა<br />
-                <span className={s.stars}>★★★★★</span> 4.9 შეფასება
+                <b>2 400+</b> {t('დაბეჭდილი შეკვეთა')}<br />
+                <span className={s.stars}>★★★★★</span> {t('4.9 შეფასება')}
               </div>
             </div>
           </div>
           <div className={s.heroArt}>
             <div className={s.heroArtBox}>
-              <img className={s.heroImg} src={heroImg} alt="მაისურები" fetchPriority="high" />
+              <img className={s.heroImg} src={heroImg} alt={t('მაისურები')} fetchPriority="high" />
               <div className={`${s.chip} ${s.chipA}`}>
                 <span className={s.chipIcon}>✓</span>
-                <div><div className={s.chipTitle}>მზადაა 3 დღეში</div><div className={s.chipSub}>მიწოდება კარამდე</div></div>
+                <div><div className={s.chipTitle}>{t('მზადაა 3 დღეში')}</div><div className={s.chipSub}>{t('მიწოდება კარამდე')}</div></div>
               </div>
               <div className={`${s.chip} ${s.chipB}`}>
                 <span className={s.chipIcon}>₾</span>
-                <div><div className={s.chipTitle}>{money(lowest)}-დან</div><div className={s.chipSub}>ფასი ბეჭდვით</div></div>
+                <div><div className={s.chipTitle}>{t('{price}-დან', { price: money(lowest) })}</div><div className={s.chipSub}>{t('ფასი ბეჭდვით')}</div></div>
               </div>
             </div>
           </div>
@@ -163,8 +165,8 @@ export default function HomePage() {
       {/* ── Ticker ───────────────────────────────────────── */}
       <div className={s.ticker} aria-hidden="true">
         <div className={s.tickerTrack}>
-          {[...TICKER, ...TICKER].map((t, i) => (
-            <span key={i} className={s.tickerItem}>{t}<span className={s.tickerStar}>✦</span></span>
+          {[...TICKER, ...TICKER].map((word, i) => (
+            <span key={i} className={s.tickerItem}>{t(word)}<span className={s.tickerStar}>✦</span></span>
           ))}
         </div>
       </div>
@@ -175,21 +177,21 @@ export default function HomePage() {
         <section className={s.section}>
           <div className={s.head}>
             <div className={s.headText}>
-              <span className={s.kicker}>კატეგორიები</span>
-              <h2 className={s.h2}>რაზე დავბეჭდოთ?</h2>
+              <span className={s.kicker}>{t('კატეგორიები')}</span>
+              <h2 className={s.h2}>{t('რაზე დავბეჭდოთ?')}</h2>
             </div>
-            <Link className={s.more} to="/shop">ყველა პროდუქტი →</Link>
+            <Link className={s.more} to="/shop">{t('ყველა პროდუქტი →')}</Link>
           </div>
           <div className={s.cats}>
             {BENTO.map((b) => (
               <Link key={b.ka} to={`/shop?cat=${b.cats[0]}`} className={s.cat}>
                 <span className={s.catMedia}>
-                  <img src={b.img} alt={b.ka} loading="lazy" className={b.photo ? s.catPhoto : ''} />
+                  <img src={b.img} alt={t(b.ka)} loading="lazy" className={b.photo ? s.catPhoto : ''} />
                 </span>
                 <span className={s.catBar}>
                   <span className={s.catText}>
-                    <span className={s.catName}>{b.ka}</span>
-                    <span className={s.catFrom}>{money(tileFrom(b))}-დან</span>
+                    <span className={s.catName}>{t(b.ka)}</span>
+                    <span className={s.catFrom}>{t('{price}-დან', { price: money(tileFrom(b)) })}</span>
                   </span>
                   <span className={s.catArrow}>→</span>
                 </span>
@@ -198,10 +200,10 @@ export default function HomePage() {
             <Link to="/shop" className={`${s.cat} ${s.catAll}`}>
               <span className={s.catAllBody}>
                 <span className={s.catAllNum}>10</span>
-                <span className={s.catAllText}>კატეგორია, 8 ფერი და ზომები XS–XXL</span>
+                <span className={s.catAllText}>{t('კატეგორია, 8 ფერი და ზომები XS–XXL')}</span>
               </span>
               <span className={s.catBar}>
-                <span className={s.catName}>ყველა პროდუქტი</span>
+                <span className={s.catName}>{t('ყველა პროდუქტი')}</span>
                 <span className={s.catArrow}>→</span>
               </span>
             </Link>
@@ -212,21 +214,21 @@ export default function HomePage() {
         <section className={s.section}>
           <div className={s.steps}>
             <div className={s.stepsIntro}>
-              <span className={s.kicker}>როგორ მუშაობს</span>
-              <h2 className={s.h2}>სამი ნაბიჯი შენს პროდუქტამდე</h2>
-              <p className={s.muted}>არ გჭირდება დიზაინერი — კონსტრუქტორში ყველაფერს თვითონ ნახავ, ფასსაც ჩათვლით.</p>
-              <button type="button" className={`${s.btn} ${s.btnNavy}`} onClick={goDesign}>გახსენი კონსტრუქტორი →</button>
+              <span className={s.kicker}>{t('როგორ მუშაობს')}</span>
+              <h2 className={s.h2}>{t('სამი ნაბიჯი შენს პროდუქტამდე')}</h2>
+              <p className={s.muted}>{t('არ გჭირდება დიზაინერი — კონსტრუქტორში ყველაფერს თვითონ ნახავ, ფასსაც ჩათვლით.')}</p>
+              <button type="button" className={`${s.btn} ${s.btnNavy}`} onClick={goDesign}>{t('გახსენი კონსტრუქტორი →')}</button>
             </div>
             <ol className={s.stepList}>
               {STEPS.map((st, i) => (
                 <li key={st.t} className={s.step}>
                   <span className={`${s.stepNum} ${s[`stepNum${i}`]}`}>{i + 1}</span>
                   <div>
-                    <div className={s.stepTitle}>{st.t}</div>
+                    <div className={s.stepTitle}>{t(st.t)}</div>
                     <div className={s.stepText}>
-                      {st.d ?? (freeShip > 0
-                        ? `მიწოდება მთელ საქართველოში, ${money(freeShip)}-დან უფასოდ.`
-                        : 'მიწოდება მთელ საქართველოში.')}
+                      {st.d ? t(st.d) : (freeShip > 0
+                        ? t('მიწოდება მთელ საქართველოში, {price}-დან უფასოდ.', { price: money(freeShip) })
+                        : t('მიწოდება მთელ საქართველოში.'))}
                     </div>
                   </div>
                 </li>
@@ -240,10 +242,10 @@ export default function HomePage() {
           <section className={s.section}>
             <div className={s.head}>
               <div className={s.headText}>
-                <span className={s.kicker}>პოპულარული</span>
-                <h2 className={s.h2}>ყველაზე გაყიდვადი</h2>
+                <span className={s.kicker}>{t('პოპულარული')}</span>
+                <h2 className={s.h2}>{t('ყველაზე გაყიდვადი')}</h2>
               </div>
-              <Link className={s.more} to="/shop">მაღაზიაში გადასვლა →</Link>
+              <Link className={s.more} to="/shop">{t('მაღაზიაში გადასვლა →')}</Link>
             </div>
             <div className={s.products}>
               {popular.map((p) => <ProductCard key={p.id} product={p} currency={settings.currency} />)}
@@ -255,12 +257,12 @@ export default function HomePage() {
         <section className={s.section}>
           <div className={s.corp}>
             <div className={s.corpBody}>
-              <span className={s.kicker}>ბიზნესისთვის</span>
-              <h2 className={s.h2}>გუნდის ფორმა, ლოგოთი — 10 ცალიდან</h2>
-              <p className={s.corpText}>Modern Roofing, Sushi Icons, Ratto Bistro და კიდევ ათობით კომპანია უკვე ჩვენთან ბეჭდავს.</p>
+              <span className={s.kicker}>{t('ბიზნესისთვის')}</span>
+              <h2 className={s.h2}>{t('გუნდის ფორმა, ლოგოთი — 10 ცალიდან')}</h2>
+              <p className={s.corpText}>{t('Modern Roofing, Sushi Icons, Ratto Bistro და კიდევ ათობით კომპანია უკვე ჩვენთან ბეჭდავს.')}</p>
               <div className={s.corpBtns}>
-                <Link to="/corporate#quote" className={`${s.btn} ${s.btnPink}`}>გამოთვალე ფასი →</Link>
-                <Link to="/corporate#work" className={`${s.btn} ${s.btnOutline}`}>ნამუშევრები</Link>
+                <Link to="/corporate#quote" className={`${s.btn} ${s.btnPink}`}>{t('გამოთვალე ფასი →')}</Link>
+                <Link to="/corporate#work" className={`${s.btn} ${s.btnOutline}`}>{t('ნამუშევრები')}</Link>
               </div>
             </div>
             <div className={s.corpMosaic}>
@@ -275,9 +277,9 @@ export default function HomePage() {
         <section className={`${s.section} ${s.stats}`}>
           {STATS.map((st) => (
             <div key={st.n} className={s.stat}>
-              <span className={s.statNum}>{st.n}</span>
-              <span className={s.statTitle}>{st.t}</span>
-              <span className={s.statText}>{st.d}</span>
+              <span className={s.statNum}>{t(st.n)}</span>
+              <span className={s.statTitle}>{t(st.t)}</span>
+              <span className={s.statText}>{t(st.d)}</span>
             </div>
           ))}
         </section>
@@ -285,9 +287,9 @@ export default function HomePage() {
         {/* ── Final CTA ──────────────────────────────────── */}
         <section className={`${s.section} ${s.sectionEnd}`}>
           <div className={s.final}>
-            <h2 className={s.finalTitle}>მზად ხარ? შექმენი პირველი დიზაინი 2 წუთში.</h2>
-            <p className={s.finalText}>რეგისტრაცია არ არის საჭირო. ნახე, როგორ გამოიყურება, სანამ შეუკვეთავ.</p>
-            <button type="button" className={`${s.btn} ${s.btnNavy} ${s.btnXl}`} onClick={goDesign}>დაიწყე ახლა →</button>
+            <h2 className={s.finalTitle}>{t('მზად ხარ? შექმენი პირველი დიზაინი 2 წუთში.')}</h2>
+            <p className={s.finalText}>{t('რეგისტრაცია არ არის საჭირო. ნახე, როგორ გამოიყურება, სანამ შეუკვეთავ.')}</p>
+            <button type="button" className={`${s.btn} ${s.btnNavy} ${s.btnXl}`} onClick={goDesign}>{t('დაიწყე ახლა →')}</button>
           </div>
         </section>
       </main>

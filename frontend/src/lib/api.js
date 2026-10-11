@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { authStorage } from './authStorage';
 import { API_URL } from './config';
+import { translate } from '../i18n/i18n-context';
 
 // Single API client. Request paths include the /api prefix, e.g. api.get('/api/products').
 const api = axios.create({ baseURL: API_URL });
@@ -29,9 +30,10 @@ api.interceptors.response.use(
 /** Extracts a readable message from a NestJS error response. */
 export function getErrorMessage(error, fallback = 'Something went wrong') {
   const message = error?.response?.data?.message;
-  if (Array.isArray(message)) return message.join('. ');
-  if (typeof message === 'string') return message;
-  if (!error?.response) return 'სერვერთან კავშირი ვერ მოხერხდა';
+  // Server messages written in Georgian are translated like any other text.
+  if (Array.isArray(message)) return message.map((m) => translate(m)).join('. ');
+  if (typeof message === 'string') return translate(message);
+  if (!error?.response) return translate('სერვერთან კავშირი ვერ მოხერხდა');
   return fallback;
 }
 

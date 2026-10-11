@@ -11,12 +11,16 @@ import {
 import useCartStore from '../store/cartStore';
 import useFavStore from '../store/favStore';
 import s from './ProductCard.module.css';
+import { useI18n } from '../i18n/i18n-context';
+import { productName } from '../i18n/products';
 
 const MAX_SWATCHES = 6;
 
 // Garment picture for a product in a given colour. Products without their own
 // photo use the category's neutral cut-out, tinted by a masked colour layer.
 export function ProductImage({ product, color, className = '' }) {
+  const { lang } = useI18n();
+  const alt = productName(product.name, lang);
   const cat = CATEGORY_BY_CODE[product.category];
   const own = productImg(product);
   const [failed, setFailed] = useState(false);
@@ -24,7 +28,7 @@ export function ProductImage({ product, color, className = '' }) {
   if (own && !failed) {
     return (
       <div className={`${s.media} ${className}`}>
-        <img className={s.photo} src={own} alt={product.name} loading="lazy" onError={() => setFailed(true)} />
+        <img className={s.photo} src={own} alt={alt} loading="lazy" onError={() => setFailed(true)} />
       </div>
     );
   }
@@ -39,7 +43,7 @@ export function ProductImage({ product, color, className = '' }) {
         <img
           className={`${s.cutout} ${cat?.tint && color === 'white' ? s.white : ''}`}
           src={img}
-          alt={product.name}
+          alt={alt}
           loading="lazy"
         />
       )}
@@ -75,6 +79,7 @@ function HeartIcon({ filled }) {
 }
 
 export default function ProductCard({ product, currency = '₾' }) {
+  const { t, lang } = useI18n();
   const colors = product.colors?.length ? product.colors : ['white'];
   const [color, setColor] = useState(() => colors[defaultColorIndex(product.id, colors.length)]);
   const [added, setAdded] = useState(false);
@@ -108,7 +113,7 @@ export default function ProductCard({ product, currency = '₾' }) {
       <Link to={href} className={s.tile} tabIndex={-1} aria-hidden="true">
         <ProductImage product={product} color={color} />
         <span className={s.badges}>
-          {product.newArrival && <span className={s.badge}>ახალი</span>}
+          {product.newArrival && <span className={s.badge}>{t('ახალი')}</span>}
           {sale && <span className={`${s.badge} ${s.badgeSale}`}>-{discount}%</span>}
         </span>
       </Link>
@@ -116,23 +121,23 @@ export default function ProductCard({ product, currency = '₾' }) {
         type="button"
         className={`${s.fav} ${fav ? s.favOn : ''}`}
         onClick={() => toggleFav(product.id)}
-        aria-label={fav ? 'რჩეულებიდან ამოღება' : 'რჩეულებში დამატება'}
+        aria-label={fav ? t('რჩეულებიდან ამოღება') : t('რჩეულებში დამატება')}
         aria-pressed={fav}
       >
         <HeartIcon filled={fav} />
       </button>
 
       <div className={s.body}>
-        <div className={s.cat}>{cat?.label || product.category}</div>
-        <Link to={href} className={s.name} title={product.name}>{product.name}</Link>
+        <div className={s.cat}>{cat?.label ? t(cat.label) : product.category}</div>
+        <Link to={href} className={s.name} title={productName(product.name, lang)}>{productName(product.name, lang)}</Link>
         {colors.length > 1 && (
           <div className={s.swatches}>
             {colors.slice(0, MAX_SWATCHES).map((c) => (
               <button
                 key={c}
                 type="button"
-                title={COLORS[c]?.name || c}
-                aria-label={COLORS[c]?.name || c}
+                title={COLORS[c] ? t(COLORS[c].name) : c}
+                aria-label={COLORS[c] ? t(COLORS[c].name) : c}
                 aria-pressed={c === color}
                 className={`${s.swatch} ${c === color ? s.swatchActive : ''}`}
                 style={{ background: COLORS[c]?.hex || c }}
@@ -149,8 +154,8 @@ export default function ProductCard({ product, currency = '₾' }) {
             type="button"
             className={`${s.add} ${added ? s.added : ''}`}
             onClick={addToCart}
-            aria-label="კალათაში დამატება"
-            title="კალათაში დამატება"
+            aria-label={t('კალათაში დამატება')}
+            title={t('კალათაში დამატება')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d={added ? 'M5 12l5 5 9-10' : 'M12 5v14M5 12h14'} />

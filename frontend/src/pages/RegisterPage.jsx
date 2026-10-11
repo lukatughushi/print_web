@@ -3,8 +3,10 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthCard, Field, FormError, SubmitButton } from '../components/AuthCard';
 import { useAuth } from '../context/auth-context';
 import { getErrorMessage } from '../lib/api';
+import { useI18n } from '../i18n/i18n-context';
 
 export default function RegisterPage() {
+  const { t } = useI18n();
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,16 +24,16 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
     // Mirrors the backend RegisterDto rules so users get instant feedback.
-    if (form.name.trim().length < 2) return setError('სახელი უნდა შეიცავდეს მინიმუმ 2 სიმბოლოს');
-    if (form.password.length < 8) return setError('პაროლი უნდა შეიცავდეს მინიმუმ 8 სიმბოლოს');
-    if (form.password !== form.confirm) return setError('პაროლები არ ემთხვევა');
+    if (form.name.trim().length < 2) return setError(t('სახელი უნდა შეიცავდეს მინიმუმ 2 სიმბოლოს'));
+    if (form.password.length < 8) return setError(t('პაროლი უნდა შეიცავდეს მინიმუმ 8 სიმბოლოს'));
+    if (form.password !== form.confirm) return setError(t('პაროლები არ ემთხვევა'));
 
     setLoading(true);
     try {
       await register({ name: form.name.trim(), email: form.email, password: form.password });
       navigate(from, { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err, 'რეგისტრაცია ვერ მოხერხდა'));
+      setError(getErrorMessage(err, t('რეგისტრაცია ვერ მოხერხდა')));
     } finally {
       setLoading(false);
     }
@@ -39,28 +41,28 @@ export default function RegisterPage() {
 
   return (
     <AuthCard
-      title="რეგისტრაცია"
-      subtitle="შექმენი ანგარიში"
+      title={t('რეგისტრაცია')}
+      subtitle={t('შექმენი ანგარიში')}
       footer={
         <>
-          უკვე გაქვს ანგარიში?{' '}
+          {t('უკვე გაქვს ანგარიში?')}{' '}
           <Link to="/login" state={location.state} className="font-semibold text-coral hover:text-navy!">
-            შესვლა
+            {t('შესვლა')}
           </Link>
         </>
       }
     >
       <form onSubmit={handleSubmit} noValidate>
         <FormError message={error} />
-        <Field label="სახელი" id="name" name="name" autoComplete="name"
+        <Field label={t('სახელი')} id="name" name="name" autoComplete="name"
           value={form.name} onChange={update} required autoFocus />
-        <Field label="ელ-ფოსტა" id="email" name="email" type="email" autoComplete="email"
+        <Field label={t('ელ-ფოსტა')} id="email" name="email" type="email" autoComplete="email"
           value={form.email} onChange={update} required />
-        <Field label="პაროლი" id="password" name="password" type="password" autoComplete="new-password"
+        <Field label={t('პაროლი')} id="password" name="password" type="password" autoComplete="new-password"
           value={form.password} onChange={update} required minLength={8} />
-        <Field label="გაიმეორე პაროლი" id="confirm" name="confirm" type="password" autoComplete="new-password"
+        <Field label={t('გაიმეორე პაროლი')} id="confirm" name="confirm" type="password" autoComplete="new-password"
           value={form.confirm} onChange={update} required />
-        <SubmitButton loading={loading}>რეგისტრაცია</SubmitButton>
+        <SubmitButton loading={loading}>{t('რეგისტრაცია')}</SubmitButton>
       </form>
     </AuthCard>
   );

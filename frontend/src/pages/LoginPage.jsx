@@ -3,8 +3,10 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthCard, Field, FormError, SubmitButton } from '../components/AuthCard';
 import { useAuth } from '../context/auth-context';
 import { getErrorMessage } from '../lib/api';
+import { useI18n } from '../i18n/i18n-context';
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,7 +29,7 @@ export default function LoginPage() {
       await login(form.email, form.password);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err, 'შესვლა ვერ მოხერხდა'));
+      setError(getErrorMessage(err, t('შესვლა ვერ მოხერხდა')));
     } finally {
       setLoading(false);
     }
@@ -35,24 +37,24 @@ export default function LoginPage() {
 
   return (
     <AuthCard
-      title="შესვლა"
-      subtitle="შედი შენს ანგარიშზე"
+      title={t('შესვლა')}
+      subtitle={t('შედი შენს ანგარიშზე')}
       footer={
         <>
-          არ გაქვს ანგარიში?{' '}
+          {t('არ გაქვს ანგარიში?')}{' '}
           <Link to="/register" state={location.state} className="font-semibold text-coral hover:text-navy!">
-            რეგისტრაცია
+            {t('რეგისტრაცია')}
           </Link>
         </>
       }
     >
       <form onSubmit={handleSubmit} noValidate>
         <FormError message={error} />
-        <Field label="ელ-ფოსტა" id="email" name="email" type="email" autoComplete="email"
+        <Field label={t('ელ-ფოსტა')} id="email" name="email" type="email" autoComplete="email"
           value={form.email} onChange={update} required autoFocus />
-        <Field label="პაროლი" id="password" name="password" type="password" autoComplete="current-password"
+        <Field label={t('პაროლი')} id="password" name="password" type="password" autoComplete="current-password"
           value={form.password} onChange={update} required />
-        <SubmitButton loading={loading}>შესვლა</SubmitButton>
+        <SubmitButton loading={loading}>{t('შესვლა')}</SubmitButton>
       </form>
     </AuthCard>
   );

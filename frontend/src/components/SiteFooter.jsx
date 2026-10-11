@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import logo from '../assets/prenta/logo_prenta.webp';
 import s from './SiteFooter.module.css';
+import { useI18n } from '../i18n/i18n-context';
 
 const DEFAULTS = {
   contactPhone: '+995 555 12 34 56',
@@ -9,6 +10,7 @@ const DEFAULTS = {
 };
 
 export default function SiteFooter({ settings = {} }) {
+  const { t } = useI18n();
   const info = { ...DEFAULTS, ...settings };
   return (
     <footer className={s.footer}>
@@ -18,34 +20,34 @@ export default function SiteFooter({ settings = {} }) {
             <img src={logo} alt="" />
             <span>PRENTA</span>
           </div>
-          <span>{info.contactAddress}</span>
+          <span>{t(info.contactAddress)}</span>
           <span>{info.contactPhone}</span>
           <span>{info.contactEmail}</span>
         </div>
         <div className={s.col}>
-          <span className={s.colTitle}>პროდუქცია</span>
-          <Link to="/shop?cat=TSHIRT,POLO,LONGSLEEVE,POLO_LONGSLEEVE">მაისურები და პოლოები</Link>
-          <Link to="/shop?cat=HOODIE,ZIP_HOODIE,BOMBER">ჰუდები და ბომბერები</Link>
-          <Link to="/shop?cat=BAG,CAP">ჩანთები და კეპები</Link>
-          <Link to="/shop?cat=MUG">ჭიქები</Link>
+          <span className={s.colTitle}>{t('პროდუქცია')}</span>
+          <Link to="/shop?cat=TSHIRT,POLO,LONGSLEEVE,POLO_LONGSLEEVE">{t('მაისურები და პოლოები')}</Link>
+          <Link to="/shop?cat=HOODIE,ZIP_HOODIE,BOMBER">{t('ჰუდები და ბომბერები')}</Link>
+          <Link to="/shop?cat=BAG,CAP">{t('ჩანთები და კეპები')}</Link>
+          <Link to="/shop?cat=MUG">{t('ჭიქები')}</Link>
         </div>
         <div className={s.col}>
-          <span className={s.colTitle}>სერვისი</span>
-          <Link to="/shop">მაღაზია</Link>
-          <Link to="/corporate">კორპორატიული შეკვეთები</Link>
-          <span>DTF ბეჭდვა</span>
+          <span className={s.colTitle}>{t('სერვისი')}</span>
+          <Link to="/shop">{t('მაღაზია')}</Link>
+          <Link to="/corporate">{t('კორპორატიული შეკვეთები')}</Link>
+          <span>{t('DTF ბეჭდვა')}</span>
         </div>
         <div className={s.col}>
-          <span className={s.colTitle}>დახმარება</span>
-          <span>მიწოდება და ვადები</span>
-          <span>დაბრუნება</span>
-          <span>ხშირად დასმული კითხვები</span>
+          <span className={s.colTitle}>{t('დახმარება')}</span>
+          <span>{t('მიწოდება და ვადები')}</span>
+          <span>{t('დაბრუნება')}</span>
+          <span>{t('ხშირად დასმული კითხვები')}</span>
         </div>
       </div>
       <div className={s.bar}>
         <div className={s.barInner}>
-          <span>© {new Date().getFullYear()} Prenta · ყველა უფლება დაცულია</span>
-          <span>გადახდა: ბარათით, კურიერთან ან განვადებით</span>
+          <span>© {new Date().getFullYear()} Prenta · {t('ყველა უფლება დაცულია')}</span>
+          <span>{t('გადახდა: ბარათით, კურიერთან ან განვადებით')}</span>
         </div>
       </div>
     </footer>

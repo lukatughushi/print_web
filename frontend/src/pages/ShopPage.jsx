@@ -14,6 +14,8 @@ import SiteFooter from '../components/SiteFooter';
 import useFavStore from '../store/favStore';
 import corpImg from '../assets/prenta/main_hoode.webp';
 import s from './ShopPage.module.css';
+import { useI18n } from '../i18n/i18n-context';
+import { productName } from '../i18n/products';
 
 // Layout follows src/acrhi/Prenta Shop.dc.html.
 
@@ -50,7 +52,7 @@ function readFilters(params) {
 }
 
 // Does product `p` pass every filter except the facet named in `skip`?
-function matches(p, f, favIds, skip) {
+function matches(p, f, favIds, skip, lang = 'ka') {
   if (skip !== 'cat' && f.cat.length && !f.cat.includes(p.category)) return false;
   if (skip !== 'color' && f.color.length && !(p.colors || []).some((c) => f.color.includes(c))) return false;
   if (skip !== 'size' && f.size.length && !sizesOf(p).some((z) => f.size.includes(z))) return false;
@@ -61,7 +63,8 @@ function matches(p, f, favIds, skip) {
   if (f.q) {
     const q = f.q.toLowerCase();
     const cat = CATEGORY_BY_CODE[p.category];
-    const hay = `${p.name} ${cat?.label || ''} ${cat?.en || ''} ${p.material || ''}`.toLowerCase();
+    // Georgian and the shown language both match, whichever the customer types.
+    const hay = `${p.name} ${productName(p.name, lang)} ${cat?.label || ''} ${cat?.en || ''} ${p.material || ''}`.toLowerCase();
     if (!hay.includes(q)) return false;
   }
   return true;
@@ -131,6 +134,7 @@ function SearchIcon() {
 /* ── Page ───────────────────────────────────────────────── */
 
 export default function ShopPage() {
+  const { t, lang } = useI18n();
   const [params, setParams] = useSearchParams();
   const { hash } = useLocation();
   const favIds = useFavStore((st) => st.ids);
@@ -194,9 +198,9 @@ export default function ShopPage() {
 
   const catCounts = useMemo(() => {
     const map = {};
-    all.forEach((p) => { if (matches(p, f, favIds, 'cat')) map[p.category] = (map[p.category] || 0) + 1; });
+    all.forEach((p) => { if (matches(p, f, favIds, 'cat', lang)) map[p.category] = (map[p.category] || 0) + 1; });
     return map;
-  }, [all, f, favIds]);
+  }, [all, f, favIds, lang]);
 
   const availableSizes = useMemo(() => {
     const set = new Set(all.flatMap(sizesOf));
@@ -208,7 +212,7 @@ export default function ShopPage() {
     return Object.keys(COLORS).filter((c) => set.has(c));
   }, [all]);
 
-  const results = useMemo(() => sortProducts(all.filter((p) => matches(p, f, favIds)), f.sort), [all, f, favIds]);
+  const results = useMemo(() => sortProducts(all.filter((p) => matches(p, f, favIds, undefined, lang)), f.sort), [all, f, favIds, lang]);
 
   const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const page = Math.min(f.page, pageCount);
@@ -237,11 +241,11 @@ export default function ShopPage() {
         <div className={s.head}>
           <div>
             <nav className={s.crumbs} aria-label="breadcrumb">
-              <Link to="/">მთავარი</Link><span>/</span><span className={s.crumbCur}>მაღაზია</span>
+              <Link to="/">{t('მთავარი')}</Link><span>/</span><span className={s.crumbCur}>{t('მაღაზია')}</span>
             </nav>
-            <h2 className={s.h2}>{title}</h2>
+            <h2 className={s.h2}>{t(title)}</h2>
           </div>
-          {products && <span className={s.total}>{results.length} პროდუქტი</span>}
+          {products && <span className={s.total}>{t('{count} პროდუქტი', { count: results.length })}</span>}
         </div>
 
         <div className={s.catStrip}>
@@ -256,7 +260,7 @@ export default function ShopPage() {
                 <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" />
               </svg>
             </span>
-            <span className={s.catLabel}>ყველა</span>
+            <span className={s.catLabel}>{t('ყველა')}</span>
           </button>
           {CATEGORIES.map((c) => (
             <button
@@ -268,7 +272,7 @@ export default function ShopPage() {
               <span className={s.catImg}>
                 <ProductImage product={{ category: c.code, name: c.label }} color={c.swatch} className={s.catPic} />
               </span>
-              <span className={s.catLabel}>{c.label}</span>
+              <span className={s.catLabel}>{t(c.label)}</span>
             </button>
           ))}
         </div>
@@ -276,23 +280,23 @@ export default function ShopPage() {
         <div className={s.layout}>
           {drawerOpen && <div className={s.backdrop} onClick={() => setDrawerOpen(false)} aria-hidden="true" />}
 
-          <aside className={`${s.aside} ${drawerOpen ? s.asideOpen : ''}`} aria-label="ფილტრები">
+          <aside className={`${s.aside} ${drawerOpen ? s.asideOpen : ''}`} aria-label={t('ფილტრები')}>
             <div className={s.asideHead}>
-              <span className={s.asideTitle}>ფილტრები</span>
+              <span className={s.asideTitle}>{t('ფილტრები')}</span>
               <div className={s.asideActions}>
-                {chips.length > 0 && <button type="button" className={s.clearBtn} onClick={clearAll}>გასუფთავება</button>}
-                <button type="button" className={s.closeBtn} onClick={() => setDrawerOpen(false)} aria-label="დახურვა">×</button>
+                {chips.length > 0 && <button type="button" className={s.clearBtn} onClick={clearAll}>{t('გასუფთავება')}</button>}
+                <button type="button" className={s.closeBtn} onClick={() => setDrawerOpen(false)} aria-label={t('დახურვა')}>×</button>
               </div>
             </div>
 
             <div className={s.group}>
-              <div className={s.groupTitle}>კატეგორია</div>
+              <div className={s.groupTitle}>{t('კატეგორია')}</div>
               {CATEGORIES.map((c) => {
                 const on = f.cat.includes(c.code);
                 return (
                   <button key={c.code} type="button" className={s.checkRow} onClick={() => toggle('cat', c.code)} aria-pressed={on}>
                     <span className={`${s.box} ${on ? s.boxOn : ''}`}>{on ? '✓' : ''}</span>
-                    <span className={s.checkLabel}>{c.label}</span>
+                    <span className={s.checkLabel}>{t(c.label)}</span>
                     <span className={s.count}>{catCounts[c.code] || 0}</span>
                   </button>
                 );
@@ -301,8 +305,8 @@ export default function ShopPage() {
 
             <div className={s.group}>
               <div className={s.groupHead}>
-                <span className={s.groupTitle}>ფასი</span>
-                <span className={s.priceLabel}>{maxPrice >= priceMax ? 'ყველა' : `≤ ${maxPrice} ₾`}</span>
+                <span className={s.groupTitle}>{t('ფასი')}</span>
+                <span className={s.priceLabel}>{maxPrice >= priceMax ? t('ყველა') : `≤ ${maxPrice} ₾`}</span>
               </div>
               <input
                 type="range"
@@ -315,14 +319,14 @@ export default function ShopPage() {
                   const v = Number(e.target.value);
                   update({ max: v >= priceMax ? null : v });
                 }}
-                aria-label="მაქსიმალური ფასი"
+                aria-label={t('მაქსიმალური ფასი')}
               />
               <div className={s.rangeEnds}><span>{priceMin} ₾</span><span>{priceMax} ₾</span></div>
             </div>
 
             {availableColors.length > 0 && (
               <div className={s.group}>
-                <div className={s.groupTitle}>ფერი</div>
+                <div className={s.groupTitle}>{t('ფერი')}</div>
                 <div className={s.colors}>
                   {availableColors.map((c) => {
                     const on = f.color.includes(c);
@@ -332,8 +336,8 @@ export default function ShopPage() {
                         type="button"
                         className={`${s.colorBtn} ${on ? s.colorBtnOn : ''}`}
                         onClick={() => toggle('color', c)}
-                        title={COLORS[c].name}
-                        aria-label={COLORS[c].name}
+                        title={t(COLORS[c].name)}
+                        aria-label={t(COLORS[c].name)}
                         aria-pressed={on}
                       >
                         <span style={{ background: COLORS[c].hex }} />
@@ -346,13 +350,13 @@ export default function ShopPage() {
 
             {availableSizes.length > 0 && (
               <div className={s.group}>
-                <div className={s.groupTitle}>ზომა</div>
+                <div className={s.groupTitle}>{t('ზომა')}</div>
                 <div className={s.sizes}>
                   {availableSizes.map((z) => {
                     const on = f.size.includes(z);
                     return (
                       <button key={z} type="button" className={`${s.sizeBtn} ${on ? s.sizeBtnOn : ''}`} onClick={() => toggle('size', z)} aria-pressed={on}>
-                        {sizeLabel(z)}
+                        {t(sizeLabel(z))}
                       </button>
                     );
                   })}
@@ -361,14 +365,14 @@ export default function ShopPage() {
             )}
 
             <div className={s.group}>
-              <div className={s.groupTitle}>სხვა</div>
-              <Toggle on={f.sale} label="ფასდაკლებით" onChange={() => update({ sale: !f.sale })} />
-              <Toggle on={f.fresh} label="მხოლოდ ახალი" onChange={() => update({ new: !f.fresh })} />
-              <Toggle on={f.fav} label={`რჩეულები (${favIds.length})`} onChange={() => update({ fav: !f.fav })} />
+              <div className={s.groupTitle}>{t('სხვა')}</div>
+              <Toggle on={f.sale} label={t('ფასდაკლებით')} onChange={() => update({ sale: !f.sale })} />
+              <Toggle on={f.fresh} label={t('მხოლოდ ახალი')} onChange={() => update({ new: !f.fresh })} />
+              <Toggle on={f.fav} label={`${t('რჩეულები')} (${favIds.length})`} onChange={() => update({ fav: !f.fav })} />
             </div>
 
             <button type="button" className={s.showBtn} onClick={() => setDrawerOpen(false)}>
-              ნახე {results.length} პროდუქტი
+              {t('ნახე {count} პროდუქტი', { count: results.length })}
             </button>
           </aside>
 
@@ -380,19 +384,19 @@ export default function ShopPage() {
                   type="search"
                   value={f.q}
                   onChange={(e) => update({ q: e.target.value })}
-                  placeholder="მოძებნე დიზაინი ან პროდუქტი…"
-                  aria-label="ძიება"
+                  placeholder={t('მოძებნე დიზაინი ან პროდუქტი…')}
+                  aria-label={t('ძიება')}
                 />
               </label>
               <button type="button" className={s.filterBtn} onClick={() => setDrawerOpen(true)}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
-                ფილტრები
+                {t('ფილტრები')}
                 {chips.length > 0 && <span className={s.filterCount}>{chips.length}</span>}
               </button>
               <label className={s.sortPill}>
-                <span>დალაგება:</span>
+                <span>{t('დალაგება:')}</span>
                 <select value={f.sort} onChange={(e) => update({ sort: e.target.value === 'pop' ? '' : e.target.value })}>
-                  {SORTS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+                  {SORTS.map((o) => <option key={o.key} value={o.key}>{t(o.label)}</option>)}
                 </select>
               </label>
             </div>
@@ -401,7 +405,7 @@ export default function ShopPage() {
               <div className={s.chips}>
                 {chips.map((c) => (
                   <button key={c.key} type="button" className={s.chip} onClick={c.clear}>
-                    {c.label}<span aria-hidden="true">×</span>
+                    {t(c.label)}<span aria-hidden="true">×</span>
                   </button>
                 ))}
               </div>
@@ -415,17 +419,17 @@ export default function ShopPage() {
 
             {products && results.length === 0 && f.fav && favIds.length === 0 && (
               <div className={s.empty}>
-                <div className={s.emptyTitle}>რჩეულები ჯერ არ გაქვს</div>
-                <div className={s.emptyText}>პროდუქტის ბარათზე ♡ დააჭირე — აქ შეინახება.</div>
-                <button type="button" className={s.emptyBtn} onClick={clearAll}>ყველა პროდუქტი</button>
+                <div className={s.emptyTitle}>{t('რჩეულები ჯერ არ გაქვს')}</div>
+                <div className={s.emptyText}>{t('პროდუქტის ბარათზე ♡ დააჭირე — აქ შეინახება.')}</div>
+                <button type="button" className={s.emptyBtn} onClick={clearAll}>{t('ყველა პროდუქტი')}</button>
               </div>
             )}
 
             {products && results.length === 0 && !(f.fav && favIds.length === 0) && (
               <div className={s.empty}>
-                <div className={s.emptyTitle}>ვერაფერი მოიძებნა</div>
-                <div className={s.emptyText}>სცადე ფილტრების შეცვლა</div>
-                <button type="button" className={s.emptyBtn} onClick={clearAll}>ფილტრების გასუფთავება</button>
+                <div className={s.emptyTitle}>{t('ვერაფერი მოიძებნა')}</div>
+                <div className={s.emptyText}>{t('სცადე ფილტრების შეცვლა')}</div>
+                <button type="button" className={s.emptyBtn} onClick={clearAll}>{t('ფილტრების გასუფთავება')}</button>
               </div>
             )}
 
@@ -436,8 +440,8 @@ export default function ShopPage() {
             )}
 
             {pageCount > 1 && (
-              <nav className={s.pager} aria-label="გვერდები">
-                <button type="button" className={s.pageArrow} onClick={() => goPage(page - 1)} disabled={page === 1} aria-label="წინა გვერდი">←</button>
+              <nav className={s.pager} aria-label={t('გვერდები')}>
+                <button type="button" className={s.pageArrow} onClick={() => goPage(page - 1)} disabled={page === 1} aria-label={t('წინა გვერდი')}>←</button>
                 {pageList(page, pageCount).map((n) => (typeof n === 'string'
                   ? <span key={n} className={s.pageGap}>…</span>
                   : (
@@ -451,7 +455,7 @@ export default function ShopPage() {
                       {n}
                     </button>
                   )))}
-                <button type="button" className={s.pageArrow} onClick={() => goPage(page + 1)} disabled={page === pageCount} aria-label="შემდეგი გვერდი">→</button>
+                <button type="button" className={s.pageArrow} onClick={() => goPage(page + 1)} disabled={page === pageCount} aria-label={t('შემდეგი გვერდი')}>→</button>
               </nav>
             )}
           </div>
@@ -462,10 +466,10 @@ export default function ShopPage() {
       <section id="corporate" className={s.corpWrap}>
         <div className={s.corp}>
           <div className={s.corpBody}>
-            <span className={s.eyebrow}>კორპორატიული შეკვეთები</span>
-            <h3 className={s.corpTitle}>გუნდისთვის, ღონისძიებისთვის, ბრენდისთვის</h3>
-            <p className={s.corpText}>10 ცალიდან — ფასდაკლება, ერთიანი დიზაინი და ზომების მიხედვით დაშლილი შეკვეთა.</p>
-            <Link to="/corporate" className={s.ctaPrimary}>გამოთვალე ფასი →</Link>
+            <span className={s.eyebrow}>{t('კორპორატიული შეკვეთები')}</span>
+            <h3 className={s.corpTitle}>{t('გუნდისთვის, ღონისძიებისთვის, ბრენდისთვის')}</h3>
+            <p className={s.corpText}>{t('10 ცალიდან — ფასდაკლება, ერთიანი დიზაინი და ზომების მიხედვით დაშლილი შეკვეთა.')}</p>
+            <Link to="/corporate" className={s.ctaPrimary}>{t('გამოთვალე ფასი →')}</Link>
           </div>
           <div className={s.corpArt}><img src={corpImg} alt="" /></div>
         </div>

@@ -38,6 +38,7 @@ import manGrey from '../assets/mans_tshirts/man_grey.png';
 import manRed from '../assets/mans_tshirts/man_red.png';
 import manBlue from '../assets/mans_tshirts/man_blue.png';
 import manGreen from '../assets/mans_tshirts/man_green.png';
+import { useI18n } from '../i18n/i18n-context';
 
 const TSHIRT_IMAGES = {
   white: manWhite,
@@ -798,6 +799,7 @@ function TextItem({
 ═══════════════════════════════════════════════════════════ */
 
 export default function DesignPage() {
+  const { t, locale } = useI18n();
   const { productId } =
     useParams();
 
@@ -1306,10 +1308,16 @@ export default function DesignPage() {
           x: clampPos(item.x + delta[0] * step),
           y: clampPos(item.y + delta[1] * step),
         });
-        const img = images.find((item) => item.id === selectedId);
-        const txt = textObjects.find((item) => item.id === selectedId);
-        if (img) updateImage(img.id, move(img));
-        else if (txt) updateText(txt.id, move(txt));
+        const nudge = (list) => list.map((item) => (item.id === selectedId ? { ...item, ...move(item) } : item));
+        if (images.some((item) => item.id === selectedId)) {
+          const next = nudge(images);
+          setImages(next);
+          saveHistory(next, textObjects);
+        } else if (textObjects.some((item) => item.id === selectedId)) {
+          const next = nudge(textObjects);
+          setTextObjects(next);
+          saveHistory(images, next);
+        }
       }
     };
 
@@ -1571,7 +1579,7 @@ export default function DesignPage() {
     const text =
       (!selectedText &&
         textInput.trim()) ||
-      'ტექსტი';
+      t('ტექსტი');
 
     const id = newId();
 
@@ -2005,8 +2013,8 @@ export default function DesignPage() {
 
   /* ── Account: saved designs and image library ─────────── */
 
-  const tabLabel = (id) => CATEGORIES.find((c) => c.id === id)?.label ?? 'დიზაინი';
-  const defaultDesignName = (id) => `${tabLabel(id)} — ${new Date().toLocaleDateString('ka-GE')}`;
+  const tabLabel = (id) => CATEGORIES.find((c) => c.id === id)?.label ?? t('დიზაინი');
+  const defaultDesignName = (id) => `${t(tabLabel(id))} — ${new Date().toLocaleDateString(locale)}`;
 
   // Opens a saved design from the account (?design=<id>).
   useEffect(() => {
@@ -2028,9 +2036,9 @@ export default function DesignPage() {
         if (data.color) setShirtColor(data.color);
         setSavedDesign({ id: data.id, name: data.name, tab: data.tab });
         setSelectedId(null);
-        toast(`„${data.name}“ გაიხსნა`);
+        toast(t('„{name}“ გაიხსნა', { name: data.name }));
       } catch (err) {
-        toast(getErrorMessage(err, 'დიზაინი ვერ ჩაიტვირთა'));
+        toast(getErrorMessage(err, t('დიზაინი ვერ ჩაიტვირთა')));
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2074,13 +2082,13 @@ export default function DesignPage() {
   function addLibraryImage(media) {
     toDataUrl(media.url)
       .then((src) => addImageSrc(src, media.name))
-      .catch(() => toast('სურათი ვერ ჩაიტვირთა'));
+      .catch(() => toast(t('სურათი ვერ ჩაიტვირთა')));
   }
 
   function openSave() {
     const hasBack = supportsBackPrint && (backDesign.images.length > 0 || backDesign.textObjects.length > 0);
     if (!frontDesign.images.length && !frontDesign.textObjects.length && !hasBack) {
-      toast('ჯერ დაამატე სურათი ან ტექსტი');
+      toast(t('ჯერ დაამატე სურათი ან ტექსტი'));
       return;
     }
     if (!user) {
@@ -2089,10 +2097,10 @@ export default function DesignPage() {
           productId: product?.id, tab: activeTab, color: shirtColor, design: designs,
         }));
       } catch {
-        toast('დიზაინის შესანახად ჯერ შედი ანგარიშზე');
+        toast(t('დიზაინის შესანახად ჯერ შედი ანგარიშზე'));
         return;
       }
-      toast('დიზაინის შესანახად შედი ანგარიშზე');
+      toast(t('დიზაინის შესანახად შედი ანგარიშზე'));
       navigate('/login', { state: { from: location } });
       return;
     }
@@ -2104,7 +2112,7 @@ export default function DesignPage() {
   async function submitSave(asNew) {
     const name = saveDialog?.name.trim();
     if (!name) {
-      setSaveError('დაარქვი სახელი');
+      setSaveError(t('დაარქვი სახელი'));
       return;
     }
     setSaving(true);
@@ -2135,9 +2143,9 @@ export default function DesignPage() {
       setSearchParams({ design: data.id }, { replace: true });
       setSaveDialog(null);
       setMyMedia(null); // its images are now in the library
-      toast(current ? 'დიზაინი განახლდა' : 'დიზაინი შენახულია — ანგარიში → დიზაინები');
+      toast(current ? t('დიზაინი განახლდა') : t('დიზაინი შენახულია — ანგარიში → დიზაინები'));
     } catch (err) {
-      setSaveError(getErrorMessage(err, 'შენახვა ვერ მოხერხდა'));
+      setSaveError(getErrorMessage(err, t('შენახვა ვერ მოხერხდა')));
     } finally {
       setSaving(false);
     }
@@ -2412,7 +2420,7 @@ export default function DesignPage() {
           s.loadingPage
         }
       >
-        იტვირთება...
+        {t('იტვირთება...')}
       </div>
     );
 
@@ -2423,8 +2431,7 @@ export default function DesignPage() {
           s.loadingPage
         }
       >
-        პროდუქტი ვერ
-        მოიძებნა
+        {t('პროდუქტი ვერ მოიძებნა')}
       </div>
     );
 
@@ -2460,10 +2467,10 @@ export default function DesignPage() {
 
   const designLabel =
     frontCount + backCount === 0
-      ? 'ცარიელი'
-      : `${frontCount + backCount} ელემენტი · ${[
-          frontCount && 'წინა',
-          backCount && 'უკანა',
+      ? t('ცარიელი')
+      : `${t('{count} ელემენტი', { count: frontCount + backCount })} · ${[
+          frontCount && t('წინა'),
+          backCount && t('უკანა'),
         ]
           .filter(Boolean)
           .join(' + ')}`;
@@ -2489,17 +2496,17 @@ export default function DesignPage() {
     <div className={s.page}>
       {/* TOOL RAIL */}
 
-      <nav className={s.rail} aria-label="ინსტრუმენტები">
-        {TOOLS.map((t) => (
+      <nav className={s.rail} aria-label={t('ინსტრუმენტები')}>
+        {TOOLS.map((tl) => (
           <button
-            key={t.id}
+            key={tl.id}
             type="button"
-            className={`${s.railBtn} ${tool === t.id ? s.railBtnActive : ''}`}
-            aria-pressed={tool === t.id}
-            onClick={() => setTool(t.id)}
+            className={`${s.railBtn} ${tool === tl.id ? s.railBtnActive : ''}`}
+            aria-pressed={tool === tl.id}
+            onClick={() => setTool(tl.id)}
           >
-            {ICONS[t.id]}
-            {t.label}
+            {ICONS[tl.id]}
+            {t(tl.label)}
           </button>
         ))}
       </nav>
@@ -2511,8 +2518,8 @@ export default function DesignPage() {
           {tool === 'product' && (
             <>
               <div>
-                <div className={s.panelTitle}>პროდუქტი</div>
-                <div className={s.panelSub}>აირჩიეთ ტიპი და მოდელი</div>
+                <div className={s.panelTitle}>{t('პროდუქტი')}</div>
+                <div className={s.panelSub}>{t('აირჩიეთ ტიპი და მოდელი')}</div>
               </div>
 
               <div className={s.productList}>
@@ -2532,9 +2539,9 @@ export default function DesignPage() {
                           <path d={c.icon} />
                         </svg>
                       </span>
-                      <span className={s.productRowName}>{c.label}</span>
+                      <span className={s.productRowName}>{t(c.label)}</span>
                       <span className={s.productRowPrice}>
-                        {from !== null ? `${from} ₾-დან` : 'მალე'}
+                        {from !== null ? t('{price}-დან', { price: `${from} ₾` }) : t('მალე')}
                       </span>
                     </button>
                   );
@@ -2548,8 +2555,8 @@ export default function DesignPage() {
           {tool === 'color' && (
             <>
               <div>
-                <div className={s.panelTitle}>ფერი</div>
-                <div className={s.panelSub}>არჩეული: {shirtColorInfo.name}</div>
+                <div className={s.panelTitle}>{t('ფერი')}</div>
+                <div className={s.panelSub}>{t('არჩეული:')} {t(shirtColorInfo.name)}</div>
               </div>
 
               <div className={s.swatchGrid}>
@@ -2567,7 +2574,7 @@ export default function DesignPage() {
                       }`}
                       style={{ background: c.hex }}
                     />
-                    <span className={s.swatchName}>{c.name}</span>
+                    <span className={s.swatchName}>{t(c.name)}</span>
                   </button>
                 ))}
               </div>
@@ -2577,25 +2584,25 @@ export default function DesignPage() {
           {tool === 'text' && (
             <>
               <div>
-                <div className={s.panelTitle}>ტექსტი</div>
+                <div className={s.panelTitle}>{t('ტექსტი')}</div>
                 <div className={s.panelSub}>
                   {selectedText
-                    ? 'დაარედაქტირეთ არჩეული ტექსტი'
-                    : 'ჩაწერეთ და დაამატეთ ახალი ტექსტი'}
+                    ? t('დაარედაქტირეთ არჩეული ტექსტი')
+                    : t('ჩაწერეთ და დაამატეთ ახალი ტექსტი')}
                 </div>
               </div>
 
               <textarea
                 className={s.textArea}
                 rows={3}
-                placeholder="ჩაწერე ტექსტი…"
+                placeholder={t('ჩაწერე ტექსტი…')}
                 value={selectedText ? selectedText.text : textInput}
                 onChange={(e) => editText(e.target.value)}
                 onBlur={() => selectedText && commitHistory()}
               />
 
               <div className={s.field}>
-                <div className={s.fieldLabel}>შრიფტი</div>
+                <div className={s.fieldLabel}>{t('შრიფტი')}</div>
                 <div className={s.fontGrid}>
                   {WEB_FONTS.map((f) => {
                     const active =
@@ -2612,7 +2619,7 @@ export default function DesignPage() {
                           className={s.fontSample}
                           style={{ fontFamily: `'${f.family}'` }}
                         >
-                          Aa ა
+                          {t('Aa ა')}
                         </span>
                         <span className={s.fontName}>{f.label}</span>
                       </button>
@@ -2621,7 +2628,7 @@ export default function DesignPage() {
                 </div>
                 <select
                   className={s.select}
-                  aria-label="სხვა შრიფტები"
+                  aria-label={t('სხვა შრიფტები')}
                   value={
                     FONT_FAMILIES.includes(selectedText?.fontFamily ?? fontFamily)
                       ? selectedText?.fontFamily ?? fontFamily
@@ -2629,7 +2636,7 @@ export default function DesignPage() {
                   }
                   onChange={(e) => e.target.value && pickFont(e.target.value)}
                 >
-                  <option value="">სხვა შრიფტები…</option>
+                  <option value="">{t('სხვა შრიფტები…')}</option>
                   {FONT_FAMILIES.map((family) => (
                     <option key={family} value={family}>
                       {family}
@@ -2641,7 +2648,7 @@ export default function DesignPage() {
               <div className={s.sliders}>
                 <label className={s.sliderField}>
                   <span className={s.sliderHead}>
-                    <span>ზომა</span>
+                    <span>{t('ზომა')}</span>
                     <b>{Math.round(selectedText?.fontSize ?? fontSize)} px</b>
                   </span>
                   <input
@@ -2667,7 +2674,7 @@ export default function DesignPage() {
                   <div className={s.sliderPair}>
                     <label className={s.sliderField}>
                       <span className={s.sliderHead}>
-                        <span>ინტერვალი</span>
+                        <span>{t('ინტერვალი')}</span>
                         <b>{selectedText.letterSpacing ?? 0}</b>
                       </span>
                       <input
@@ -2689,7 +2696,7 @@ export default function DesignPage() {
 
                     <label className={s.sliderField}>
                       <span className={s.sliderHead}>
-                        <span>ბრუნვა</span>
+                        <span>{t('ბრუნვა')}</span>
                         <b>{selectedText.rotation ?? 0}°</b>
                       </span>
                       <input
@@ -2713,7 +2720,7 @@ export default function DesignPage() {
               </div>
 
               <div className={s.field}>
-                <div className={s.fieldLabel}>ტექსტის ფერი</div>
+                <div className={s.fieldLabel}>{t('ტექსტის ფერი')}</div>
                 <div className={s.textColors}>
                   {TEXT_COLORS.map((c) => {
                     const active = (selectedText?.fill ?? textColor) === c;
@@ -2754,7 +2761,7 @@ export default function DesignPage() {
                     })
                   }
                 >
-                  პარამეტრების დარესეტება
+                  {t('პარამეტრების დარესეტება')}
                 </button>
               )}
 
@@ -2763,7 +2770,7 @@ export default function DesignPage() {
                 className={s.dashedBtn}
                 onClick={handleAddText}
               >
-                + ახალი ტექსტის დამატება
+                {t('+ ახალი ტექსტის დამატება')}
               </button>
             </>
           )}
@@ -2771,8 +2778,8 @@ export default function DesignPage() {
           {tool === 'image' && (
             <>
               <div>
-                <div className={s.panelTitle}>სურათი</div>
-                <div className={s.panelSub}>ატვირთეთ ლოგო ან ფოტო</div>
+                <div className={s.panelTitle}>{t('სურათი')}</div>
+                <div className={s.panelSub}>{t('ატვირთეთ ლოგო ან ფოტო')}</div>
               </div>
 
               <button
@@ -2787,7 +2794,7 @@ export default function DesignPage() {
                 onDrop={handleDrop}
               >
                 <span className={s.dropIcon}>{ICONS.upload}</span>
-                <span className={s.dropTitle}>ჩააგდეთ ფაილი ან აირჩიეთ</span>
+                <span className={s.dropTitle}>{t('ჩააგდეთ ფაილი ან აირჩიეთ')}</span>
                 <span className={s.dropHint}>PNG, JPG, WEBP, GIF</span>
               </button>
 
@@ -2804,7 +2811,7 @@ export default function DesignPage() {
                   <div className={s.sliders}>
                     <label className={s.sliderField}>
                       <span className={s.sliderHead}>
-                        <span>მასშტაბი</span>
+                        <span>{t('მასშტაბი')}</span>
                         <b>{Math.round((selectedImage.scale ?? 1) * 100)}%</b>
                       </span>
                       <input
@@ -2826,7 +2833,7 @@ export default function DesignPage() {
 
                     <label className={s.sliderField}>
                       <span className={s.sliderHead}>
-                        <span>ბრუნვა</span>
+                        <span>{t('ბრუნვა')}</span>
                         <b>{selectedImage.rotation ?? 0}°</b>
                       </span>
                       <input
@@ -2848,7 +2855,7 @@ export default function DesignPage() {
 
                     <label className={s.sliderField}>
                       <span className={s.sliderHead}>
-                        <span>გამჭვირვალობა</span>
+                        <span>{t('გამჭვირვალობა')}</span>
                         <b>{Math.round((selectedImage.opacity ?? 1) * 100)}%</b>
                       </span>
                       <input
@@ -2870,12 +2877,12 @@ export default function DesignPage() {
                   </div>
 
                   <div className={s.field}>
-                    <div className={s.fieldLabel}>პოზიცია</div>
+                    <div className={s.fieldLabel}>{t('პოზიცია')}</div>
                     <div className={s.alignRow}>
                       {[
-                        ['l', 'მარცხნივ'],
-                        ['c', 'ცენტრში'],
-                        ['r', 'მარჯვნივ'],
+                        ['l', t('მარცხნივ')],
+                        ['c', t('ცენტრში')],
+                        ['r', t('მარჯვნივ')],
                       ].map(([id, label]) => (
                         <button
                           key={id}
@@ -2892,7 +2899,7 @@ export default function DesignPage() {
               ) : (
                 images.length > 0 && (
                   <div className={s.hintBox}>
-                    აირჩიეთ სურათი ლეიერებიდან ან კანვასზე, რომ შეცვალოთ
+                    {t('აირჩიეთ სურათი ლეიერებიდან ან კანვასზე, რომ შეცვალოთ')}
                   </div>
                 )
               )}
@@ -2900,13 +2907,13 @@ export default function DesignPage() {
               {user ? (
                 <div className={s.library}>
                   <div className={s.libraryHead}>
-                    <span>ჩემი სურათები</span>
-                    <Link to="/account?tab=media" className={s.libraryAll}>მართვა</Link>
+                    <span>{t('ჩემი სურათები')}</span>
+                    <Link to="/account?tab=media" className={s.libraryAll}>{t('მართვა')}</Link>
                   </div>
                   {myMedia === null ? (
-                    <div className={s.libraryHint}>იტვირთება…</div>
+                    <div className={s.libraryHint}>{t('იტვირთება…')}</div>
                   ) : myMedia.length === 0 ? (
-                    <div className={s.libraryHint}>ატვირთული სურათები აქ შეინახება — სხვა დიზაინშიც ერთი დაჭერით გამოიყენებ.</div>
+                    <div className={s.libraryHint}>{t('ატვირთული სურათები აქ შეინახება — სხვა დიზაინშიც ერთი დაჭერით გამოიყენებ.')}</div>
                   ) : (
                     <div className={s.libraryGrid}>
                       {myMedia.slice(0, 30).map((m) => (
@@ -2915,7 +2922,7 @@ export default function DesignPage() {
                           type="button"
                           className={s.libraryItem}
                           onClick={() => addLibraryImage(m)}
-                          title={`დამატება: ${m.name}`}
+                          title={`${t('დამატება:')} ${m.name}`}
                         >
                           <img src={`${API_URL}${m.url}`} alt={m.name} loading="lazy" />
                         </button>
@@ -2925,7 +2932,7 @@ export default function DesignPage() {
                 </div>
               ) : (
                 <div className={s.libraryHint}>
-                  <Link to="/login" state={{ from: location }} className={s.libraryAll}>შედი ანგარიშზე</Link> — ატვირთული სურათები შეინახება და სხვა დიზაინშიც გამოიყენებ.
+                  <Link to="/login" state={{ from: location }} className={s.libraryAll}>{t('შედი ანგარიშზე')}</Link> — {t('ატვირთული სურათები შეინახება და სხვა დიზაინშიც გამოიყენებ.')}
                 </div>
               )}
             </>
@@ -2935,18 +2942,18 @@ export default function DesignPage() {
         <div className={s.layers}>
           <div className={s.layersHead}>
             {ICONS.layers}
-            <span>ლეიერები</span>
+            <span>{t('ლეიერები')}</span>
             <span className={s.countBadge}>{layerList.length}</span>
             {supportsBackPrint && (
               <span className={s.layersSide}>
-                {editSide === 'back' ? GEO.back : GEO.front}
+                {editSide === 'back' ? t(GEO.back) : t(GEO.front)}
               </span>
             )}
           </div>
 
           {layerList.length === 0 ? (
             <div className={s.layersEmpty}>
-              ჯერ ობიექტები არ არის — დაამატეთ ტექსტი ან სურათი
+              {t('ჯერ ობიექტები არ არის — დაამატეთ ტექსტი ან სურათი')}
             </div>
           ) : (
             <div className={s.layerList}>
@@ -2955,8 +2962,8 @@ export default function DesignPage() {
                 const hidden = node.visible === false;
                 const active = selectedId === node.id;
                 const fallbackName = isText
-                  ? node.text || 'ტექსტი'
-                  : node.name || 'სურათი';
+                  ? node.text || t('ტექსტი')
+                  : node.name || t('სურათი');
 
                 return (
                   <div
@@ -2974,23 +2981,23 @@ export default function DesignPage() {
                       <input
                         className={s.layerName}
                         value={node.layerName ?? fallbackName}
-                        aria-label="ლეიერის სახელი"
+                        aria-label={t('ლეიერის სახელი')}
                         onChange={(e) =>
                           renameLayer(kind, node.id, e.target.value)
                         }
                       />
                       <span className={s.layerKind}>
                         {isText
-                          ? `ტექსტი · ${fontLabel(node.fontFamily ?? 'Arial')}`
-                          : `სურათი · ${Math.round((node.scale ?? 1) * 100)}%`}
+                          ? `${t('ტექსტი')} · ${fontLabel(node.fontFamily ?? 'Arial')}`
+                          : `${t('სურათი')} · ${Math.round((node.scale ?? 1) * 100)}%`}
                       </span>
                     </div>
 
                     <button
                       type="button"
                       className={s.iconBtn}
-                      title={hidden ? 'გამოჩენა' : 'დამალვა'}
-                      aria-label={hidden ? 'ობიექტის გამოჩენა' : 'ობიექტის დამალვა'}
+                      title={hidden ? t('გამოჩენა') : t('დამალვა')}
+                      aria-label={hidden ? t('ობიექტის გამოჩენა') : t('ობიექტის დამალვა')}
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleLayerVisibility(kind, node.id);
@@ -3001,8 +3008,8 @@ export default function DesignPage() {
                     <button
                       type="button"
                       className={s.iconBtnSm}
-                      title="ზემოთ"
-                      aria-label="ზემოთ გადატანა"
+                      title={t('ზემოთ')}
+                      aria-label={t('ზემოთ გადატანა')}
                       disabled={index === 0}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -3014,8 +3021,8 @@ export default function DesignPage() {
                     <button
                       type="button"
                       className={s.iconBtnSm}
-                      title="ქვემოთ"
-                      aria-label="ქვემოთ გადატანა"
+                      title={t('ქვემოთ')}
+                      aria-label={t('ქვემოთ გადატანა')}
                       disabled={index === layerList.length - 1}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -3027,8 +3034,8 @@ export default function DesignPage() {
                     <button
                       type="button"
                       className={`${s.iconBtn} ${s.iconBtnDanger}`}
-                      title="წაშლა"
-                      aria-label="ობიექტის წაშლა"
+                      title={t('წაშლა')}
+                      aria-label={t('ობიექტის წაშლა')}
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteLayer(kind, node.id);
@@ -3051,8 +3058,8 @@ export default function DesignPage() {
           <button
             type="button"
             className={s.floatBtn}
-            title="დაბრუნება (Ctrl+Z)"
-            aria-label="დაბრუნება"
+            title={t('დაბრუნება (Ctrl+Z)')}
+            aria-label={t('დაბრუნება')}
             disabled={!canUndo}
             onClick={undo}
           >
@@ -3061,8 +3068,8 @@ export default function DesignPage() {
           <button
             type="button"
             className={s.floatBtn}
-            title="გამეორება (Ctrl+Y)"
-            aria-label="გამეორება"
+            title={t('გამეორება (Ctrl+Y)')}
+            aria-label={t('გამეორება')}
             disabled={!canRedo}
             onClick={redo}
           >
@@ -3075,7 +3082,7 @@ export default function DesignPage() {
             <button
               type="button"
               className={s.ctxPill}
-              title="შრიფტის შეცვლა"
+              title={t('შრიფტის შეცვლა')}
               onClick={cycleFont}
             >
               {fontLabel(selectedText.fontFamily ?? 'Arial')}
@@ -3085,7 +3092,7 @@ export default function DesignPage() {
             <button
               type="button"
               className={s.ctxBtn}
-              aria-label="შემცირება"
+              aria-label={t('შემცირება')}
               onClick={() =>
                 updateText(selectedText.id, {
                   fontSize: clampFont((selectedText.fontSize ?? 28) - 2),
@@ -3098,7 +3105,7 @@ export default function DesignPage() {
             <button
               type="button"
               className={s.ctxBtn}
-              aria-label="გაზრდა"
+              aria-label={t('გაზრდა')}
               onClick={() =>
                 updateText(selectedText.id, {
                   fontSize: clampFont((selectedText.fontSize ?? 28) + 2),
@@ -3111,8 +3118,8 @@ export default function DesignPage() {
             <button
               type="button"
               className={s.ctxDot}
-              title="ტექსტის ფერი"
-              aria-label="ტექსტის ფერი"
+              title={t('ტექსტის ფერი')}
+              aria-label={t('ტექსტის ფერი')}
               style={{ background: selectedText.fill ?? '#000' }}
               onClick={() => setTool('text')}
             />
@@ -3152,8 +3159,8 @@ export default function DesignPage() {
             <button
               type="button"
               className={`${s.ctxBtn} ${s.ctxDanger}`}
-              title="წაშლა"
-              aria-label="წაშლა"
+              title={t('წაშლა')}
+              aria-label={t('წაშლა')}
               onClick={deleteSelectedObject}
             >
               {ICONS.trash}
@@ -3168,7 +3175,7 @@ export default function DesignPage() {
               className={s.ctxPill}
               onClick={() => replaceInputRef.current?.click()}
             >
-              ჩანაცვლება
+              {t('ჩანაცვლება')}
             </button>
             <input
               ref={replaceInputRef}
@@ -3181,7 +3188,7 @@ export default function DesignPage() {
             <button
               type="button"
               className={s.ctxBtn}
-              aria-label="შემცირება"
+              aria-label={t('შემცირება')}
               onClick={() =>
                 updateImage(selectedImage.id, {
                   scale: clampScale((selectedImage.scale ?? 1) - 0.1),
@@ -3196,7 +3203,7 @@ export default function DesignPage() {
             <button
               type="button"
               className={s.ctxBtn}
-              aria-label="გაზრდა"
+              aria-label={t('გაზრდა')}
               onClick={() =>
                 updateImage(selectedImage.id, {
                   scale: clampScale((selectedImage.scale ?? 1) + 0.1),
@@ -3209,7 +3216,7 @@ export default function DesignPage() {
             <button
               type="button"
               className={s.ctxPillPlain}
-              title="90°-ით მობრუნება"
+              title={t('90°-ით მობრუნება')}
               onClick={() =>
                 updateImage(selectedImage.id, {
                   rotation: ((((selectedImage.rotation ?? 0) + 90 + 180) % 360) + 360) % 360 - 180,
@@ -3225,8 +3232,8 @@ export default function DesignPage() {
             <button
               type="button"
               className={`${s.ctxBtn} ${s.ctxDanger}`}
-              title="წაშლა"
-              aria-label="წაშლა"
+              title={t('წაშლა')}
+              aria-label={t('წაშლა')}
               onClick={deleteSelectedObject}
             >
               {ICONS.trash}
@@ -3261,7 +3268,7 @@ export default function DesignPage() {
               ) : (
                 <img
                   src={currentSrc}
-                  alt={activeCat.label}
+                  alt={t(activeCat.label)}
                   draggable={false}
                   className={s.flatImage}
                   style={{ filter: activeFilter }}
@@ -3383,9 +3390,9 @@ export default function DesignPage() {
 
         {backIsEmpty && !is3DMode && (
           <div className={s.emptyBack}>
-            უკანა მხარე ცარიელია
+            {t('უკანა მხარე ცარიელია')}
             <button type="button" onClick={handleAddText}>
-              + ტექსტი
+              {t('+ ტექსტი')}
             </button>
             <button
               type="button"
@@ -3394,7 +3401,7 @@ export default function DesignPage() {
                 uploadInputRef.current?.click();
               }}
             >
-              + სურათი
+              {t('+ სურათი')}
             </button>
           </div>
         )}
@@ -3402,7 +3409,7 @@ export default function DesignPage() {
         {is3DMode && (
           <div className={s.orbitHint}>
             {ICONS.rotate}
-            გადაათრიეთ მოსაბრუნებლად
+            {t('გადაათრიეთ მოსაბრუნებლად')}
           </div>
         )}
 
@@ -3416,7 +3423,7 @@ export default function DesignPage() {
                 onClick={showFront}
               >
                 {ICONS.front}
-                {GEO.front}
+                {t(GEO.front)}
               </button>
               <button
                 type="button"
@@ -3425,14 +3432,14 @@ export default function DesignPage() {
                 onClick={showBack}
               >
                 {ICONS.back}
-                {GEO.back}
+                {t(GEO.back)}
               </button>
               <span className={s.dockSep} />
               <button
                 type="button"
                 className={`${s.dockBtn} ${is3DMode ? s.dockBtnActive : ''}`}
                 aria-pressed={is3DMode}
-                title="3D რეჟიმში მოდელი თავისუფლად ბრუნავს"
+                title={t('3D რეჟიმში მოდელი თავისუფლად ბრუნავს')}
                 onClick={toggle3DMode}
               >
                 {ICONS.cube}
@@ -3448,7 +3455,7 @@ export default function DesignPage() {
                 onClick={() => goToSide('front')}
               >
                 {ICONS.front}
-                {GEO.front}
+                {t(GEO.front)}
               </button>
               <button
                 type="button"
@@ -3458,7 +3465,7 @@ export default function DesignPage() {
                 onClick={() => goToSide('back')}
               >
                 {ICONS.back}
-                {GEO.back}
+                {t(GEO.back)}
               </button>
             </>
           )}
@@ -3475,19 +3482,19 @@ export default function DesignPage() {
             </span>
             <div>
               <div className={s.orderName}>
-                {activeCat.label}
+                {t(activeCat.label)}
               </div>
               <div className={s.orderMeta}>
-                შენი დიზაინით
+                {t('შენი დიზაინით')}
               </div>
             </div>
           </div>
 
           <div className={s.summary}>
             <div className={s.summaryRow}>
-              <span>ფერი</span>
+              <span>{t('ფერი')}</span>
               <b>
-                {shirtColorInfo.name}
+                {t(shirtColorInfo.name)}
                 <span
                   className={s.summaryDot}
                   style={{ background: shirtColorInfo.hex }}
@@ -3496,12 +3503,12 @@ export default function DesignPage() {
             </div>
             {orderProduct && (
               <div className={s.summaryRow}>
-                <span>{GEO.size}</span>
-                <b>{oneSize ? 'ერთი ზომა' : selectedSize}</b>
+                <span>{t(GEO.size)}</span>
+                <b>{oneSize ? t('ერთი ზომა') : selectedSize}</b>
               </div>
             )}
             <div className={s.summaryRow}>
-              <span>დიზაინი</span>
+              <span>{t('დიზაინი')}</span>
               <b>{designLabel}</b>
             </div>
           </div>
@@ -3509,7 +3516,7 @@ export default function DesignPage() {
           {/* Sizes come from the product (set in admin); single-size products need no picker. */}
           {orderProduct && sizeOptions.length > 1 && (
             <div className={s.field}>
-              <div className={s.orderLabel}>{GEO.size}</div>
+              <div className={s.orderLabel}>{t(GEO.size)}</div>
               <div className={s.sizeGrid}>
                 {sizeOptions.map((sz) => (
                   <button
@@ -3527,12 +3534,12 @@ export default function DesignPage() {
           )}
 
           <div className={s.qtyRow}>
-            <span className={s.orderLabel}>{GEO.qty}</span>
+            <span className={s.orderLabel}>{t(GEO.qty)}</span>
             <div className={s.qtyControl}>
               <button
                 type="button"
                 className={s.qtyBtn}
-                aria-label="შემცირება"
+                aria-label={t('შემცირება')}
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               >
                 −
@@ -3541,7 +3548,7 @@ export default function DesignPage() {
               <button
                 type="button"
                 className={s.qtyBtn}
-                aria-label="გაზრდა"
+                aria-label={t('გაზრდა')}
                 onClick={() => setQuantity((q) => q + 1)}
               >
                 +
@@ -3551,11 +3558,11 @@ export default function DesignPage() {
 
           <div className={s.priceRows}>
             <div>
-              <span>ერთეულის ფასი</span>
+              <span>{t('ერთეულის ფასი')}</span>
               <span>{unitPrice !== null ? formatPrice(unitPrice) : '—'}</span>
             </div>
             <div>
-              <span>{GEO.qty}</span>
+              <span>{t(GEO.qty)}</span>
               <span>× {quantity}</span>
             </div>
           </div>
@@ -3563,7 +3570,7 @@ export default function DesignPage() {
 
         <div className={s.orderFoot}>
           <div className={s.totalRow}>
-            <span>სულ</span>
+            <span>{t('სულ')}</span>
             <b>
               {unitPrice !== null
                 ? formatPrice(unitPrice * quantity)
@@ -3577,7 +3584,7 @@ export default function DesignPage() {
             onClick={handleAddToCart}
             disabled={!orderProduct}
           >
-            {GEO.order}
+            {t(GEO.order)}
           </button>
 
           <button
@@ -3587,21 +3594,21 @@ export default function DesignPage() {
             disabled={cartAdded || !orderProduct}
           >
             {ICONS.cart}
-            {cartAdded ? '✓ დამატებულია' : 'კალათაში დამატება'}
+            {cartAdded ? t('✓ დამატებულია') : t('კალათაში დამატება')}
           </button>
 
           <button
             type="button"
             className={s.saveDesignBtn}
             onClick={openSave}
-            title={savedDesign?.tab === activeTab ? `„${savedDesign.name}“` : 'შეინახე ანგარიშზე შაბლონად'}
+            title={savedDesign?.tab === activeTab ? `„${savedDesign.name}“` : t('შეინახე ანგარიშზე შაბლონად')}
           >
             <Icon d="M5 3h11l3 3v15H5zM8 3v6h8V3M8 21v-7h8v7" size={17} width={1.8} />
-            {savedDesign?.tab === activeTab ? 'ცვლილებების შენახვა' : 'დიზაინის შენახვა'}
+            {savedDesign?.tab === activeTab ? t('ცვლილებების შენახვა') : t('დიზაინის შენახვა')}
           </button>
 
           {!orderProduct && (
-            <div className={s.notForSale}>ეს პროდუქტი ჯერ არ იყიდება</div>
+            <div className={s.notForSale}>{t('ეს პროდუქტი ჯერ არ იყიდება')}</div>
           )}
         </div>
       </aside>
@@ -3620,29 +3627,29 @@ export default function DesignPage() {
               submitSave(false);
             }}
           >
-            <div className={s.modalTitle}>დიზაინის შენახვა</div>
-            <div className={s.modalSub}>შეინახება შენს ანგარიშზე — შემდეგ გახსნი, შეცვლი ან შაბლონად გამოიყენებ.</div>
+            <div className={s.modalTitle}>{t('დიზაინის შენახვა')}</div>
+            <div className={s.modalSub}>{t('შეინახება შენს ანგარიშზე — შემდეგ გახსნი, შეცვლი ან შაბლონად გამოიყენებ.')}</div>
             <input
               className={s.modalInput}
               value={saveDialog.name}
               onChange={(e) => setSaveDialog((d) => ({ ...d, name: e.target.value }))}
               onKeyDown={(e) => e.key === 'Escape' && !saving && setSaveDialog(null)}
               maxLength={80}
-              placeholder="დიზაინის სახელი"
+              placeholder={t('დიზაინის სახელი')}
               autoFocus
             />
             {saveError && <div className={s.modalError}>{saveError}</div>}
             <div className={s.modalActions}>
               <button type="button" className={s.modalGhost} onClick={() => setSaveDialog(null)} disabled={saving}>
-                გაუქმება
+                {t('გაუქმება')}
               </button>
               {saveDialog.update && (
                 <button type="button" className={s.modalGhost} onClick={() => submitSave(true)} disabled={saving}>
-                  ახლად შენახვა
+                  {t('ახლად შენახვა')}
                 </button>
               )}
               <button type="submit" className={s.modalPrimary} disabled={saving}>
-                {saving ? 'ინახება…' : saveDialog.update ? 'განახლება' : 'შენახვა'}
+                {saving ? t('ინახება…') : saveDialog.update ? t('განახლება') : t('შენახვა')}
               </button>
             </div>
           </form>

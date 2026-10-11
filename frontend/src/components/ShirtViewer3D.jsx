@@ -28,6 +28,7 @@ import {
   EDITOR_W,
   EDITOR_H,
 } from '../lib/shirtTexture';
+import { useI18n } from '../i18n/i18n-context';
 
 /* =========================================================
    MODELS
@@ -1652,6 +1653,7 @@ export default function ShirtViewer3D({
   // Which print surface the editor overlay (onPrintAreaChange) follows.
   printSide = 'front',
 }) {
+  const { t } = useI18n();
   const printMeshRef =
     useRef(null);
 
@@ -1678,7 +1680,7 @@ export default function ShirtViewer3D({
             fontSize: 13,
           }}
         >
-          3D ხედი მიუწვდომელია
+          {t('3D ხედი მიუწვდომელია')}
         </div>
       }
     >

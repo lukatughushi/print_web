@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth-context';
 import { avatarColor, initialsOf } from '../lib/userBadge';
 import s from './Navbar.module.css';
+import { useI18n } from '../i18n/i18n-context';
 
 const ITEMS = [
   { to: '/account', label: 'ჩემი ანგარიში' },
@@ -14,6 +15,7 @@ const ITEMS = [
 
 /** Initials avatar of the signed-in user, with the account menu. */
 export default function UserMenu() {
+  const { t } = useI18n();
   const { user, isAdmin, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -67,10 +69,10 @@ export default function UserMenu() {
             </span>
           </div>
           {ITEMS.map((it) => (
-            <Link key={it.to} to={it.to} className={s.menuItem} role="menuitem">{it.label}</Link>
+            <Link key={it.to} to={it.to} className={s.menuItem} role="menuitem">{t(it.label)}</Link>
           ))}
-          {isAdmin && <Link to="/admin/dashboard" className={s.menuItem} role="menuitem">ადმინ პანელი</Link>}
-          <button type="button" className={`${s.menuItem} ${s.menuOut}`} role="menuitem" onClick={signOut}>გასვლა</button>
+          {isAdmin && <Link to="/admin/dashboard" className={s.menuItem} role="menuitem">{t('ადმინ პანელი')}</Link>}
+          <button type="button" className={`${s.menuItem} ${s.menuOut}`} role="menuitem" onClick={signOut}>{t('გასვლა')}</button>
         </div>
       )}
     </div>

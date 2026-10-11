@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AuthProvider from './context/AuthProvider';
+import I18nProvider from './i18n/I18nProvider';
 import Navbar from './components/Navbar';
 import FavoritesSync from './components/FavoritesSync';
 import ScrollToTop from './components/ScrollToTop';
@@ -102,9 +103,11 @@ function AppContent() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </I18nProvider>
     </BrowserRouter>
   );
 }

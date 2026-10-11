@@ -5,6 +5,8 @@ import useCartStore from '../store/cartStore';
 import { useAuth } from '../context/auth-context';
 import { money, priceOf, shippingFor } from '../lib/catalog';
 import s from './storefront.module.css';
+import { useI18n } from '../i18n/i18n-context';
+import { productName } from '../i18n/products';
 
 const PAY_OPTS = [
   ['cash', 'გადახდა კურიერთან'],
@@ -49,6 +51,7 @@ async function fetchLiveCatalog() {
 }
 
 export default function CheckoutPage() {
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { items, clear, updateItem, removeItem } = useCartStore();
 
@@ -137,19 +140,19 @@ export default function CheckoutPage() {
 
   const placeOrder = async () => {
     if (!form.name.trim() || !form.phone.trim() || !form.city.trim() || !form.addr.trim()) {
-      setError('შეავსე ყველა ველი — სახელი, ტელეფონი, ქალაქი და მისამართი.');
+      setError(t('შეავსე ყველა ველი — სახელი, ტელეფონი, ქალაქი და მისამართი.'));
       return;
     }
     if (!EMAIL_RE.test(form.email.trim())) {
-      setError('შეიყვანე სწორი ელ. ფოსტა.');
+      setError(t('შეიყვანე სწორი ელ. ფოსტა.'));
       return;
     }
     if (hasUnavailable) {
-      setError('წაშალე კალათიდან პროდუქტები, რომლებიც აღარ იყიდება.');
+      setError(t('წაშალე კალათიდან პროდუქტები, რომლებიც აღარ იყიდება.'));
       return;
     }
     if (needsSize) {
-      setError('აირჩიე ზომა მონიშნული პროდუქტებისთვის.');
+      setError(t('აირჩიე ზომა მონიშნული პროდუქტებისთვის.'));
       return;
     }
     setPlacing(true);
@@ -188,13 +191,13 @@ export default function CheckoutPage() {
       if (code === 'PRICE_CHANGED') {
         // A price changed after this page loaded: show the new total and let the customer confirm again.
         await fetchLiveCatalog().then(applyLivePrices).catch(() => {});
-        setError('ფასები განახლდა. გადაამოწმე ახალი ჯამი და დაადასტურე შეკვეთა ხელახლა.');
+        setError(t('ფასები განახლდა. გადაამოწმე ახალი ჯამი და დაადასტურე შეკვეთა ხელახლა.'));
       } else if (code === 'INVALID_SIZE') {
         // Sizes changed after this page loaded: reload them so the affected line asks for a new size.
         await fetchLiveCatalog().then(applyLivePrices).catch(() => {});
-        setError('ზოგიერთი ზომა აღარ არის ხელმისაწვდომი. აირჩიე ახალი ზომა.');
+        setError(t('ზოგიერთი ზომა აღარ არის ხელმისაწვდომი. აირჩიე ახალი ზომა.'));
       } else {
-        setError(getErrorMessage(err, 'შეკვეთის გაფორმება ვერ მოხერხდა. სცადე ხელახლა.'));
+        setError(getErrorMessage(err, t('შეკვეთის გაფორმება ვერ მოხერხდა. სცადე ხელახლა.')));
       }
     } finally {
       setPlacing(false);
@@ -206,14 +209,14 @@ export default function CheckoutPage() {
       <main className={s.page}>
         <div className={s.done}>
           <div className={s.doneIcon}>✓</div>
-          <h1 className={s.h1}>შეკვეთა მიღებულია</h1>
+          <h1 className={s.h1}>{t('შეკვეთა მიღებულია')}</h1>
           <p className={s.doneText}>
-            შეკვეთის ნომერი <strong>{done.orderNo}</strong>. დაგიკავშირდებით {form.phone} ნომერზე დადასტურებისთვის.
+            {t('შეკვეთის ნომერი')} <strong>{done.orderNo}</strong>. {t('დაგიკავშირდებით {phone} ნომერზე დადასტურებისთვის.', { phone: form.phone })}
           </p>
           <p className={s.doneText} style={{ color: '#8A98A6', marginBottom: 30 }}>
-            მიწოდება 2–3 სამუშაო დღეში · {form.city}
+            {t('მიწოდება 2–3 სამუშაო დღეში')} · {form.city}
           </p>
-          <button className={s.btnDark} onClick={() => navigate('/shop')}>გაგრძელება</button>
+          <button className={s.btnDark} onClick={() => navigate('/shop')}>{t('გაგრძელება')}</button>
         </div>
       </main>
     );
@@ -223,12 +226,12 @@ export default function CheckoutPage() {
     return (
       <main className={s.page}>
         <div className={s.wrapMid}>
-          <h1 className={s.h1}>შეკვეთის გაფორმება</h1>
+          <h1 className={s.h1}>{t('შეკვეთის გაფორმება')}</h1>
           <div className={s.emptyCard}>
-            <h2>კალათა ცარიელია</h2>
-            <p>დაამატე პროდუქტი შეკვეთის გასაფორმებლად.</p>
+            <h2>{t('კალათა ცარიელია')}</h2>
+            <p>{t('დაამატე პროდუქტი შეკვეთის გასაფორმებლად.')}</p>
             <div className={s.emptyActions}>
-              <button className={s.btnOutline} onClick={() => navigate('/shop')}>მაღაზია</button>
+              <button className={s.btnOutline} onClick={() => navigate('/shop')}>{t('მაღაზია')}</button>
             </div>
           </div>
         </div>
@@ -239,36 +242,36 @@ export default function CheckoutPage() {
   return (
     <main className={s.page}>
       <div className={s.wrapMid}>
-        <div className={s.back} onClick={() => navigate('/cart')}>← კალათა</div>
-        <h1 className={s.h1} style={{ marginBottom: 24 }}>შეკვეთის გაფორმება</h1>
+        <div className={s.back} onClick={() => navigate('/cart')}>{t('← კალათა')}</div>
+        <h1 className={s.h1} style={{ marginBottom: 24 }}>{t('შეკვეთის გაფორმება')}</h1>
 
         <div className={s.twoCol}>
           <div className={s.formCard}>
             <div className={s.formGrid}>
-              <label className={s.field}>სახელი და გვარი
-                <input className={s.input} value={form.name} onChange={set('name')} placeholder="ნინო ბერიძე" />
+              <label className={s.field}>{t('სახელი და გვარი')}
+                <input className={s.input} value={form.name} onChange={set('name')} placeholder={t('ნინო ბერიძე')} />
               </label>
-              <label className={s.field}>ტელეფონი
+              <label className={s.field}>{t('ტელეფონი')}
                 <input className={s.input} value={form.phone} onChange={set('phone')} placeholder="+995 5xx xx xx xx" />
               </label>
-              <label className={s.field}>ელ. ფოსტა
+              <label className={s.field}>{t('ელ. ფოსტა')}
                 <input className={s.input} type="email" value={form.email} onChange={set('email')} placeholder="nino@example.com" />
               </label>
-              <label className={s.field}>ქალაქი
-                <input className={s.input} value={form.city} onChange={set('city')} placeholder="თბილისი" />
+              <label className={s.field}>{t('ქალაქი')}
+                <input className={s.input} value={form.city} onChange={set('city')} placeholder={t('თბილისი')} />
               </label>
-              <label className={s.field}>მისამართი
-                <input className={s.input} value={form.addr} onChange={set('addr')} placeholder="ჭავჭავაძის 12, ბ. 4" />
+              <label className={s.field}>{t('მისამართი')}
+                <input className={s.input} value={form.addr} onChange={set('addr')} placeholder={t('ჭავჭავაძის 12, ბ. 4')} />
               </label>
             </div>
             {detailsChanged && (
               <label className={s.rememberRow}>
                 <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-                ტელეფონი და მისამართი ანგარიშზე შევინახო შემდეგი შეკვეთისთვის
+                {t('ტელეფონი და მისამართი ანგარიშზე შევინახო შემდეგი შეკვეთისთვის')}
               </label>
             )}
 
-            <div className={s.fieldLabel} style={{ marginTop: 6 }}>გადახდა</div>
+            <div className={s.fieldLabel} style={{ marginTop: 6 }}>{t('გადახდა')}</div>
             <div className={s.payList}>
               {PAY_OPTS.map(([k, label]) => (
                 <div
@@ -279,14 +282,14 @@ export default function CheckoutPage() {
                   tabIndex={0}
                 >
                   <span className={`${s.radio} ${pay === k ? s.radioOn : ''}`} />
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                 </div>
               ))}
             </div>
 
             {priceCheck.changed.length > 0 && (
               <div className={s.formNotice}>
-                ზოგიერთი პროდუქტის ფასი განახლდა:
+                {t('ზოგიერთი პროდუქტის ფასი განახლდა:')}
                 {priceCheck.changed.map((c, i) => (
                   <div key={i}>{c.name}: {money(c.from, cur)} → <b>{money(c.to, cur)}</b></div>
                 ))}
@@ -295,7 +298,7 @@ export default function CheckoutPage() {
 
             {hasUnavailable && (
               <div className={s.formError}>
-                ზოგიერთი პროდუქტი აღარ იყიდება. წაშალე ის შეკვეთიდან გასაგრძელებლად.
+                {t('ზოგიერთი პროდუქტი აღარ იყიდება. წაშალე ის შეკვეთიდან გასაგრძელებლად.')}
               </div>
             )}
 
@@ -308,36 +311,36 @@ export default function CheckoutPage() {
               disabled={placing || priceCheck.status === 'loading' || hasUnavailable || needsSize}
             >
               {placing
-                ? 'იგზავნება…'
+                ? t('იგზავნება…')
                 : priceCheck.status === 'loading'
-                  ? 'ფასები მოწმდება…'
-                  : `შეკვეთის დადასტურება · ${money(total, cur)}`}
+                  ? t('ფასები მოწმდება…')
+                  : `${t('შეკვეთის დადასტურება')} · ${money(total, cur)}`}
             </button>
           </div>
 
           <div className={s.summary}>
-            <div style={{ fontWeight: 700, marginBottom: 12 }}>შეკვეთა</div>
+            <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('შეკვეთა')}</div>
             {items.map((it, i) => (
               priceCheck.unavailableIds.includes(it.productId) ? (
                 <div key={i} className={s.summaryRow}>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#C8395A' }}>
-                    {(it.productName || 'ჩემი დიზაინი')} — აღარ იყიდება
+                    {it.productName ? productName(it.productName, lang) : t('ჩემი დიზაინი')} — {t('აღარ იყიდება')}
                   </span>
                   <button type="button" className={s.lineRemove} style={{ marginTop: 0 }} onClick={() => removeItem(i)}>
-                    წაშლა
+                    {t('წაშლა')}
                   </button>
                 </div>
               ) : (
                 <div key={i}>
                   <div className={s.summaryRow}>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {(it.productName || 'ჩემი დიზაინი')} × {it.quantity || 1}
+                      {it.productName ? productName(it.productName, lang) : t('ჩემი დიზაინი')} × {it.quantity || 1}
                     </span>
                     <span>{money((it.basePrice || 0) * (it.quantity || 1), cur)}</span>
                   </div>
                   {hasBadSize(it) && (
                     <label className={s.summaryRow} style={{ color: '#C8395A', fontSize: 13 }}>
-                      <span>ზომა {it.size} აღარ არის — აირჩიე:</span>
+                      <span>{t('ზომა {size} აღარ არის — აირჩიე:', { size: it.size })}</span>
                       <select value="" onChange={(e) => updateItem(i, { size: e.target.value })}>
                         <option value="" disabled>—</option>
                         {sizeOptionsFor(it).map((z) => <option key={z} value={z}>{z}</option>)}
@@ -347,9 +350,9 @@ export default function CheckoutPage() {
                 </div>
               )
             ))}
-            <div className={s.summaryRow} style={{ marginTop: 12 }}><span>მიწოდება</span><span>{shipping ? money(shipping, cur) : 'უფასო'}</span></div>
+            <div className={s.summaryRow} style={{ marginTop: 12 }}><span>{t('მიწოდება')}</span><span>{shipping ? money(shipping, cur) : t('უფასო')}</span></div>
             <div className={s.summaryTotal}>
-              <b>ჯამი</b>
+              <b>{t('ჯამი')}</b>
               <span>{money(total, cur)}</span>
             </div>
           </div>

@@ -170,7 +170,7 @@
   .inner { padding: 8px 12px 6px; column-gap: 8px; }
   .logo { width: 32px; height: 32px; }
   .wordmark { font-size: 17px; letter-spacing: .12em; }
-  .right { gap: 6px; }
+  .right { gap: 4px; }
   .right > .link { padding: 7px 10px; }
   .iconBtn, .right .avatar { width: 36px; height: 36px; }
   /* The logo already links home, so phones show the other three links. */
@@ -258,3 +258,35 @@
 .menuItem:hover { background: #F6F1EC; color: #16233B; }
 .menuOut { margin-top: 4px; border-top: 1px solid #F0EAE3; border-radius: 0 0 10px 10px; color: #C23B57; }
 .menuOut:hover { color: #C23B57; }
+
+/* ── Language ────────────────────────────────────────────── */
+.langSwitch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 4px 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  color: #fff;
+  cursor: pointer;
+}
+.langSwitch:hover { background: rgba(255, 255, 255, .1); }
+.langSwitch select {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 8px 0 2px;
+  cursor: pointer;
+  outline: none;
+}
+.langSwitch select option { color: #16233B; }
+@media (max-width: 560px) {
+  .langSwitch { height: 32px; padding: 0 0 0 8px; }
+  .langSwitch svg { display: none; }
+}
