@@ -2475,10 +2475,6 @@ export default function DesignPage() {
           .filter(Boolean)
           .join(' + ')}`;
 
-  const thumbSrc = activeTab === 'tshirt' ? currentSrc : activeCat.front;
-  const thumbFilter =
-    activeTab === 'tshirt' ? 'none' : COLOR_FILTERS[shirtColor] ?? 'none';
-
   // Editing is paused while the customer orbits the 3D model.
   const canEdit = !is3DMode;
   const backIsEmpty =
@@ -3477,9 +3473,6 @@ export default function DesignPage() {
       <aside className={s.orderPanel}>
         <div className={s.orderBody}>
           <div className={s.orderHead}>
-            <span className={s.orderThumb}>
-              <img src={thumbSrc} alt="" style={{ filter: thumbFilter }} />
-            </span>
             <div>
               <div className={s.orderName}>
                 {t(activeCat.label)}

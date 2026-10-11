@@ -8,10 +8,11 @@ import api from '../lib/api';
 import { starterProduct } from '../lib/catalog';
 import logo from '../assets/prenta/logo_prenta.webp';
 import s from './Navbar.module.css';
-import { LANGS, useI18n } from '../i18n/i18n-context';
+import { useI18n } from '../i18n/i18n-context';
+import LangMenu from './LangMenu';
 
 export default function Navbar() {
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   const cartCount = useCartStore((st) => st.items.reduce((sum, it) => sum + (it.quantity || 1), 0));
   const favCount = useFavStore((st) => st.ids.length);
   const { pathname } = useLocation();
@@ -58,14 +59,7 @@ export default function Navbar() {
 
         {/* ── Cart ──────────────────────────────────────────── */}
         <div className={s.right}>
-          <label className={s.langSwitch} title="Language / Язык">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
-            </svg>
-            <select value={lang} onChange={(e) => setLang(e.target.value)} aria-label="ენა / Language / Язык">
-              {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
-            </select>
-          </label>
+          <LangMenu />
           {isAuthenticated ? (
             <UserMenu />
           ) : (

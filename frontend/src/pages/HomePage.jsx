@@ -125,7 +125,6 @@ export default function HomePage() {
         <div className={s.heroGlow} />
         <div className={s.heroInner}>
           <div className={s.heroCopy}>
-            <span className={s.pill}><span className={s.pillBadge}>{t('ახალი')}</span>{t('ბეჭდვა 1 ცალიდანაც')}</span>
             <h1 className={s.heroTitle}>{t('შენი იდეა.')} <br /><span>{t('ჩვენი ბეჭდვა.')}</span></h1>
             <p className={s.heroText}>
               {t('ატვირთე სურათი, ლოგო ან ტექსტი — დავბეჭდავთ მაისურზე, ჰუდზე, ჩანთაზე, კეპზე ან ჭიქაზე და მოგიტანთ 3 დღეში.')}
