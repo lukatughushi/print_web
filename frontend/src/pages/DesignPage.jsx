@@ -1034,10 +1034,21 @@ export default function DesignPage() {
     setPrintRect,
   ] = useState(null);
 
+  // Clean printable rectangle per side (editor coordinates) reported by
+  // the 3D viewer; artwork outside it is not printed.
+  const [safeAreas, setSafeAreas] =
+    useState({});
+
   const handlePrintArea =
     useCallback(
-      (rect) =>
-        setPrintRect(rect),
+      (rect) => {
+        setPrintRect(rect);
+        if (rect?.side) {
+          setSafeAreas((prev) =>
+            prev[rect.side] === rect.safe ? prev : { ...prev, [rect.side]: rect.safe }
+          );
+        }
+      },
       []
     );
 
@@ -2383,6 +2394,9 @@ export default function DesignPage() {
           width: CANVAS_WIDTH,
           height: CANVAS_HEIGHT,
         },
+        ...(is3D && (safeAreas.front || safeAreas.back)
+          ? { printSafe: { front: safeAreas.front ?? null, back: safeAreas.back ?? null } }
+          : {}),
       });
 
     const { previewUrl, backPreviewUrl } =

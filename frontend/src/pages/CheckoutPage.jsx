@@ -27,8 +27,9 @@ async function buildDesign(item) {
     // the storefront doesn't need.
     const { renderPrintFile } = await import('../lib/shirtTexture');
     // Front artwork is the top-level images/texts; the back has its own.
-    printUrl = await renderPrintFile(canvas);
-    if (canvas?.back) backPrintUrl = await renderPrintFile(canvas.back);
+    // Only the clean print area is printed (see the 3D viewer).
+    printUrl = await renderPrintFile(canvas, canvas?.printSafe?.front);
+    if (canvas?.back) backPrintUrl = await renderPrintFile(canvas.back, canvas?.printSafe?.back);
   } catch {
     // The order still carries the layers; admins can re-create the print file.
   }

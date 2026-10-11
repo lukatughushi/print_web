@@ -71,13 +71,16 @@ const MODEL_URLS = {
 //  flipV:      the print surfaces' UV v-axis runs bottom→top (the other
 //               models run top→bottom), so it is mirrored on load.
 //               true = both sides, or a list of sides, e.g. ['back'].
+//  rebuildPrint: sides whose print mesh is ragged (picked triangle by
+//               triangle): the print surface is re-cut from the body to the
+//               mesh's bounding rectangle (see rebuildPrintFromBody).
 //  fabricMaterial: name prefix (or list of prefixes) of the garment's fabric
 //               materials. When set,
 //               every other non-print part (e.g. a zipper) is hardware: it
 //               keeps HARDWARE_COLOR instead of taking the garment colour.
 const MODEL_OPTIONS = {
   // tshirt-male.glb: FRONT_PRINT has standard UVs, print_back flipped ones.
-  male: { rotationY: 0, printFit: 'stretch', flipV: ['back'] },
+  male: { rotationY: 0, printFit: 'stretch', flipV: ['back'], rebuildPrint: ['front'] },
   // hoodie.glb: front print ~27x25 cm, back ~22x31 cm.
   hoodie: { rotationY: 0, printFit: 'band' },
   // Front print is split around the zipper (merged on load, see
@@ -120,6 +123,7 @@ const HARDWARE_COLOR = '#000000';
 
 // texture = a · canvas + b, per axis, in 0..1 units. Identity = 'stretch'.
 const IDENTITY_MAPPING = { ax: 1, bx: 0, ay: 1, by: 0 };
+const NO_SIDES = [];
 
 // Every model is scaled (uniformly, never distorted) so that on load it fills
 // the same share of the viewer, whatever the model's shape and the screen
@@ -391,10 +395,148 @@ function mergeSplitPrintPanels(root, baseName) {
 
   const mesh = new THREE.Mesh(merged, material);
   mesh.name = baseName;
+  // Two panels with a deliberate gap (the zipper) between them.
+  mesh.userData.splitPrint = true;
 
   parent.add(mesh);
   a.removeFromParent();
   b.removeFromParent();
+}
+
+/**
+ * Rebuilds a print surface from the garment body (MODEL_OPTIONS.rebuildPrint).
+ * Some models ship a print mesh picked triangle by triangle, with a ragged
+ * outline and holes. This takes the same area (the mesh's bounds, as seen
+ * from the front or back) and cuts the body's own surface to that exact
+ * rectangle, so the print zone has straight edges and no gaps.
+ */
+function rebuildPrintFromBody(root, printMesh, side) {
+  root.updateMatrixWorld(true);
+
+  const zone = new THREE.Box3().setFromObject(printMesh);
+  if (zone.isEmpty()) return;
+  const facing = side === 'back' ? -1 : 1;
+
+  // Which way the old surface's texture runs, so artwork keeps its orientation.
+  const oldPos = printMesh.geometry.attributes.position;
+  const oldUv = printMesh.geometry.attributes.uv;
+  let covUX = 0;
+  let covVY = 0;
+  if (oldUv) {
+    const world = new THREE.Vector3();
+    const mid = zone.getCenter(new THREE.Vector3());
+    const uvb = computeUvBounds(printMesh.geometry);
+    const midU = (uvb.minU + uvb.maxU) / 2;
+    const midV = (uvb.minV + uvb.maxV) / 2;
+    for (let i = 0; i < oldPos.count; i++) {
+      world.fromBufferAttribute(oldPos, i).applyMatrix4(printMesh.matrixWorld);
+      covUX += (oldUv.getX(i) - midU) * (world.x - mid.x);
+      covVY += (oldUv.getY(i) - midV) * (world.y - mid.y);
+    }
+  }
+  const uRightward = covUX >= 0;
+  const vUpward = covVY > 0;
+
+  // A small inset keeps the rectangle off the armpit / hem curves.
+  const insetX = (zone.max.x - zone.min.x) * 0.03;
+  const insetY = (zone.max.y - zone.min.y) * 0.02;
+  const x0 = zone.min.x + insetX;
+  const x1 = zone.max.x - insetX;
+  const y0 = zone.min.y + insetY;
+  const y1 = zone.max.y - insetY;
+
+  const bodyBox = new THREE.Box3();
+  const bodies = [];
+  root.traverse((object) => {
+    if (!object.isMesh || object === printMesh) return;
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    if (materials.some((m) => printSideOf(object, m))) return;
+    bodies.push(object);
+    bodyBox.expandByObject(object);
+  });
+  if (!bodies.length) return;
+  const midZ = (bodyBox.min.z + bodyBox.max.z) / 2;
+  const lift = bodyBox.getSize(new THREE.Vector3()).length() * 0.0006;
+
+  // Sutherland–Hodgman against one axis-aligned plane; vertices are { p, n }.
+  const clip = (poly, axis, limit, keepGreater) => {
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i];
+      const b = poly[(i + 1) % poly.length];
+      const da = keepGreater ? a.p[axis] - limit : limit - a.p[axis];
+      const db = keepGreater ? b.p[axis] - limit : limit - b.p[axis];
+      if (da >= 0) out.push(a);
+      if (da >= 0 !== db >= 0) {
+        const t = da / (da - db);
+        out.push({ p: a.p.clone().lerp(b.p, t), n: a.n.clone().lerp(b.n, t) });
+      }
+    }
+    return out;
+  };
+
+  const positions = [];
+  const normals = [];
+  const uvs = [];
+  const toLocal = new THREE.Matrix4().copy(printMesh.matrixWorld).invert();
+  const normalToLocal = new THREE.Matrix3().getNormalMatrix(toLocal);
+  const faceNormal = new THREE.Vector3();
+  const ab = new THREE.Vector3();
+  const ac = new THREE.Vector3();
+
+  bodies.forEach((body) => {
+    const geometry = body.geometry;
+    const pos = geometry.attributes.position;
+    if (!pos) return;
+    if (!geometry.attributes.normal) geometry.computeVertexNormals();
+    const nor = geometry.attributes.normal;
+    const index = geometry.index;
+    const normalMatrix = new THREE.Matrix3().getNormalMatrix(body.matrixWorld);
+    const vertex = (i) => ({
+      p: new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(body.matrixWorld),
+      n: new THREE.Vector3().fromBufferAttribute(nor, i).applyMatrix3(normalMatrix).normalize(),
+    });
+    const triCount = index ? index.count / 3 : pos.count / 3;
+
+    for (let t = 0; t < triCount; t++) {
+      const tri = [0, 1, 2].map((k) => vertex(index ? index.getX(t * 3 + k) : t * 3 + k));
+      const [a, b, c] = tri;
+      // Quick reject, then keep only the side that faces the viewer.
+      if (Math.max(a.p.x, b.p.x, c.p.x) < x0 || Math.min(a.p.x, b.p.x, c.p.x) > x1) continue;
+      if (Math.max(a.p.y, b.p.y, c.p.y) < y0 || Math.min(a.p.y, b.p.y, c.p.y) > y1) continue;
+      faceNormal.crossVectors(ab.subVectors(b.p, a.p), ac.subVectors(c.p, a.p)).normalize();
+      if (faceNormal.z * facing < 0.12) continue;
+      if (((a.p.z + b.p.z + c.p.z) / 3 - midZ) * facing < 0) continue;
+
+      let poly = clip(tri, 'x', x0, true);
+      poly = clip(poly, 'x', x1, false);
+      poly = clip(poly, 'y', y0, true);
+      poly = clip(poly, 'y', y1, false);
+      if (poly.length < 3) continue;
+
+      for (let k = 1; k < poly.length - 1; k++) {
+        [poly[0], poly[k], poly[k + 1]].forEach(({ p: point, n }) => {
+          const u = (point.x - x0) / (x1 - x0);
+          const v = (point.y - y0) / (y1 - y0);
+          uvs.push(uRightward ? u : 1 - u, vUpward ? v : 1 - v);
+          const local = point.clone().addScaledVector(n, lift).applyMatrix4(toLocal);
+          positions.push(local.x, local.y, local.z);
+          const ln = n.clone().applyMatrix3(normalToLocal).normalize();
+          normals.push(ln.x, ln.y, ln.z);
+        });
+      }
+    }
+  });
+
+  if (positions.length < 9) return;
+
+  const rebuilt = new THREE.BufferGeometry();
+  rebuilt.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  rebuilt.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  rebuilt.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  rebuilt.computeBoundingBox();
+  rebuilt.computeBoundingSphere();
+  printMesh.geometry = rebuilt;
 }
 
 /** How the editor canvas maps onto one print surface (see MODEL_OPTIONS). */
@@ -436,6 +578,134 @@ function computePrintMapping(mesh, uvBounds, { printFit, printWidthBoost }) {
   }
 
   return IDENTITY_MAPPING;
+}
+
+/**
+ * The largest clean rectangle inside a print surface's outline, in texture
+ * space (0..1 of its UV bounds, y down like the canvas). Print meshes end in a ragged edge
+ * along their triangles; artwork clipped to this rectangle never reaches
+ * that edge, so a full-size image prints with straight sides.
+ * Returns null when the surface already fills its bounds (or wraps around).
+ */
+const SAFE_GRID = 160;
+function computeSafeRect(geometry, uvBounds, { ignoreInnerGaps = false } = {}) {
+  const uv = geometry?.attributes?.uv;
+  if (!uv || !uvBounds) return null;
+  const spanU = uvBounds.maxU - uvBounds.minU;
+  const spanV = uvBounds.maxV - uvBounds.minV;
+  if (!(spanU > 1e-6) || !(spanV > 1e-6)) return null;
+
+  const N = SAFE_GRID;
+  const cover = new Uint8Array(N * N);
+  const index = geometry.index;
+  const triCount = index ? index.count / 3 : uv.count / 3;
+  const gx = (i) => ((uv.getX(i) - uvBounds.minU) / spanU) * N;
+  const gy = (i) => ((uv.getY(i) - uvBounds.minV) / spanV) * N;
+
+  for (let t = 0; t < triCount; t++) {
+    const a = index ? index.getX(t * 3) : t * 3;
+    const b = index ? index.getX(t * 3 + 1) : t * 3 + 1;
+    const c = index ? index.getX(t * 3 + 2) : t * 3 + 2;
+    const ax = gx(a), ay = gy(a), bx = gx(b), by = gy(b), cx = gx(c), cy = gy(c);
+    const area = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    if (Math.abs(area) < 1e-12) continue;
+    const x0 = Math.max(0, Math.floor(Math.min(ax, bx, cx)));
+    const x1 = Math.min(N - 1, Math.ceil(Math.max(ax, bx, cx)));
+    const y0 = Math.max(0, Math.floor(Math.min(ay, by, cy)));
+    const y1 = Math.min(N - 1, Math.ceil(Math.max(ay, by, cy)));
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const px = x + 0.5, py = y + 0.5;
+        const w0 = ((bx - px) * (cy - py) - (by - py) * (cx - px)) / area;
+        const w1 = ((cx - px) * (ay - py) - (cy - py) * (ax - px)) / area;
+        if (w0 >= -1e-6 && w1 >= -1e-6 && 1 - w0 - w1 >= -1e-6) cover[y * N + x] = 1;
+      }
+    }
+  }
+
+  let best = { area: 0 };
+
+  if (ignoreInnerGaps) {
+    // Split surface (zip hoodie): only the outline limits the area, so the
+    // gap between its panels doesn't cut the printable rectangle in half.
+    const left = new Int32Array(N).fill(-1);
+    const right = new Int32Array(N).fill(-1);
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        if (cover[y * N + x]) {
+          if (left[y] < 0) left[y] = x;
+          right[y] = x + 1;
+        }
+      }
+    }
+    if (left.every((l, y) => l === 0 && right[y] === N)) return null;
+
+    for (let y0 = 0; y0 < N; y0++) {
+      if (left[y0] < 0) continue;
+      let maxL = left[y0];
+      let minR = right[y0];
+      for (let y1 = y0; y1 < N && left[y1] >= 0; y1++) {
+        maxL = Math.max(maxL, left[y1]);
+        minR = Math.min(minR, right[y1]);
+        if (minR <= maxL) break;
+        const area = (minR - maxL) * (y1 - y0 + 1);
+        if (area > best.area) best = { area, x0: maxL, x1: minR, y0, y1: y1 + 1 };
+      }
+    }
+  } else {
+    // Close one-cell cracks between neighbouring triangles; real holes stay.
+    const filled = cover.slice();
+    for (let y = 1; y < N - 1; y++) {
+      for (let x = 1; x < N - 1; x++) {
+        const i = y * N + x;
+        if (!cover[i] && ((cover[i - 1] && cover[i + 1]) || (cover[i - N] && cover[i + N]))) filled[i] = 1;
+      }
+    }
+    let covered = 0;
+    for (let i = 0; i < filled.length; i++) covered += filled[i];
+    if (covered >= filled.length * 0.995) return null;
+
+    // Largest fully covered rectangle (histogram method, O(N²)): holes in
+    // the surface and its ragged outline are both left outside.
+    const heights = new Int32Array(N);
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) heights[x] = filled[y * N + x] ? heights[x] + 1 : 0;
+      const stack = [];
+      for (let x = 0; x <= N; x++) {
+        const h = x < N ? heights[x] : 0;
+        let start = x;
+        while (stack.length && stack[stack.length - 1].h >= h) {
+          const top = stack.pop();
+          const area = top.h * (x - top.start);
+          if (area > best.area) best = { area, x0: top.start, x1: x, y0: y - top.h + 1, y1: y + 1 };
+          start = top.start;
+        }
+        stack.push({ start, h });
+      }
+    }
+  }
+  if (!best.area) return null;
+
+  // One cell of margin keeps antialiased edges off the ragged border.
+  const inset = 1;
+  return {
+    x0: (best.x0 + inset) / N,
+    y0: (best.y0 + inset) / N,
+    x1: (best.x1 - inset) / N,
+    y1: (best.y1 - inset) / N,
+  };
+}
+
+/** A texture-space rectangle in editor canvas coordinates (inverse of the mapping). */
+function safeRectInEditor(safe, mapping) {
+  if (!safe) return null;
+  const toCanvas = (t, a, b) => Math.min(1, Math.max(0, (t - b) / a));
+  return {
+    x: toCanvas(safe.x0, mapping.ax, mapping.bx) * EDITOR_W,
+    y: toCanvas(safe.y0, mapping.ay, mapping.by) * EDITOR_H,
+    width: (toCanvas(safe.x1, mapping.ax, mapping.bx) - toCanvas(safe.x0, mapping.ax, mapping.bx)) * EDITOR_W,
+    height: (toCanvas(safe.y1, mapping.ay, mapping.by) - toCanvas(safe.y0, mapping.ay, mapping.by)) * EDITOR_H,
+  };
 }
 
 const isIdentityMapping = (m) =>
@@ -539,8 +809,16 @@ function usePrintSurface({
   designRev,
   color,
 }) {
+  // Clean rectangle the artwork is clipped to (null = the whole surface).
+  const safeRect = useMemo(
+    () => (mesh && !mesh.userData.wrapPrint
+      ? computeSafeRect(mesh.geometry, uvBounds, { ignoreInnerGaps: !!mesh.userData.splitPrint })
+      : null),
+    [mesh, uvBounds]
+  );
+
   const needsCorrection =
-    !!mesh && !!designCanvas && !isIdentityMapping(mapping);
+    !!mesh && !!designCanvas && (!isIdentityMapping(mapping) || !!safeRect);
 
   const correctedCanvas = useMemo(() => {
     if (!needsCorrection) return null;
@@ -559,7 +837,8 @@ function usePrintSurface({
     if (!mesh) return;
     mesh.userData.printMapping = mapping;
     mesh.userData.printUvBounds = uvBounds;
-  }, [mesh, mapping, uvBounds]);
+    mesh.userData.printSafeEditor = safeRectInEditor(safeRect, mapping);
+  }, [mesh, mapping, uvBounds, safeRect]);
 
   // Keep the corrected canvas LIVE as images/text move or change.
   useLayoutEffect(() => {
@@ -579,6 +858,14 @@ function usePrintSurface({
     ctx.fillStyle = color;
     ctx.fillRect(0, 0, w, h);
 
+    // Only the clean rectangle is printed (see computeSafeRect).
+    ctx.save();
+    if (safeRect) {
+      ctx.beginPath();
+      ctx.rect(safeRect.x0 * w, safeRect.y0 * h, (safeRect.x1 - safeRect.x0) * w, (safeRect.y1 - safeRect.y0) * h);
+      ctx.clip();
+    }
+
     // texture = a · canvas + b  →  draw the canvas at b, sized a.
     ctx.drawImage(
       designCanvas,
@@ -587,7 +874,8 @@ function usePrintSurface({
       mapping.ax * w,
       mapping.ay * h
     );
-  }, [correctedCanvas, designCanvas, mapping, designRev, color]);
+    ctx.restore();
+  }, [correctedCanvas, designCanvas, mapping, designRev, color, safeRect]);
 
   // One reusable texture per canvas/model UV configuration.
   const texture = useMemo(() => {
@@ -646,7 +934,7 @@ function GarmentMesh({
   const { scene } = useGLTF(modelUrl);
 
   const options = MODEL_OPTIONS[productType] ?? {};
-  const { rotationY = 0, fabricMaterial, flipV = false, scale = 1, wrapPrint, wrapCenterU, wrapGapU } = options;
+  const { rotationY = 0, fabricMaterial, flipV = false, scale = 1, wrapPrint, wrapCenterU, wrapGapU, rebuildPrint = NO_SIDES } = options;
 
   const {
     model,
@@ -716,6 +1004,13 @@ function GarmentMesh({
       });
     });
 
+    // Models whose print mesh is ragged get a clean one cut from the body.
+    ['front', 'back'].forEach((side) => {
+      if (!rebuildPrint.includes(side) || !found[side].mesh) return;
+      rebuildPrintFromBody(root, found[side].mesh, side);
+      found[side].uvBounds = computeUvBounds(found[side].mesh.geometry) || found[side].uvBounds;
+    });
+
     // Get the REAL visual centre and model size.
     root.updateMatrixWorld(true);
 
@@ -747,7 +1042,7 @@ function GarmentMesh({
       modelSize: size,
       wrapDiameter,
     };
-  }, [scene, flipV, wrapPrint, wrapCenterU, wrapGapU]);
+  }, [scene, flipV, wrapPrint, wrapCenterU, wrapGapU, rebuildPrint]);
 
   // Scale that fits the model (as turned by rotationY) into the viewer.
   const viewSize = useThree((state) => state.size);
@@ -1225,6 +1520,7 @@ function SmoothViewControls({
 function PrintAreaProjector({
   meshRef,
   onRect,
+  side = 'front',
 }) {
   const camera = useThree(
     (state) => state.camera
@@ -1561,6 +1857,9 @@ function PrintAreaProjector({
       width: spanWidth * mapping.ax,
       height: spanHeight * mapping.ay,
       visible,
+      // Clean printable rectangle in editor coordinates, and its side.
+      safe: mesh.userData.printSafeEditor ?? null,
+      side,
       // Wrap labels: canvas x (0..1) currently facing the viewer, so new
       // artwork can be placed where the customer can see it.
       ...(focusTexX !== null
@@ -1573,6 +1872,8 @@ function PrintAreaProjector({
 
     const changed =
       !prev ||
+      prev.safe !== rect.safe ||
+      prev.side !== rect.side ||
       prev.visible !==
         rect.visible ||
       Math.abs(
@@ -1788,6 +2089,7 @@ export default function ShirtViewer3D({
             onRect={
               onPrintAreaChange
             }
+            side={printSide}
           />
         )}
 

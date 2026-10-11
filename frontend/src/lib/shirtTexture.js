@@ -210,6 +210,9 @@ export async function renderShirtCanvas(
     shirtColor = '#ffffff',
     images = [],
     textObjects = [],
+    // Optional printable rectangle in editor coordinates; artwork outside
+    // it is not drawn (see the 3D viewer's clean print area).
+    clip = null,
   } = design;
 
   const ctx =
@@ -280,6 +283,13 @@ export async function renderShirtCanvas(
       ])
     );
 
+  ctx.save();
+  if (clip) {
+    ctx.beginPath();
+    ctx.rect(clip.x * S, clip.y * S, clip.width * S, clip.height * S);
+    ctx.clip();
+  }
+
   // One pass in stacking order, so layers can be reordered across types.
   sortByStack(images, textObjects).forEach(
     ({ kind, node }) => {
@@ -290,6 +300,7 @@ export async function renderShirtCanvas(
       }
     }
   );
+  ctx.restore();
 }
 
 function drawImageNode(ctx, node, img, S) {
@@ -457,7 +468,7 @@ function drawTextNode(ctx, node, S) {
    same editor coordinate space, at TEX_SCALE resolution.
 ═══════════════════════════════════════════════════════════ */
 
-export async function renderPrintFile(design = {}) {
+export async function renderPrintFile(design = {}, clip = null) {
   const canvas = createShirtCanvas();
   const visible = (item) => item.visible !== false;
   const images = (design.images || []).filter(visible);
@@ -468,6 +479,7 @@ export async function renderPrintFile(design = {}) {
     shirtColor: 'rgba(0,0,0,0)',
     images,
     textObjects,
+    clip,
   });
 
   return trimToArtwork(canvas).toDataURL('image/png');

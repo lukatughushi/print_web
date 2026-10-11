@@ -85,14 +85,22 @@ export async function renderPlacement(layers, side) {
   };
   box.h = (box.w * EDITOR_H) / EDITOR_W;
 
-  // Print area outline.
+  // The printable rectangle inside the editor area (3D models report a
+  // clean area smaller than the whole surface); outline it.
+  const safe = layers?.printSafe?.[side];
+  const kx = box.w / EDITOR_W;
+  const ky = box.h / EDITOR_H;
+  const area = safe
+    ? { x: box.x + safe.x * kx, y: box.y + safe.y * ky, w: safe.width * kx, h: safe.height * ky }
+    : { x: box.x, y: box.y, w: box.w, h: box.h };
+
   ctx.save();
   ctx.setLineDash([10, 8]);
   ctx.lineWidth = 2.5;
   ctx.strokeStyle = 'rgba(239, 95, 122, .9)';
   ctx.fillStyle = 'rgba(239, 95, 122, .06)';
-  ctx.fillRect(box.x, box.y, box.w, box.h);
-  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  ctx.fillRect(area.x, area.y, area.w, area.h);
+  ctx.strokeRect(area.x, area.y, area.w, area.h);
   ctx.restore();
 
   // Artwork, rendered in editor space and scaled into the print area.
@@ -100,7 +108,7 @@ export async function renderPlacement(layers, side) {
   await renderShirtCanvas(art, { shirtColor: 'rgba(0,0,0,0)', images: part.images, textObjects: part.texts });
   ctx.save();
   ctx.beginPath();
-  ctx.rect(box.x, box.y, box.w, box.h);
+  ctx.rect(area.x, area.y, area.w, area.h);
   ctx.clip();
   ctx.drawImage(art, box.x, box.y, box.w, box.h);
   ctx.restore();
@@ -111,7 +119,7 @@ export async function renderPlacement(layers, side) {
 /** Artwork-only PNG for one side (trimmed), or null. */
 export function renderSidePrint(layers, side) {
   const part = sideLayers(layers, side);
-  return hasArtwork(part) ? renderPrintFile(part) : null;
+  return hasArtwork(part) ? renderPrintFile(part, layers?.printSafe?.[side]) : null;
 }
 
 /**
