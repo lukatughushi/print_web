@@ -24,3 +24,6 @@ legacy/server/uploads/
 !.vscode/extensions.json
 **/.claude/settings.local.json
 .vercel/
+
+# Design mockups and their working copies (kept locally; add -f to track one)
+frontend/src/acrhi/
