@@ -99,12 +99,7 @@
   place-items: center;
 }
 .catImg .catPic { inset: 12%; }
-.catAll {
-  font-family: var(--serif), Georgia, serif;
-  font-size: 11px;
-  letter-spacing: .08em;
-  color: #A79C90;
-}
+.catAll { color: #16233B; }
 .catLabel {
   font-size: 12px;
   font-weight: 600;

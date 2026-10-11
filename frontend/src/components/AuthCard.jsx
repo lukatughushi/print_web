@@ -33,7 +33,7 @@ export function SubmitButton({ loading, children }) {
     <button
       type="submit"
       disabled={loading}
-      className="mt-2 w-full cursor-pointer rounded-full bg-coral px-6 py-3 font-bold text-white transition hover:bg-navy disabled:cursor-not-allowed disabled:opacity-60"
+      className="mt-2 w-full cursor-pointer rounded-full border-0 bg-coral px-6 py-3 font-bold text-white transition hover:bg-navy disabled:cursor-not-allowed disabled:opacity-60"
     >
       {loading ? '...' : children}
     </button>

@@ -8,7 +8,7 @@ const useToast = create((set) => ({
   show: (message) => {
     clearTimeout(timer);
     set({ message });
-    timer = setTimeout(() => set({ message: '' }), 1800);
+    timer = setTimeout(() => set({ message: '' }), 2600);
   },
 }));
 

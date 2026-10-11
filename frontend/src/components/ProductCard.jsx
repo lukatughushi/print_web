@@ -10,7 +10,6 @@ import {
 } from '../lib/catalog';
 import useCartStore from '../store/cartStore';
 import useFavStore from '../store/favStore';
-import useToast from '../store/toastStore';
 import s from './ProductCard.module.css';
 
 const MAX_SWATCHES = 6;
@@ -82,7 +81,6 @@ export default function ProductCard({ product, currency = '₾' }) {
   const addItem = useCartStore((st) => st.addItem);
   const fav = useFavStore((st) => st.ids.includes(product.id));
   const toggleFav = useFavStore((st) => st.toggle);
-  const toast = useToast((st) => st.show);
 
   const cat = CATEGORY_BY_CODE[product.category];
   const price = priceOf(product);
@@ -103,7 +101,6 @@ export default function ProductCard({ product, currency = '₾' }) {
       previewUrl: '',
     });
     setAdded(true);
-    toast(`${product.name} — კალათაში დაემატა`);
   };
 
   return (

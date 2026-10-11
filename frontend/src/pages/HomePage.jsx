@@ -1,23 +1,29 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import { CATEGORIES, isOnSale, priceOf } from '../lib/catalog';
-import ProductCard, { ProductImage } from '../components/ProductCard';
+import { isOnSale, priceOf, starterProduct } from '../lib/catalog';
+import ProductCard from '../components/ProductCard';
 import SiteFooter from '../components/SiteFooter';
 import s from './HomePage.module.css';
 
-import heroTshirt from '../assets/prenta/home_tshirt.webp';
-import mainHoodie from '../assets/prenta/main_hoode.webp';
+import heroImg from '../assets/home/hero.webp';
+import teeImg from '../assets/home/tee.webp';
+import hoodieImg from '../assets/home/hoodie.webp';
+import longsleeveImg from '../assets/home/longsleeve.webp';
+import toteImg from '../assets/home/tote.webp';
+import capImg from '../assets/home/cap.webp';
+import mugImg from '../assets/home/mug.webp';
+import corpRoofing from '../assets/corp/roofing-2.webp';
+import corpSushi from '../assets/corp/sushi.webp';
+import corpVlog from '../assets/corp/vlog-1.webp';
+import corpFestival from '../assets/corp/festival-1.webp';
+import corpDelfi from '../assets/corp/delfi-1.webp';
 
-import { API_URL as API_BASE } from '../lib/config';
 
 /* ── Static defaults (overridden by /api/settings) ─────────── */
 const DEFAULT_SETTINGS = {
-  announcementText: '★ 2 400+ დაბეჭდილი შეკვეთა · ბეჭდვა 3 დღეში · მიწოდება მთელ საქართველოში',
-  announcementActive: true,
-  heroTitle: 'დაბეჭდე საკუთარი დიზაინი',
-  heroSubtitle:
-    'ატვირთე სურათი ან დაწერე ტექსტი, აწყვე დიზაინი პირდაპირ ბრაუზერში და მიიღე მზა პროდუქტი 3 დღეში. მინიმალური შეკვეთა — 1 ცალი.',
+  announcementText: '',
+  announcementActive: false,
   heroCtaText: 'დაიწყე დიზაინი',
   heroCtaLink: '',
   freeShipThreshold: 150,
@@ -27,43 +33,32 @@ const DEFAULT_SETTINGS = {
   contactAddress: 'თბილისი, ჭავჭავაძის 12',
 };
 
+// Category cards. `cats` are the shop categories whose lowest price the tile shows;
+// `from` is the fallback while products load.
+const BENTO = [
+  { ka: 'მაისური', cats: ['TSHIRT'], img: teeImg, from: 35 },
+  { ka: 'ჰუდი', cats: ['HOODIE', 'ZIP_HOODIE'], img: hoodieImg, from: 89 },
+  { ka: 'პოლო', cats: ['POLO', 'POLO_LONGSLEEVE'], img: corpRoofing, from: 45, photo: true },
+  { ka: 'გრძელმკლავიანი', cats: ['LONGSLEEVE'], img: longsleeveImg, from: 55 },
+  { ka: 'ჩანთა', cats: ['BAG'], img: toteImg, from: 29 },
+  { ka: 'კეპი', cats: ['CAP'], img: capImg, from: 39 },
+  { ka: 'ჭიქა', cats: ['MUG'], img: mugImg, from: 25 },
+];
+
+const TICKER = ['მაისური', 'ჰუდი', 'პოლო', 'ბომბერი', 'ჩანთა', 'კეპი', 'ჭიქა', 'DTF ბეჭდვა', '1 ცალიდან', 'მიწოდება 3 დღეში'];
+
 const STEPS = [
-  { n: '01', t: 'აწყვე დიზაინი', d: 'ატვირთე ლოგო ან სურათი, დაამატე ტექსტი და მზა ემბლემები — წინ, უკან და სახელოებზე.' },
-  { n: '02', t: 'ნახე ფასი მაშინვე', d: 'ფასი ცოცხლად ითვლება: პროდუქტი + ბეჭდვის ზონები + რაოდენობა. ფარული ხარჯების გარეშე.' },
-  { n: '03', t: 'მიიღე 3 დღეში', d: 'ვბეჭდავთ, ვაფუთავთ და კურიერით ვაგზავნით მთელ საქართველოში. 150 ₾-დან უფასოდ.' },
+  { t: 'აირჩიე პროდუქტი', d: '10 კატეგორია, 8 ფერი, XS–XXL ზომები.' },
+  { t: 'ატვირთე დიზაინი', d: 'წინ, უკან ან სახელოზე — ფასი მაშინვე ითვლება.' },
+  { t: 'მიიღე 3 დღეში', d: null },
 ];
 
-const WHY = [
-  { t: 'ბრაუზერის კონსტრუქტორი', d: 'ოთხი ბეჭდვის ზონა, ფენები, შრიფტები და ბეჭდვის საზღვარი — პროგრამის ჩამოტვირთვის გარეშე.' },
-  { t: '1 ცალიც ისეთივე ფასია', d: 'მინიმალური შეკვეთა არ არსებობს. დაბეჭდე ერთი მაისური საჩუქრად ან 200 ცალი გუნდისთვის.' },
-  { t: 'DTF ბეჭდვა', d: 'ნათელი ფერები მუქ ქსოვილზეც, 50+ რეცხვის შემდეგაც არ სკდება და არ ცვივა.' },
-  { t: 'ფასი გამჭვირვალედ', d: 'პროდუქტი + ბეჭდვის ზონა × რაოდენობა. ჯამს ხედავ დიზაინის აწყობის დროსვე.' },
-  { t: 'მიწოდება 2–3 დღეში', d: 'კურიერი მთელ საქართველოში, 150 ₾-დან უფასოდ. თბილისში — მეორე დღეს.' },
-  { t: 'დიზაინის დახმარება', d: 'გვიგზავნი იდეას — ჩვენი დიზაინერი ბეჭდვისთვის ამზადებს ფაილს უფასოდ.' },
+const STATS = [
+  { n: '50+', t: 'რეცხვას უძლებს', d: 'DTF ბეჭდვა არ სკდება და ფერს ინარჩუნებს.' },
+  { n: '3 დღე', t: 'შეკვეთიდან კარამდე', d: 'თბილისში — ხშირად მეორე დღესვე.' },
+  { n: '100%', t: 'ბამბა', d: 'მაისურები 180–220 გრ/მ² ქსოვილისგან.' },
 ];
 
-const REVIEWS = [
-  { q: 'ბენდის მერჩი ვთხოვეთ 40 მაისურზე — ორ დღეში მზად იყო და ფერები ზუსტად ისეთია, როგორც ეკრანზე ვნახეთ.', n: 'ნიკა, მუსიკოსი' },
-  { q: 'კონსტრუქტორი ისეთი მარტივია, რომ დედაჩემმაც აწყო შვილიშვილისთვის ჰუდი. ბეჭდვა რეცხვის შემდეგ არ შეცვლილა.', n: 'ანა, თბილისი' },
-  { q: 'ჩვენი კაფესთვის 25 ჩანთა და 30 ჭიქა დავბეჭდეთ. ერთი შეკვეთით, ერთი ფასით — ძალიან მოსახერხებელია.', n: 'გიორგი, კაფე „ჩრდილი“' },
-];
-
-function Chevron({ dir = 'right' }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <polyline points={dir === 'left' ? '15 18 9 12 15 6' : '9 18 15 12 9 6'} />
-    </svg>
-  );
-}
-
-function ArrowRight() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
-    </svg>
-  );
-}
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -84,259 +79,220 @@ export default function HomePage() {
     api.get('/api/products').then((r) => setProducts(Array.isArray(r.data) ? r.data : [])).catch(() => {});
   }, []);
 
-  const firstProductId = products[0]?.id;
-  const designLink = settings.heroCtaLink || (firstProductId ? `/design/${firstProductId}` : '/');
-  const goDesign = () => navigate(designLink.startsWith('/') ? designLink : '/');
-  const goShop = () => navigate('/shop');
+  const firstProductId = starterProduct(products)?.id;
+  const designLink = settings.heroCtaLink || (firstProductId ? `/design/${firstProductId}` : '/shop');
+  const goDesign = () => navigate(designLink.startsWith('/') ? designLink : '/shop');
 
-  // Lowest price per category, for the category tiles.
+  // Lowest price per category, for the category cards and the hero chip.
   const fromPrice = {};
   products.forEach((p) => {
     const price = priceOf(p);
     if (price > 0 && !(fromPrice[p.category] <= price)) fromPrice[p.category] = price;
   });
+  const tileFrom = (tile) => {
+    const prices = tile.cats.map((c) => fromPrice[c]).filter((v) => v !== undefined);
+    return prices.length ? Math.min(...prices) : tile.from;
+  };
+  const allPrices = Object.values(fromPrice);
+  const lowest = allPrices.length ? Math.min(...allPrices) : 35;
 
-  // Featured: discounted first, then new arrivals, one of each category at most.
-  const featured = [];
+  // Best sellers: discounted first, then new arrivals, one of each category at most.
+  const popular = [];
   const seen = new Set();
   [...products]
     .sort((a, b) => Number(isOnSale(b)) - Number(isOnSale(a)) || Number(!!b.newArrival) - Number(!!a.newArrival))
     .forEach((p) => {
-      if (featured.length < 10 && !seen.has(p.category)) {
+      if (popular.length < 6 && !seen.has(p.category)) {
         seen.add(p.category);
-        featured.push(p);
+        popular.push(p);
       }
     });
 
-  /* ── Dynamic banners → slider ───────────────────────────── */
-  const [banners, setBanners] = useState(null); // null = loading, [] = none
-  useEffect(() => {
-    api.get('/api/banners').then((r) => setBanners(Array.isArray(r.data) ? r.data : [])).catch(() => setBanners([]));
-  }, []);
-
-  const [slide, setSlide] = useState(0);
-  const timerRef = useRef(null);
-  const slideCount = banners?.length || 0;
-
-  const goTo = useCallback((idx) => {
-    if (!slideCount) return;
-    setSlide((idx + slideCount) % slideCount);
-  }, [slideCount]);
-
-  useEffect(() => {
-    if (slideCount < 2) return undefined;
-    timerRef.current = setInterval(() => setSlide((x) => (x + 1) % slideCount), 5000);
-    return () => clearInterval(timerRef.current);
-  }, [slideCount]);
-
-  const nudge = (dir) => {
-    clearInterval(timerRef.current);
-    goTo(slide + dir);
-  };
-
   const money = (n) => `${Math.round(n)} ${settings.currency}`;
-  const hasBanners = Array.isArray(banners) && banners.length > 0;
-  const safeSlide = Math.min(slide, Math.max(0, slideCount - 1));
+  const freeShip = Number(settings.freeShipThreshold) || 0;
 
   return (
     <div className={s.page}>
 
-      {/* ── Announcement bar ─────────────────────────────── */}
       {settings.announcementActive && settings.announcementText && (
         <div className={s.announce}>{settings.announcementText}</div>
       )}
 
-      {/* ── Hero / Slider ────────────────────────────────── */}
-      {banners === null ? (
-        <div className={s.sliderLoading}>
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <circle cx="20" cy="20" r="16" stroke="#EF5F79" strokeWidth="3" strokeDasharray="80" strokeDashoffset="30" strokeLinecap="round">
-              <animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="0.9s" repeatCount="indefinite" />
-            </circle>
-          </svg>
-        </div>
-      ) : hasBanners ? (
-        <section className={s.slider}>
-          <div className={s.sliderTrack} style={{ transform: `translateX(-${safeSlide * 100}%)` }}>
-            {banners.map((b) => (
-              <div key={b.id} className={s.slide} style={{ backgroundImage: `url(${API_BASE}${b.imageUrl})` }}>
-                <div className={s.slideOverlay}>
-                  <div>
-                    {b.title && <h2 className={s.slideTitle}>{b.title}</h2>}
-                    {b.subtitle && <p className={s.slideText}>{b.subtitle}</p>}
-                    {b.ctaText && (
-                      <a href={b.ctaLink || '/'} className={s.btnPrimary}>{b.ctaText}</a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          {slideCount > 1 && (
-            <div className={s.sliderCtrl}>
-              <div className={s.dots}>
-                {banners.map((b, i) => (
-                  <button
-                    key={b.id}
-                    className={`${s.dot} ${safeSlide === i ? s.dotActive : ''}`}
-                    onClick={() => { clearInterval(timerRef.current); goTo(i); }}
-                    aria-label={`Slide ${i + 1}`}
-                  />
-                ))}
-              </div>
-              <div className={s.arrows}>
-                <button className={s.arrow} onClick={() => nudge(-1)} aria-label="Previous"><Chevron dir="left" /></button>
-                <button className={s.arrow} onClick={() => nudge(1)} aria-label="Next"><Chevron dir="right" /></button>
-              </div>
-            </div>
-          )}
-        </section>
-      ) : (
-        <section className={s.hero}>
-          <div className={s.heroBlobA} />
-          <div className={s.heroBlobB} />
-          <div className={s.heroInner}>
-            <div>
-              <h1 className={s.heroTitle}>
-                {settings.heroTitle}<br />
-                <span>მაისურზე, ჰუდზე, ჩანთაზე.</span>
-              </h1>
-              <p className={s.heroText}>{settings.heroSubtitle}</p>
-              <div className={s.heroCtas}>
-                <div className={s.btnPrimary} onClick={goDesign} role="button" tabIndex={0}>
-                  {settings.heroCtaText} <ArrowRight />
-                </div>
-                <div className={s.btnGhost} onClick={goShop} role="button" tabIndex={0}>
-                  მზა პროდუქცია
-                </div>
-              </div>
-              <div className={s.heroLinks}>
-                <div className={s.heroLink} onClick={() => navigate('/shop?cat=TSHIRT')}>ნახე პოპულარული მაისურები</div>
-                <div className={s.heroLink} onClick={goDesign}>როგორ მუშაობს ბეჭდვა</div>
-              </div>
-            </div>
-            <div className={s.heroArt}>
-              <img className={s.heroArtBack} src={heroTshirt} alt="" />
-              <img className={s.heroArtMid} src={heroTshirt} alt="" />
-              <img className={s.heroArtFront} src={heroTshirt} alt="დაბეჭდილი მაისური" fetchPriority="high" />
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── How it works ─────────────────────────────────── */}
-      <section className={s.band}>
-        <div className={s.bandInner}>
-          <div className={s.steps}>
-            {STEPS.map((step) => (
-              <div key={step.n}>
-                <div className={s.stepNum}>{step.n}</div>
-                <div className={s.stepTitle}>{step.t}</div>
-                <div className={s.stepText}>{step.d}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Categories ───────────────────────────────────── */}
-      <section className={s.section}>
-        <div className={s.sectionHead}>
-          <div>
-            <h2 className={s.h2}>კატეგორიები</h2>
-            <p className={s.sub} style={{ marginBottom: 0 }}>ტანსაცმელი და აქსესუარები — ყველა ბეჭდვისთვის მომზადებული.</p>
-          </div>
-          <Link className={s.moreLink} to="/shop">მთელი კატალოგი →</Link>
-        </div>
-        <div className={s.catGrid}>
-          {CATEGORIES.map((c) => (
-            <Link key={c.code} className={s.catCard} to={`/shop?cat=${c.code}`}>
-              <span className={s.catTile}>
-                <ProductImage product={{ category: c.code, name: c.label }} color={c.swatch} className={s.catImg} />
-              </span>
-              <span className={s.catName}>{c.label}</span>
-              {fromPrice[c.code] !== undefined && (
-                <span className={s.catPrice}>{money(fromPrice[c.code])}-დან</span>
-              )}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Featured products ────────────────────────────── */}
-      {featured.length > 0 && (
-        <section className={s.section}>
-          <div className={s.sectionHead}>
-            <div>
-              <h2 className={s.h2}>შეთავაზებები</h2>
-              <p className={s.sub} style={{ marginBottom: 0 }}>ფასდაკლებები და ახალი კოლექცია.</p>
-            </div>
-            <Link className={s.moreLink} to="/shop?sale=1">ყველა ფასდაკლება →</Link>
-          </div>
-          <div className={s.bestGrid}>
-            {featured.map((p) => <ProductCard key={p.id} product={p} currency={settings.currency} />)}
-          </div>
-        </section>
-      )}
-
-      {/* ── Corporate CTA ────────────────────────────────── */}
-      <section className={s.sectionPad} style={{ maxWidth: 1360, margin: '0 auto' }}>
-        <div className={s.corp}>
-          <div className={s.corpBody}>
-            <div className={s.corpKicker}>კორპორატიული შეკვეთები</div>
-            <h3 className={s.corpTitle}>გუნდისთვის, ღონისძიებისთვის, ბრენდისთვის</h3>
-            <p className={s.corpText}>
-              10 ცალიდან — ფასდაკლება, ერთიანი დიზაინი და ზომების მიხედვით დაშლილი შეკვეთა.
-              ჩვენ ვამზადებთ ნიმუშს, თქვენ ამტკიცებთ და ვბეჭდავთ.
+      {/* ── Hero ─────────────────────────────────────────── */}
+      <section className={s.hero}>
+        <div className={s.heroGlow} />
+        <div className={s.heroInner}>
+          <div className={s.heroCopy}>
+            <span className={s.pill}><span className={s.pillBadge}>ახალი</span>ბეჭდვა 1 ცალიდანაც</span>
+            <h1 className={s.heroTitle}>შენი იდეა. <br /><span>ჩვენი ბეჭდვა.</span></h1>
+            <p className={s.heroText}>
+              ატვირთე სურათი, ლოგო ან ტექსტი — დავბეჭდავთ მაისურზე, ჰუდზე, ჩანთაზე, კეპზე ან ჭიქაზე და მოგიტანთ 3 დღეში.
             </p>
-            <div className={s.btnPrimary} onClick={goDesign} role="button" tabIndex={0}>გამოთვალე ფასი <ArrowRight /></div>
-          </div>
-          <img className={s.corpImg} src={mainHoodie} alt="ჰუდი" />
-        </div>
-      </section>
-
-      {/* ── Why Prenta ───────────────────────────────────── */}
-      <section className={s.band}>
-        <div className={s.bandInner}>
-          <h2 className={s.h2} style={{ marginBottom: 26 }}>რატომ Prenta?</h2>
-          <div className={s.whyGrid}>
-            {WHY.map((w) => (
-              <div key={w.t} className={s.whyCard}>
-                <div className={s.whyTitle}>{w.t}</div>
-                <div className={s.whyText}>{w.d}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Reviews ──────────────────────────────────────── */}
-      <section className={s.sectionPad} style={{ maxWidth: 1360, margin: '0 auto' }}>
-        <h2 className={s.h2} style={{ marginBottom: 24 }}>რას ამბობენ მომხმარებლები</h2>
-        <div className={s.reviewGrid}>
-          {REVIEWS.map((r) => (
-            <div key={r.n} className={s.reviewCard}>
-              <div className={s.stars}>★★★★★</div>
-              <div className={s.reviewText}>{r.q}</div>
-              <div className={s.reviewName}>{r.n}</div>
+            <div className={s.heroCtas}>
+              <button type="button" className={`${s.btn} ${s.btnPink} ${s.btnLg}`} onClick={goDesign}>
+                {settings.heroCtaText} →
+              </button>
+              <Link to="/shop" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>მზა პროდუქცია</Link>
             </div>
+            <div className={s.proof}>
+              <div className={s.avatars}>
+                {[corpSushi, corpRoofing, corpVlog].map((src) => <img key={src} src={src} alt="" />)}
+              </div>
+              <div className={s.proofText}>
+                <b>2 400+</b> დაბეჭდილი შეკვეთა<br />
+                <span className={s.stars}>★★★★★</span> 4.9 შეფასება
+              </div>
+            </div>
+          </div>
+          <div className={s.heroArt}>
+            <div className={s.heroArtBox}>
+              <img className={s.heroImg} src={heroImg} alt="მაისურები" fetchPriority="high" />
+              <div className={`${s.chip} ${s.chipA}`}>
+                <span className={s.chipIcon}>✓</span>
+                <div><div className={s.chipTitle}>მზადაა 3 დღეში</div><div className={s.chipSub}>მიწოდება კარამდე</div></div>
+              </div>
+              <div className={`${s.chip} ${s.chipB}`}>
+                <span className={s.chipIcon}>₾</span>
+                <div><div className={s.chipTitle}>{money(lowest)}-დან</div><div className={s.chipSub}>ფასი ბეჭდვით</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Ticker ───────────────────────────────────────── */}
+      <div className={s.ticker} aria-hidden="true">
+        <div className={s.tickerTrack}>
+          {[...TICKER, ...TICKER].map((t, i) => (
+            <span key={i} className={s.tickerItem}>{t}<span className={s.tickerStar}>✦</span></span>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* ── Final CTA ────────────────────────────────────── */}
-      <section className={s.finalCta}>
-        <div className={s.finalInner}>
-          <div>
-            <h2 className={s.finalTitle}>მზად ხარ დასაბეჭდად?</h2>
-            <div style={{ opacity: 0.9 }}>დიზაინის აწყობა უფასოა — გადაიხდი მხოლოდ მაშინ, როცა შეკვეთას გააფორმებ.</div>
+      <main className={s.main}>
+
+        {/* ── Categories ────────────────────────────────── */}
+        <section className={s.section}>
+          <div className={s.head}>
+            <div className={s.headText}>
+              <span className={s.kicker}>კატეგორიები</span>
+              <h2 className={s.h2}>რაზე დავბეჭდოთ?</h2>
+            </div>
+            <Link className={s.more} to="/shop">ყველა პროდუქტი →</Link>
           </div>
-          <div className={s.btnDark} onClick={goDesign} role="button" tabIndex={0}>კონსტრუქტორის გახსნა</div>
-        </div>
-      </section>
+          <div className={s.cats}>
+            {BENTO.map((b) => (
+              <Link key={b.ka} to={`/shop?cat=${b.cats[0]}`} className={s.cat}>
+                <span className={s.catMedia}>
+                  <img src={b.img} alt={b.ka} loading="lazy" className={b.photo ? s.catPhoto : ''} />
+                </span>
+                <span className={s.catBar}>
+                  <span className={s.catText}>
+                    <span className={s.catName}>{b.ka}</span>
+                    <span className={s.catFrom}>{money(tileFrom(b))}-დან</span>
+                  </span>
+                  <span className={s.catArrow}>→</span>
+                </span>
+              </Link>
+            ))}
+            <Link to="/shop" className={`${s.cat} ${s.catAll}`}>
+              <span className={s.catAllBody}>
+                <span className={s.catAllNum}>10</span>
+                <span className={s.catAllText}>კატეგორია, 8 ფერი და ზომები XS–XXL</span>
+              </span>
+              <span className={s.catBar}>
+                <span className={s.catName}>ყველა პროდუქტი</span>
+                <span className={s.catArrow}>→</span>
+              </span>
+            </Link>
+          </div>
+        </section>
+
+        {/* ── How it works ───────────────────────────────── */}
+        <section className={s.section}>
+          <div className={s.steps}>
+            <div className={s.stepsIntro}>
+              <span className={s.kicker}>როგორ მუშაობს</span>
+              <h2 className={s.h2}>სამი ნაბიჯი შენს პროდუქტამდე</h2>
+              <p className={s.muted}>არ გჭირდება დიზაინერი — კონსტრუქტორში ყველაფერს თვითონ ნახავ, ფასსაც ჩათვლით.</p>
+              <button type="button" className={`${s.btn} ${s.btnNavy}`} onClick={goDesign}>გახსენი კონსტრუქტორი →</button>
+            </div>
+            <ol className={s.stepList}>
+              {STEPS.map((st, i) => (
+                <li key={st.t} className={s.step}>
+                  <span className={`${s.stepNum} ${s[`stepNum${i}`]}`}>{i + 1}</span>
+                  <div>
+                    <div className={s.stepTitle}>{st.t}</div>
+                    <div className={s.stepText}>
+                      {st.d ?? (freeShip > 0
+                        ? `მიწოდება მთელ საქართველოში, ${money(freeShip)}-დან უფასოდ.`
+                        : 'მიწოდება მთელ საქართველოში.')}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* ── Best sellers ───────────────────────────────── */}
+        {popular.length > 0 && (
+          <section className={s.section}>
+            <div className={s.head}>
+              <div className={s.headText}>
+                <span className={s.kicker}>პოპულარული</span>
+                <h2 className={s.h2}>ყველაზე გაყიდვადი</h2>
+              </div>
+              <Link className={s.more} to="/shop">მაღაზიაში გადასვლა →</Link>
+            </div>
+            <div className={s.products}>
+              {popular.map((p) => <ProductCard key={p.id} product={p} currency={settings.currency} />)}
+            </div>
+          </section>
+        )}
+
+        {/* ── Corporate ──────────────────────────────────── */}
+        <section className={s.section}>
+          <div className={s.corp}>
+            <div className={s.corpBody}>
+              <span className={s.kicker}>ბიზნესისთვის</span>
+              <h2 className={s.h2}>გუნდის ფორმა, ლოგოთი — 10 ცალიდან</h2>
+              <p className={s.corpText}>Modern Roofing, Sushi Icons, Ratto Bistro და კიდევ ათობით კომპანია უკვე ჩვენთან ბეჭდავს.</p>
+              <div className={s.corpBtns}>
+                <Link to="/corporate#quote" className={`${s.btn} ${s.btnPink}`}>გამოთვალე ფასი →</Link>
+                <Link to="/corporate#work" className={`${s.btn} ${s.btnOutline}`}>ნამუშევრები</Link>
+              </div>
+            </div>
+            <div className={s.corpMosaic}>
+              <span className={`${s.corpCell} ${s.corpBig}`}><img src={corpRoofing} alt="" loading="lazy" /></span>
+              <span className={s.corpCell}><img src={corpFestival} alt="" loading="lazy" /></span>
+              <span className={s.corpCell}><img src={corpDelfi} alt="" loading="lazy" /></span>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Stats ──────────────────────────────────────── */}
+        <section className={`${s.section} ${s.stats}`}>
+          {STATS.map((st) => (
+            <div key={st.n} className={s.stat}>
+              <span className={s.statNum}>{st.n}</span>
+              <span className={s.statTitle}>{st.t}</span>
+              <span className={s.statText}>{st.d}</span>
+            </div>
+          ))}
+        </section>
+
+        {/* ── Final CTA ──────────────────────────────────── */}
+        <section className={`${s.section} ${s.sectionEnd}`}>
+          <div className={s.final}>
+            <h2 className={s.finalTitle}>მზად ხარ? შექმენი პირველი დიზაინი 2 წუთში.</h2>
+            <p className={s.finalText}>რეგისტრაცია არ არის საჭირო. ნახე, როგორ გამოიყურება, სანამ შეუკვეთავ.</p>
+            <button type="button" className={`${s.btn} ${s.btnNavy} ${s.btnXl}`} onClick={goDesign}>დაიწყე ახლა →</button>
+          </div>
+        </section>
+      </main>
 
       <SiteFooter settings={settings} />
-
     </div>
   );
 }

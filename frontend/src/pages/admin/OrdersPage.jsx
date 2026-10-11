@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../lib/api';
 import { API_BASE, CATEGORY_LABELS, COLORS } from '../../lib/catalog';
@@ -10,16 +10,133 @@ import {
   getErrorMessage,
   shortDate,
 } from './adminShared';
+import Pager from './Pager';
+import useServerList, { useDebounced, usePageSize } from './useServerList';
 import s from './Admin.module.css';
 
 const fileUrl = (id) => `${API_BASE}/api/files/${id}`;
+
+// The constructor's own colour keys / hexes (see SHIRT_COLORS in DesignPage).
+const EDITOR_COLORS = {
+  white: 'თეთრი', black: 'შავი', grey: 'ნაცრისფერი', red: 'წითელი', blue: 'ლურჯი', green: 'მწვანე',
+  '#ffffff': 'თეთრი', '#1a1a1a': 'შავი', '#888888': 'ნაცრისფერი', '#cc2222': 'წითელი', '#2244cc': 'ლურჯი', '#228833': 'მწვანე',
+};
 
 // Product colour arrives as a hex from the editor (or a key from the shop).
 function colorName(value) {
   if (!value) return null;
   if (COLORS[value]) return COLORS[value].name;
-  const match = Object.values(COLORS).find((c) => c.hex.toLowerCase() === String(value).toLowerCase());
-  return match?.name ?? value;
+  const key = String(value).toLowerCase();
+  const match = Object.values(COLORS).find((c) => c.hex.toLowerCase() === key);
+  return match?.name ?? EDITOR_COLORS[key] ?? value;
+}
+
+// three.js loads only when an order with a custom design is opened.
+const Snapshot3D = lazy(() => import('./Snapshot3D'));
+
+const downloadUrl = (id, name) => `${fileUrl(id)}?download=1&name=${encodeURIComponent(name)}`;
+
+/** One picture in a side card; null src = still being prepared. */
+function SideImage({ src, tag, kind, alt, onZoom, pending }) {
+  if (!src && !pending) return null;
+  const cls = kind === 'art' ? s.printArt : s.printMock;
+  if (!src) {
+    return (
+      <div className={`${cls} ${s.printPending}`}>
+        <span className={s.printTag}>{tag}</span>
+        <span>მზადდება…</span>
+      </div>
+    );
+  }
+  return (
+    <button type="button" className={cls} onClick={() => onZoom(src)} title="გადიდება">
+      <img src={src} alt={alt} />
+      <span className={s.printTag}>{tag}</span>
+    </button>
+  );
+}
+
+/**
+ * One printed side of a custom item: where it is printed (a 3D photo of the
+ * garment with the design; the flat placement drawing if 3D can't be made)
+ * and the print file.
+ */
+function PrintSide({ title, view3d, view3dPending, placement, print, printName, onZoom }) {
+  if (!placement && !print && !view3d) return null;
+  const where = view3d || (view3dPending ? null : placement);
+  return (
+    <div className={s.printSide}>
+      <div className={s.printSideHead}><span>{title}</span></div>
+      <div className={s.printSideImgs}>
+        <SideImage src={where} pending={view3dPending} tag="სად დაიბეჭდოს" alt={`${title} — სად დაიბეჭდოს`} onZoom={onZoom} />
+        <SideImage src={print} kind="art" tag="ბეჭდვის ფაილი" alt={`${title} — ბეჭდვის ფაილი`} onZoom={onZoom} />
+      </div>
+      {print && (
+        <a className={s.printDownload} href={print} download={printName}>⬇ ბეჭდვის ფაილი (PNG)</a>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Front / back of a custom item, rebuilt from its saved layers so every
+ * order (old ones too) shows each side in 3D, where it is printed, and the
+ * print file. Falls back to the files stored with the order.
+ */
+function ItemDesign({ design, baseName, onZoom }) {
+  const [layers, setLayers] = useState(null);
+  const [built, setBuilt] = useState(null); // { front, back } or 'failed'
+  const [shots, setShots] = useState(null); // 3D photos { front, back }
+
+  useEffect(() => {
+    if (!design.layersFile) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await (await fetch(fileUrl(design.layersFile))).json();
+        const { renderPlacement, renderSidePrint } = await import('../../lib/placement');
+        const side = async (name) => ({
+          placement: await renderPlacement(data, name),
+          print: await renderSidePrint(data, name),
+        });
+        const result = { front: await side('front'), back: await side('back') };
+        if (!cancelled) { setLayers(data); setBuilt(result); }
+      } catch {
+        if (!cancelled) setBuilt('failed');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [design.layersFile]);
+
+  if (design.layersFile && built === null) return <div className={s.muted} style={{ fontSize: 12.5, marginTop: 8 }}>განლაგება მზადდება…</div>;
+
+  const fromLayers = built && built !== 'failed';
+  const stored3d = { front: design.previewFile && fileUrl(design.previewFile), back: design.backPreviewFile && fileUrl(design.backPreviewFile) };
+  const sideData = (name) => (fromLayers
+    ? { ...built[name], view3d: shots ? shots[name] ?? null : null, pending: !shots && !!built[name].placement }
+    : {
+        placement: null,
+        print: (name === 'front' ? design.printFile : design.backPrintFile)
+          && downloadUrl(name === 'front' ? design.printFile : design.backPrintFile, `${baseName}-${name}.png`),
+        view3d: stored3d[name],
+        pending: false,
+      });
+  const front = sideData('front');
+  const back = sideData('back');
+
+  return (
+    <>
+      {fromLayers && layers && !shots && (
+        <Suspense fallback={null}>
+          <Snapshot3D layers={layers} onDone={(r) => setShots({ front: r.front ?? stored3d.front, back: r.back ?? stored3d.back })} />
+        </Suspense>
+      )}
+      <div className={s.printSides}>
+        <PrintSide title="წინა მხარე" view3d={front.view3d} view3dPending={front.pending} placement={front.placement} print={front.print} printName={`${baseName}-front.png`} onZoom={onZoom} />
+        <PrintSide title="უკანა მხარე" view3d={back.view3d} view3dPending={back.pending} placement={back.placement} print={back.print} printName={`${baseName}-back.png`} onZoom={onZoom} />
+      </div>
+    </>
+  );
 }
 
 function StatusBadge({ status }) {
@@ -29,6 +146,7 @@ function StatusBadge({ status }) {
 
 function OrderDrawer({ order, onClose, onSaved }) {
   const [note, setNote] = useState(order.adminNote || '');
+  const [zoom, setZoom] = useState(null); // image shown full size
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -93,13 +211,7 @@ function OrderDrawer({ order, onClose, onSaved }) {
             <h3 className={s.cardTitle}>პროდუქტები</h3>
             {order.items.map((it, i) => (
               <div key={i} className={s.item}>
-                <div className={s.itemPreview}>
-                  {it.design?.previewFile
-                    ? <img src={fileUrl(it.design.previewFile)} alt="" />
-                    : it.design?.printFile
-                      ? <img src={fileUrl(it.design.printFile)} alt="" />
-                      : 'დიზაინის გარეშე'}
-                </div>
+                {!it.design && <div className={s.itemPreview}>დიზაინის გარეშე</div>}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className={s.strong}>{it.name}</div>
                   <div className={s.muted} style={{ fontSize: 12.5 }}>
@@ -109,11 +221,14 @@ function OrderDrawer({ order, onClose, onSaved }) {
                     {it.quantity} × {gel(it.unitPrice)} = <b>{gel(it.lineTotal)}</b>
                   </div>
                   {it.design && (
-                    <div className={s.itemLinks}>
-                      {it.design.printFile && <a className={s.link} href={fileUrl(it.design.printFile)} target="_blank" rel="noreferrer" download>⬇ ბეჭდვის ფაილი (PNG)</a>}
-                      {it.design.layersFile && <a className={s.link} href={fileUrl(it.design.layersFile)} target="_blank" rel="noreferrer">ფენები (JSON)</a>}
-                      {it.design.model && <span className={s.muted} style={{ fontSize: 12 }}>მოდელი: {it.design.model}</span>}
-                    </div>
+                    <>
+                      <ItemDesign design={it.design} baseName={`${order.number}-${i + 1}`} onZoom={setZoom} />
+                      {it.design.layersFile && (
+                        <div className={s.itemLinks}>
+                          <a className={s.link} href={fileUrl(it.design.layersFile)} target="_blank" rel="noreferrer">ფენები (JSON)</a>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -143,6 +258,12 @@ function OrderDrawer({ order, onClose, onSaved }) {
           </button>
         </div>
       </aside>
+      {zoom && (
+        <div className={s.zoomBack} onClick={() => setZoom(null)} role="dialog" aria-label="სურათი">
+          <img src={zoom} alt="" className={s.zoomImg} />
+          <button type="button" className={s.zoomClose} onClick={() => setZoom(null)} aria-label="დახურვა">×</button>
+        </div>
+      )}
     </>
   );
 }
@@ -151,61 +272,66 @@ export default function OrdersPage() {
   const [params, setParams] = useSearchParams();
   const status = params.get('status') || '';
   const openId = params.get('open') || '';
+  const page = Math.max(1, Number(params.get('page')) || 1);
+  const [pageSize, setPageSize] = usePageSize('orders');
   const [query, setQuery] = useState(params.get('q') || '');
-  const [orders, setOrders] = useState(null);
-  const [error, setError] = useState('');
+  const search = useDebounced(query.trim());
+  // Drawer order fetched by id when it isn't on the current page (or after a save).
+  const [fetched, setFetched] = useState(null);
 
-  const load = useCallback(() => {
-    api.get('/api/orders')
-      .then((r) => setOrders(r.data))
-      .catch((e) => setError(getErrorMessage(e, 'შეკვეთები ვერ ჩაიტვირთა')));
-  }, []);
+  const setParam = useCallback((changes) => {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      Object.entries(changes).forEach(([k, v]) => { if (v) next.set(k, v); else next.delete(k); });
+      return next;
+    }, { replace: true });
+  }, [setParams]);
 
-  useEffect(() => { load(); }, [load]);
+  // A new search starts again from page 1.
+  useEffect(() => {
+    if (search !== (params.get('q') || '')) setParam({ q: search, page: '' });
+  }, [search, params, setParam]);
 
-  const setParam = (key, value) => {
-    const next = new URLSearchParams(params);
-    if (value) next.set(key, value); else next.delete(key);
-    setParams(next, { replace: true });
+  const { data, error, loading, reload } = useServerList(
+    '/api/orders',
+    { status, q: params.get('q') || '', page, pageSize },
+    'შეკვეთები ვერ ჩაიტვირთა',
+  );
+
+  const row = openId ? data?.items.find((o) => o.id === openId) : null;
+  const opened = !openId ? null : (fetched?.id === openId ? fetched : row) || null;
+
+  // Opened from elsewhere (e.g. the dashboard) and not on this page: fetch it.
+  useEffect(() => {
+    if (!openId || !data || data.items.some((o) => o.id === openId)) return;
+    api.get(`/api/orders/${openId}`).then((r) => setFetched(r.data)).catch(() => {});
+  }, [openId, data]);
+
+  const counts = data?.counts || {};
+  const all = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  const saved = (updated) => {
+    setFetched(updated);
+    reload(); // status counts and filters may have changed
   };
-
-  const counts = useMemo(() => {
-    const c = Object.fromEntries(ORDER_STATUSES.map((st) => [st.key, 0]));
-    (orders || []).forEach((o) => { c[o.status] = (c[o.status] || 0) + 1; });
-    return c;
-  }, [orders]);
-
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return (orders || []).filter((o) => {
-      if (status && o.status !== status) return false;
-      if (!q) return true;
-      return [o.number, o.customerName, o.phone, o.customerEmail, o.address]
-        .some((v) => String(v || '').toLowerCase().includes(q));
-    });
-  }, [orders, status, query]);
-
-  const open = orders?.find((o) => o.id === openId) || null;
-
-  const saved = (updated) => setOrders((list) => list.map((o) => (o.id === updated.id ? updated : o)));
 
   return (
     <div className={s.page}>
       <div className={s.head}>
         <div>
           <h1 className={s.title}>შეკვეთები</h1>
-          <p className={s.sub}>{orders ? `${orders.length} შეკვეთა` : ' '}</p>
+          <p className={s.sub}>{data ? `${all} შეკვეთა` : ' '}</p>
         </div>
-        <button type="button" className={s.btnGhost} onClick={load}>↻ განახლება</button>
+        <button type="button" className={s.btnGhost} onClick={reload}>↻ განახლება</button>
       </div>
 
       <div className={s.tabs}>
-        <button type="button" className={`${s.tab} ${!status ? s.tabOn : ''}`} onClick={() => setParam('status', '')}>
-          ყველა <span className={s.tabCount}>{orders?.length ?? 0}</span>
+        <button type="button" className={`${s.tab} ${!status ? s.tabOn : ''}`} onClick={() => setParam({ status: '', page: '' })}>
+          ყველა <span className={s.tabCount}>{all}</span>
         </button>
         {ORDER_STATUSES.map((st) => (
-          <button key={st.key} type="button" className={`${s.tab} ${status === st.key ? s.tabOn : ''}`} onClick={() => setParam('status', st.key)}>
-            {st.label} <span className={s.tabCount}>{counts[st.key]}</span>
+          <button key={st.key} type="button" className={`${s.tab} ${status === st.key ? s.tabOn : ''}`} onClick={() => setParam({ status: st.key, page: '' })}>
+            {st.label} <span className={s.tabCount}>{counts[st.key] || 0}</span>
           </button>
         ))}
       </div>
@@ -216,16 +342,16 @@ export default function OrdersPage() {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="ძებნა: ნომერი, სახელი, ტელეფონი, ელფოსტა…"
+          placeholder="ძებნა: ნომერი, სახელი, ტელეფონი, ელფოსტა, მისამართი…"
         />
       </div>
 
       {error && <div className={s.error}>{error}</div>}
-      {!orders && !error && <div className={s.loading}>იტვირთება…</div>}
-      {orders && shown.length === 0 && <div className={s.empty}>შეკვეთები ვერ მოიძებნა.</div>}
+      {!data && !error && <div className={s.loading}>იტვირთება…</div>}
+      {data && data.items.length === 0 && <div className={s.empty}>შეკვეთები ვერ მოიძებნა.</div>}
 
-      {shown.length > 0 && (
-        <div className={s.tableWrap}>
+      {data?.items.length > 0 && (
+        <div className={`${s.tableWrap} ${loading ? s.tableBusy : ''}`}>
           <table className={s.table}>
             <thead>
               <tr>
@@ -239,9 +365,9 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {shown.map((o) => (
-                <tr key={o.id} className={s.clickRow} onClick={() => setParam('open', o.id)}>
-                  <td className={s.strong}>{o.number}</td>
+              {data.items.map((o) => (
+                <tr key={o.id} className={s.clickRow} onClick={() => setParam({ open: o.id })}>
+                  <td className={`${s.strong} ${s.nowrap}`}>{o.number}</td>
                   <td className={s.nowrap}>{shortDate(o.createdAt, true)}</td>
                   <td>
                     <div>{o.customerName}</div>
@@ -261,7 +387,9 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {open && <OrderDrawer key={open.id} order={open} onClose={() => setParam('open', '')} onSaved={saved} />}
+      {data && <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={(n) => setParam({ page: n > 1 ? String(n) : '' })} onPageSize={(n) => { setPageSize(n); setParam({ page: '' }); }} />}
+
+      {opened && <OrderDrawer key={opened.id} order={opened} onClose={() => setParam({ open: '' })} onSaved={saved} />}
     </div>
   );
 }

@@ -15,10 +15,13 @@ export const PAYMENT_METHODS = ['cash', 'card', 'bog'] as const;
 /** Customer design attached to a line. Ids are GridFS files (see FilesModule). */
 @Schema({ _id: false })
 export class OrderDesign {
-  /** Print-ready PNG rendered from the editor. */
+  /** Front print: artwork-only PNG, trimmed to the artwork. */
   @Prop() printFile?: string;
-  /** Small preview image shown in the cart / admin. */
+  /** Front mockup: the garment with the design, showing where it is printed. */
   @Prop() previewFile?: string;
+  /** Back print / mockup, when the back side has a design. */
+  @Prop() backPrintFile?: string;
+  @Prop() backPreviewFile?: string;
   /** Editor layers (JSON) so the design can be re-created. */
   @Prop() layersFile?: string;
   /** 3D model the design was made on (e.g. 'polo', 'mug'). */

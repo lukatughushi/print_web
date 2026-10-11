@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model, Types } from 'mongoose';
+import { countBy, paginate, PageQuery, searchRegex } from '../common/pagination';
 import { FilesService } from '../files/files.service';
 import { Product } from '../products/schemas/product.schema';
 import { SettingsService } from '../settings/settings.service';
@@ -111,23 +112,28 @@ export class OrdersService {
     }
   }
 
-  findAll(query: { status?: string; q?: string }) {
-    const filter: Record<string, unknown> = {};
-    if (query.status && Object.values(OrderStatus).includes(query.status as OrderStatus)) {
-      filter.status = query.status;
-    }
-    if (query.q?.trim()) {
-      const q = query.q.trim();
-      const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      const or: Record<string, unknown>[] = [{ customerName: rx }, { phone: rx }, { customerEmail: rx }];
+  /** One page of orders plus per-status counts (for the filter tabs). */
+  async findAll(query: { status?: string; q?: string } & PageQuery) {
+    const search: Record<string, unknown> = {};
+    const rx = searchRegex(query.q);
+    if (rx) {
+      const or: Record<string, unknown>[] = [{ customerName: rx }, { phone: rx }, { customerEmail: rx }, { address: rx }];
       // "PR-3F9A21" or "3f9a21" → ids ending with those hex digits.
-      const tail = q.replace(/^PR-/i, '').toLowerCase();
+      const tail = query.q!.trim().replace(/^PR-/i, '').toLowerCase();
       if (/^[0-9a-f]{4,24}$/.test(tail)) {
         or.push({ $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: `${tail}$` } } });
       }
-      filter.$or = or;
+      search.$or = or;
     }
-    return this.orderModel.find(filter).sort({ createdAt: -1 }).limit(500).exec();
+    const filter = { ...search };
+    if (query.status && Object.values(OrderStatus).includes(query.status as OrderStatus)) {
+      filter.status = query.status;
+    }
+    const [page, counts] = await Promise.all([
+      paginate(this.orderModel, filter, query),
+      countBy(this.orderModel, search, 'status'),
+    ]);
+    return { ...page, counts };
   }
 
   findByEmail(email: string) {
@@ -161,6 +167,12 @@ export class OrdersService {
 
     const preview = decodeDataUrl(design.previewUrl);
     if (preview) out.previewFile = await put(preview.buffer, 'preview.png', preview.type);
+
+    const backPrint = decodeDataUrl(design.backPrintUrl);
+    if (backPrint) out.backPrintFile = await put(backPrint.buffer, 'print-back.png', backPrint.type);
+
+    const backPreview = decodeDataUrl(design.backPreviewUrl);
+    if (backPreview) out.backPreviewFile = await put(backPreview.buffer, 'preview-back.png', backPreview.type);
 
     if (design.canvasJson) {
       const json = Buffer.from(JSON.stringify(design.canvasJson));

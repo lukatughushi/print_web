@@ -81,15 +81,7 @@ export default function SettingsPage() {
       </div>
 
       <div className={`${s.card} ${s.section}`}>
-        <h2 className={s.sectionTitle}>მთავარი ბანერი (როცა სლაიდერში ბანერები არ არის)</h2>
-        <div className={s.field}>
-          <label className={s.label} htmlFor="s-ht">სათაური</label>
-          <input id="s-ht" className={s.input} value={form.heroTitle || ''} onChange={set('heroTitle')} />
-        </div>
-        <div className={s.field}>
-          <label className={s.label} htmlFor="s-hs">ტექსტი</label>
-          <textarea id="s-hs" className={s.textarea} value={form.heroSubtitle || ''} onChange={set('heroSubtitle')} />
-        </div>
+        <h2 className={s.sectionTitle}>მთავარი გვერდის ღილაკი</h2>
         <div className={s.formGrid}>
           <div className={s.field}>
             <label className={s.label} htmlFor="s-hc">ღილაკის ტექსტი</label>

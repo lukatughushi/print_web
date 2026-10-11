@@ -2,10 +2,12 @@ import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AuthProvider from './context/AuthProvider';
 import Navbar from './components/Navbar';
+import FavoritesSync from './components/FavoritesSync';
 import Toast from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
+import CorporatePage from './pages/CorporatePage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -17,13 +19,15 @@ import AccountPage from './pages/AccountPage';
 // download the 3D/editor libraries (three.js, Konva) or the admin panel.
 const loadDesignPage = () => import('./pages/DesignPage');
 const DesignPage = lazy(loadDesignPage);
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AdminLayout = lazy(() => import('./components/AdminLayout'));
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage'));
 const AdminOrders = lazy(() => import('./pages/admin/OrdersPage'));
 const AdminProducts = lazy(() => import('./pages/admin/ProductsPage'));
 const AdminUsers = lazy(() => import('./pages/admin/UsersPage'));
-const BannersPage = lazy(() => import('./pages/admin/BannersPage'));
+const AdminQuotes = lazy(() => import('./pages/admin/QuotesPage'));
+const AdminLogs = lazy(() => import('./pages/admin/LogsPage'));
 const SettingsPage = lazy(() => import('./pages/admin/SettingsPage'));
 
 // Fetch the constructor code once the current page is idle, so opening it
@@ -50,10 +54,12 @@ function AppContent() {
     <>
       {!isAdmin && <Navbar />}
       <Toast />
+      <FavoritesSync />
       <Suspense fallback={<PageLoading />}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
+        <Route path="/corporate" element={<CorporatePage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         {/* Design editor — existing Fabric.js page, do not replace */}
         <Route path="/design/:productId" element={<DesignPage />} />
@@ -78,10 +84,13 @@ function AppContent() {
             <Route path="orders" element={<AdminOrders />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="users" element={<AdminUsers />} />
-            <Route path="banners" element={<BannersPage />} />
+            <Route path="quotes" element={<AdminQuotes />} />
+            <Route path="logs" element={<AdminLogs />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </Suspense>
     </>

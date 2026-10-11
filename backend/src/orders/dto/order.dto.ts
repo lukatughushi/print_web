@@ -26,6 +26,8 @@ export class OrderDesignDto {
   /** data: URLs (PNG/JPEG/WebP) produced by the editor. */
   @IsOptional() @IsString() printUrl?: string;
   @IsOptional() @IsString() previewUrl?: string;
+  @IsOptional() @IsString() backPrintUrl?: string;
+  @IsOptional() @IsString() backPreviewUrl?: string;
   @IsOptional() @IsString() @MaxLength(40) model?: string;
 }
 

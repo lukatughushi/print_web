@@ -31,8 +31,13 @@ export class OrdersController {
 
   @Roles(Role.Admin)
   @Get()
-  findAll(@Query('status') status?: string, @Query('q') q?: string) {
-    return this.orders.findAll({ status, q });
+  findAll(
+    @Query('status') status?: string,
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.orders.findAll({ status, q, page, pageSize });
   }
 
   @Roles(Role.Admin)

@@ -1,29 +1,29 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 import { useAuth } from '../../context/auth-context';
 import { gel, getErrorMessage, shortDate } from './adminShared';
+import Pager from './Pager';
+import useServerList, { useDebounced, usePageSize } from './useServerList';
 import s from './Admin.module.css';
 
 export default function UsersPage() {
   const { user: me } = useAuth();
-  const [users, setUsers] = useState(null);
   const [query, setQuery] = useState('');
+  const search = useDebounced(query.trim());
   const [role, setRole] = useState('');
-  const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = usePageSize('users');
+  const [actionError, setActionError] = useState('');
 
-  useEffect(() => {
-    api.get('/api/admin/users')
-      .then((r) => setUsers(r.data))
-      .catch((e) => setError(getErrorMessage(e, 'მომხმარებლები ვერ ჩაიტვირთა')));
-  }, []);
-
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return (users || []).filter((u) =>
-      (!role || u.role === role) &&
-      (!q || `${u.name} ${u.email}`.toLowerCase().includes(q)));
-  }, [users, query, role]);
+  const { data, setData, error: loadError, loading } = useServerList(
+    '/api/admin/users',
+    { q: search, role, page, pageSize },
+    'მომხმარებლები ვერ ჩაიტვირთა',
+  );
+  const error = actionError || loadError;
+  const users = data?.items ?? null;
+  const shown = users ?? [];
 
   const setUserRole = async (u, next) => {
     const msg = next === 'admin'
@@ -31,10 +31,10 @@ export default function UsersPage() {
       : `${u.name}-ს მოეხსნას ადმინის უფლებები?`;
     if (!window.confirm(msg)) return;
     try {
-      const { data } = await api.patch(`/api/admin/users/${u.id}/role`, { role: next });
-      setUsers((list) => list.map((x) => (x.id === u.id ? { ...x, role: data.role } : x)));
+      const { data: updated } = await api.patch(`/api/admin/users/${u.id}/role`, { role: next });
+      setData((d) => d && ({ ...d, items: d.items.map((x) => (x.id === u.id ? { ...x, role: updated.role } : x)) }));
     } catch (e) {
-      setError(getErrorMessage(e, 'როლი ვერ შეიცვალა'));
+      setActionError(getErrorMessage(e, 'როლი ვერ შეიცვალა'));
     }
   };
 
@@ -43,13 +43,13 @@ export default function UsersPage() {
       <div className={s.head}>
         <div>
           <h1 className={s.title}>მომხმარებლები</h1>
-          <p className={s.sub}>{users ? `${users.length} რეგისტრირებული` : ' '}</p>
+          <p className={s.sub}>{data ? `${data.total} ${role || search ? 'ნაპოვნი' : 'რეგისტრირებული'}` : ' '}</p>
         </div>
       </div>
 
       <div className={s.toolbar}>
-        <input className={s.search} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ძებნა: სახელი ან ელფოსტა…" />
-        <select className={s.select} value={role} onChange={(e) => setRole(e.target.value)}>
+        <input className={s.search} type="search" value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="ძებნა: სახელი ან ელფოსტა…" />
+        <select className={s.select} value={role} onChange={(e) => { setRole(e.target.value); setPage(1); }}>
           <option value="">ყველა როლი</option>
           <option value="user">მომხმარებელი</option>
           <option value="admin">ადმინი</option>
@@ -61,7 +61,7 @@ export default function UsersPage() {
       {users && shown.length === 0 && <div className={s.empty}>მომხმარებლები ვერ მოიძებნა.</div>}
 
       {shown.length > 0 && (
-        <div className={s.tableWrap}>
+        <div className={`${s.tableWrap} ${loading ? s.tableBusy : ''}`}>
           <table className={s.table}>
             <thead>
               <tr>
@@ -105,6 +105,8 @@ export default function UsersPage() {
           </table>
         </div>
       )}
+
+      {data && <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1); }} />}
     </div>
   );
 }

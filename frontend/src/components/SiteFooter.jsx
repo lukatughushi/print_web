@@ -32,7 +32,7 @@ export default function SiteFooter({ settings = {} }) {
         <div className={s.col}>
           <span className={s.colTitle}>სერვისი</span>
           <Link to="/shop">მაღაზია</Link>
-          <Link to="/shop#corporate">კორპორატიული შეკვეთები</Link>
+          <Link to="/corporate">კორპორატიული შეკვეთები</Link>
           <span>DTF ბეჭდვა</span>
         </div>
         <div className={s.col}>

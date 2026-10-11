@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
 import useFavStore from '../store/favStore';
 import { useAuth } from '../context/auth-context';
+import UserMenu from './UserMenu';
 import api from '../lib/api';
+import { starterProduct } from '../lib/catalog';
 import logo from '../assets/prenta/logo_prenta.webp';
 import s from './Navbar.module.css';
 
 export default function Navbar() {
   const cartCount = useCartStore((st) => st.items.reduce((sum, it) => sum + (it.quantity || 1), 0));
   const favCount = useFavStore((st) => st.ids.length);
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuth();
 
-  // "კონსტრუქტორი" opens the first available product in the constructor.
+  // "კონსტრუქტორი" opens a t-shirt (or the first product) in the constructor.
   const [firstProductId, setFirstProductId] = useState(null);
   useEffect(() => {
     api.get('/api/products')
-      .then((r) => setFirstProductId(Array.isArray(r.data) && r.data[0] ? r.data[0].id : null))
+      .then((r) => setFirstProductId(starterProduct(r.data)?.id ?? null))
       .catch(() => {});
   }, []);
   const studioPath = firstProductId ? `/design/${firstProductId}` : '/';
@@ -44,31 +45,24 @@ export default function Navbar() {
           >
             მთავარი
           </NavLink>
-          <button
-            type="button"
-            className={`${s.link} ${shopActive ? s.linkActive : ''}`}
-            onClick={() => navigate('/shop')}
-          >
+          <Link to="/shop" className={`${s.link} ${shopActive ? s.linkActive : ''}`}>
             მაღაზია
-          </button>
-          <button
-            type="button"
-            className={`${s.link} ${studioActive ? s.linkActive : ''}`}
-            onClick={() => navigate(studioPath)}
-          >
+          </Link>
+          <Link to={studioPath} className={`${s.link} ${studioActive ? s.linkActive : ''}`}>
             კონსტრუქტორი
-          </button>
-          <Link to="/shop#corporate" className={s.link}>კორპორატიული</Link>
+          </Link>
+          <NavLink to="/corporate" className={({ isActive }) => `${s.link} ${isActive ? s.linkActive : ''}`}>კორპორატიული</NavLink>
         </nav>
 
         {/* ── Cart ──────────────────────────────────────────── */}
         <div className={s.right}>
-          <NavLink
-            to={isAuthenticated ? '/account' : '/login'}
-            className={({ isActive }) => `${s.link} ${isActive ? s.linkActive : ''}`}
-          >
-            {isAuthenticated ? 'ანგარიში' : 'შესვლა'}
-          </NavLink>
+          {isAuthenticated ? (
+            <UserMenu />
+          ) : (
+            <NavLink to="/login" className={({ isActive }) => `${s.link} ${isActive ? s.linkActive : ''}`}>
+              შესვლა
+            </NavLink>
+          )}
           <Link to="/shop?fav=1" className={s.iconBtn} aria-label="რჩეულები" title="რჩეულები">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
               <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />

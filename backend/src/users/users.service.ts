@@ -31,6 +31,11 @@ export class UsersService {
     return this.userModel.find().sort({ createdAt: -1 }).exec();
   }
 
+  async setPassword(id: string, plain: string) {
+    const password = await bcrypt.hash(plain, SALT_ROUNDS);
+    await this.userModel.updateOne({ _id: id }, { $set: { password } }).exec();
+  }
+
   comparePassword(plain: string, hash: string) {
     return bcrypt.compare(plain, hash);
   }

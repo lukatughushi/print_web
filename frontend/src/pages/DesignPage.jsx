@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Stage, Layer, Image as KonvaImage, Text, Rect, Transformer } from 'react-konva';
 import useImage from 'use-image';
 import useCartStore from '../store/cartStore';
-import api from '../lib/api';
+import api, { getErrorMessage } from '../lib/api';
+import { API_URL } from '../lib/config';
+import { useAuth } from '../context/auth-context';
+import useToast from '../store/toastStore';
 import { priceOf } from '../lib/catalog';
 import ShirtViewer3D from '../components/ShirtViewer3D';
 import {
@@ -375,6 +378,25 @@ function fitBox(naturalW, naturalH, box = UPLOAD_BOX) {
 
 // Object ids: texts keep numeric ids, images string ids (as saved before).
 const newId = () => Date.now();
+
+// The 3D camera eases to the front/back view; snapshots wait for it to stop.
+const CAMERA_SETTLE_MS = 1700;
+
+// A design made before signing in, kept across the login page (see openSave).
+const PENDING_DESIGN_KEY = 'prenta:pendingDesign';
+
+// Library / saved-design images are served by the API; the editor works on data URLs.
+async function toDataUrl(src) {
+  if (!src || src.startsWith('data:')) return src;
+  const url = src.startsWith('/api/') ? `${API_URL}${src}` : src;
+  const blob = await (await fetch(url)).blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -851,6 +873,20 @@ export default function DesignPage() {
   const [cartAdded, setCartAdded] =
     useState(false);
 
+  // Account: saved designs (templates) and the image library.
+  const { user } = useAuth();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const designParam = searchParams.get('design');
+  const toast = useToast((st) => st.show);
+  // Saved design open in the editor ({ id, name, tab }): "save" updates it.
+  const [savedDesign, setSavedDesign] = useState(null);
+  const [saveDialog, setSaveDialog] = useState(null); // { name, update } while open
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [myMedia, setMyMedia] = useState(null); // null until first loaded
+  const loadedDesignRef = useRef(null);
+
   const [textInput, setTextInput] =
     useState('');
 
@@ -1206,27 +1242,10 @@ export default function DesignPage() {
     const handleKeyDown = (
       e
     ) => {
-      if (
-        (e.ctrlKey ||
-          e.metaKey) &&
-        e.key === 'z'
-      ) {
-        e.preventDefault();
-        undo();
-      }
-
-      if (
-        (e.ctrlKey ||
-          e.metaKey) &&
-        e.key === 'y'
-      ) {
-        e.preventDefault();
-        redo();
-      }
-
       const target =
         e.target;
 
+      // Typing in a field keeps the browser's own undo, delete and caret keys.
       const isTyping =
         target instanceof
           HTMLInputElement ||
@@ -1236,14 +1255,61 @@ export default function DesignPage() {
           HTMLSelectElement ||
         target?.isContentEditable;
 
+      if (isTyping) return;
+
+      const key = e.key.toLowerCase();
+
       if (
-        !isTyping &&
+        (e.ctrlKey ||
+          e.metaKey) &&
+        key === 'z' &&
+        !e.shiftKey
+      ) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      if (
+        (e.ctrlKey ||
+          e.metaKey) &&
+        (key === 'y' ||
+          (key === 'z' && e.shiftKey))
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      if (
         selectedId &&
         (e.key === 'Delete' ||
           e.key === 'Backspace')
       ) {
         e.preventDefault();
         deleteSelectedObject();
+        return;
+      }
+
+      // Arrow keys nudge the selected image or text (Shift = bigger step).
+      const delta = {
+        ArrowLeft: [-1, 0],
+        ArrowRight: [1, 0],
+        ArrowUp: [0, -1],
+        ArrowDown: [0, 1],
+      }[e.key];
+
+      if (selectedId && delta && !is3DMode) {
+        e.preventDefault();
+        const step = nudgeAmount(e);
+        const move = (item) => ({
+          x: clampPos(item.x + delta[0] * step),
+          y: clampPos(item.y + delta[1] * step),
+        });
+        const img = images.find((item) => item.id === selectedId);
+        const txt = textObjects.find((item) => item.id === selectedId);
+        if (img) updateImage(img.id, move(img));
+        else if (txt) updateText(txt.id, move(txt));
       }
     };
 
@@ -1266,6 +1332,7 @@ export default function DesignPage() {
     // Shortcuts must always act on the product/side on screen.
     designKey,
     editSide,
+    is3DMode,
   ]);
 
   // Konva measures text hit-areas with these fonts, so load them up front.
@@ -1588,18 +1655,20 @@ export default function DesignPage() {
   function addImageFile(file) {
     if (!file || !file.type.startsWith('image/')) return;
 
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      addImageSrc(ev.target.result, file.name);
+      rememberImage(ev.target.result, file.name);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Places an image (data URL) on the side being edited, centred in the print area.
+  function addImageSrc(src, name) {
     const id = String(newId());
     const z = nextZ();
 
-    const reader =
-      new FileReader();
-
-    reader.onload = (
-      ev
-    ) => {
-      const src =
-        ev.target.result;
-
+    {
       const probe =
         new Image();
 
@@ -1635,8 +1704,8 @@ export default function DesignPage() {
               {
                 id,
                 z,
-                name: file.name,
-                layerName: file.name,
+                name: name,
+                layerName: name,
                 visible: true,
                 src,
                 x,
@@ -1668,11 +1737,7 @@ export default function DesignPage() {
       };
 
       probe.src = src;
-    };
-
-    reader.readAsDataURL(
-      file
-    );
+    }
 
     setSelectedId(id);
     setTool('image');
@@ -1938,49 +2003,160 @@ export default function DesignPage() {
     }
   };
 
-  async function handleAddToCart() {
-    if (!orderProduct) return;
+  /* ── Account: saved designs and image library ─────────── */
 
-    const hasBackDesign =
-      supportsBackPrint &&
-      (backDesign.images.length > 0 ||
-        backDesign.textObjects.length > 0);
+  const tabLabel = (id) => CATEGORIES.find((c) => c.id === id)?.label ?? 'დიზაინი';
+  const defaultDesignName = (id) => `${tabLabel(id)} — ${new Date().toLocaleDateString('ka-GE')}`;
 
-    const canvasJson =
-      JSON.stringify({
-        // Top-level images/texts are the FRONT design (unchanged format).
-        images: frontDesign.images,
-        texts:
-          frontDesign.textObjects,
-        ...(hasBackDesign
-          ? {
-              back: {
-                images: backDesign.images,
-                texts: backDesign.textObjects,
-              },
-            }
-          : {}),
-        garment: activeTab,
-        ...(modelType ? { model: modelType } : {}),
-        garmentColor: shirtHex,
-        printArea: {
-          width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
+  // Opens a saved design from the account (?design=<id>).
+  useEffect(() => {
+    if (!designParam || !user || loadedDesignRef.current === designParam) return;
+    loadedDesignRef.current = designParam;
+    (async () => {
+      try {
+        const { data } = await api.get(`/api/me/designs/${designParam}`);
+        const stamp = Date.now();
+        const side = async (part, key) => ({
+          images: await Promise.all((part?.images ?? []).map(async (img, i) => ({
+            ...img, id: `${key}${stamp}-${i}`, src: await toDataUrl(img.src),
+          }))),
+          textObjects: (part?.texts ?? []).map((t, i) => ({ ...t, id: `${key}t${stamp}-${i}` })),
+        });
+        const loaded = { front: await side(data.data?.front, 'f'), back: await side(data.data?.back, 'b') };
+        setDesignsByTab((all) => ({ ...all, [data.tab]: loaded }));
+        setHistoryByTab((all) => ({ ...all, [data.tab]: { entries: [{ designs: loaded }], step: 0 } }));
+        if (data.color) setShirtColor(data.color);
+        setSavedDesign({ id: data.id, name: data.name, tab: data.tab });
+        setSelectedId(null);
+        toast(`„${data.name}“ გაიხსნა`);
+      } catch (err) {
+        toast(getErrorMessage(err, 'დიზაინი ვერ ჩაიტვირთა'));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [designParam, user]);
+
+  // Back from the login page: restore the design and ask for a name.
+  useEffect(() => {
+    if (!product || !user) return;
+    let pending = null;
+    try {
+      pending = JSON.parse(sessionStorage.getItem(PENDING_DESIGN_KEY) || 'null');
+    } catch {
+      return;
+    }
+    if (!pending?.design || pending.productId !== product.id) return;
+    Promise.resolve().then(() => {
+      try { sessionStorage.removeItem(PENDING_DESIGN_KEY); } catch { /* ignore */ }
+      setDesignsByTab((all) => ({ ...all, [pending.tab]: pending.design }));
+      setHistoryByTab((all) => ({ ...all, [pending.tab]: { entries: [{ designs: pending.design }], step: 0 } }));
+      if (pending.color) setShirtColor(pending.color);
+      setSaveError('');
+      setSaveDialog({ name: defaultDesignName(pending.tab), update: false });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id, user?.id]);
+
+  // The image library loads the first time the image panel opens.
+  useEffect(() => {
+    if (tool !== 'image' || !user || myMedia !== null) return;
+    api.get('/api/me/media').then((r) => setMyMedia(r.data)).catch(() => setMyMedia([]));
+  }, [tool, user, myMedia]);
+
+  // Uploads also go to the signed-in customer's library (deduplicated server-side).
+  function rememberImage(src, name) {
+    if (!user) return;
+    api.post('/api/me/media', { dataUrl: src, name })
+      .then((r) => setMyMedia((list) => (list ? [r.data, ...list.filter((m) => m.id !== r.data.id)] : list)))
+      .catch(() => {});
+  }
+
+  function addLibraryImage(media) {
+    toDataUrl(media.url)
+      .then((src) => addImageSrc(src, media.name))
+      .catch(() => toast('სურათი ვერ ჩაიტვირთა'));
+  }
+
+  function openSave() {
+    const hasBack = supportsBackPrint && (backDesign.images.length > 0 || backDesign.textObjects.length > 0);
+    if (!frontDesign.images.length && !frontDesign.textObjects.length && !hasBack) {
+      toast('ჯერ დაამატე სურათი ან ტექსტი');
+      return;
+    }
+    if (!user) {
+      try {
+        sessionStorage.setItem(PENDING_DESIGN_KEY, JSON.stringify({
+          productId: product?.id, tab: activeTab, color: shirtColor, design: designs,
+        }));
+      } catch {
+        toast('დიზაინის შესანახად ჯერ შედი ანგარიშზე');
+        return;
+      }
+      toast('დიზაინის შესანახად შედი ანგარიშზე');
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+    const current = savedDesign?.tab === activeTab ? savedDesign : null;
+    setSaveError('');
+    setSaveDialog({ name: current?.name ?? defaultDesignName(activeTab), update: !!current });
+  }
+
+  async function submitSave(asNew) {
+    const name = saveDialog?.name.trim();
+    if (!name) {
+      setSaveError('დაარქვი სახელი');
+      return;
+    }
+    setSaving(true);
+    setSaveError('');
+    try {
+      const withBack = supportsBackPrint && (backDesign.images.length > 0 || backDesign.textObjects.length > 0);
+      const { previewUrl } = await capturePreviews(false);
+      const payload = {
+        name,
+        tab: activeTab,
+        productId: orderProduct?.id ?? product?.id,
+        category: activeCat.category,
+        color: shirtColor,
+        data: {
+          front: { images: frontDesign.images, texts: frontDesign.textObjects },
+          back: withBack
+            ? { images: backDesign.images, texts: backDesign.textObjects }
+            : { images: [], texts: [] },
         },
-      });
+        ...(previewUrl ? { preview: previewUrl } : {}),
+      };
+      const current = !asNew && savedDesign?.tab === activeTab ? savedDesign : null;
+      const { data } = current
+        ? await api.put(`/api/me/designs/${current.id}`, payload)
+        : await api.post('/api/me/designs', payload);
+      loadedDesignRef.current = data.id;
+      setSavedDesign({ id: data.id, name: data.name, tab: activeTab });
+      setSearchParams({ design: data.id }, { replace: true });
+      setSaveDialog(null);
+      setMyMedia(null); // its images are now in the library
+      toast(current ? 'დიზაინი განახლდა' : 'დიზაინი შენახულია — ანგარიში → დიზაინები');
+    } catch (err) {
+      setSaveError(getErrorMessage(err, 'შენახვა ვერ მოხერხდა'));
+    } finally {
+      setSaving(false);
+    }
+  }
 
+  // Snapshots of the current design (front, and back when it has one) as JPEG data URLs.
+  async function capturePreviews(hasBackDesign) {
     let previewUrl = '';
     let backPreviewUrl = '';
 
-    // Frames the current 3D view into a 400x500 JPEG.
+    // Frames the current 3D view into a 600x750 JPEG (sharp enough for the print team).
     const snapshot3D = (glCanvas) => {
       const off =
         document.createElement(
           'canvas'
         );
 
-      off.width = 400;
-      off.height = 500;
+      off.width = 600;
+      off.height = 750;
 
       const ctx =
         off.getContext(
@@ -1988,19 +2164,58 @@ export default function DesignPage() {
         );
 
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 400, 500);
+      ctx.fillRect(0, 0, 600, 750);
+
+      // Crop to the garment (the 3D canvas is transparent around it), so
+      // the mockup shows the placement large instead of a small product.
+      let src = { x: 0, y: 0, w: glCanvas.width, h: glCanvas.height };
+      try {
+        const probe = document.createElement('canvas');
+        probe.width = glCanvas.width;
+        probe.height = glCanvas.height;
+        const pctx = probe.getContext('2d');
+        pctx.drawImage(glCanvas, 0, 0);
+        const data = pctx.getImageData(0, 0, probe.width, probe.height).data;
+        let minX = probe.width, minY = probe.height, maxX = -1, maxY = -1;
+        for (let y = 0; y < probe.height; y += 2) {
+          for (let x = 0; x < probe.width; x += 2) {
+            if (data[(y * probe.width + x) * 4 + 3] > 10) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        const fullyOpaque = minX === 0 && minY === 0 && maxX >= probe.width - 2 && maxY >= probe.height - 2;
+        if (maxX > minX && maxY > minY && !fullyOpaque) {
+          const pad = Math.round(Math.max(maxX - minX, maxY - minY) * 0.06);
+          src = {
+            x: Math.max(0, minX - pad),
+            y: Math.max(0, minY - pad),
+            w: Math.min(probe.width, maxX + pad) - Math.max(0, minX - pad),
+            h: Math.min(probe.height, maxY + pad) - Math.max(0, minY - pad),
+          };
+        }
+      } catch {
+        // Keep the full frame.
+      }
 
       const fit = Math.min(
-        400 / glCanvas.width,
-        500 / glCanvas.height
+        600 / src.w,
+        750 / src.h
       );
-      const w = glCanvas.width * fit;
-      const h = glCanvas.height * fit;
+      const w = src.w * fit;
+      const h = src.h * fit;
 
       ctx.drawImage(
         glCanvas,
-        (400 - w) / 2,
-        (500 - h) / 2,
+        src.x,
+        src.y,
+        src.w,
+        src.h,
+        (600 - w) / 2,
+        (750 - h) / 2,
         w,
         h
       );
@@ -2031,7 +2246,7 @@ export default function DesignPage() {
           showBack();
           await new Promise(
             (r) =>
-              setTimeout(r, 1000)
+              setTimeout(r, CAMERA_SETTLE_MS)
           );
           backPreviewUrl =
             snapshot3D(glCanvas);
@@ -2040,7 +2255,7 @@ export default function DesignPage() {
         showFront();
         await new Promise(
           (r) =>
-            setTimeout(r, 1000)
+            setTimeout(r, CAMERA_SETTLE_MS)
         );
 
         previewUrl =
@@ -2118,12 +2333,51 @@ export default function DesignPage() {
       previewUrl = '';
     }
 
+    return { previewUrl, backPreviewUrl };
+  }
+
+  async function handleAddToCart() {
+    if (!orderProduct) return;
+
+    const hasBackDesign =
+      supportsBackPrint &&
+      (backDesign.images.length > 0 ||
+        backDesign.textObjects.length > 0);
+
+    const canvasJson =
+      JSON.stringify({
+        // Top-level images/texts are the FRONT design (unchanged format).
+        images: frontDesign.images,
+        texts:
+          frontDesign.textObjects,
+        ...(hasBackDesign
+          ? {
+              back: {
+                images: backDesign.images,
+                texts: backDesign.textObjects,
+              },
+            }
+          : {}),
+        garment: activeTab,
+        ...(modelType ? { model: modelType } : {}),
+        garmentColor: shirtHex,
+        printArea: {
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+        },
+      });
+
+    const { previewUrl, backPreviewUrl } =
+      await capturePreviews(hasBackDesign);
+
     addItem({
       productId:
         orderProduct.id,
 
+      // The customer's own design: name the item by its type, not by the
+      // catalogue design it was started from.
       productName:
-        orderProduct.name,
+        activeCat.label,
 
       basePrice:
         priceOf(orderProduct),
@@ -2333,8 +2587,8 @@ export default function DesignPage() {
 
               <textarea
                 className={s.textArea}
-                rows={2}
-                placeholder="ტექსტი..."
+                rows={3}
+                placeholder="ჩაწერე ტექსტი…"
                 value={selectedText ? selectedText.text : textInput}
                 onChange={(e) => editText(e.target.value)}
                 onBlur={() => selectedText && commitHistory()}
@@ -2641,6 +2895,38 @@ export default function DesignPage() {
                     აირჩიეთ სურათი ლეიერებიდან ან კანვასზე, რომ შეცვალოთ
                   </div>
                 )
+              )}
+
+              {user ? (
+                <div className={s.library}>
+                  <div className={s.libraryHead}>
+                    <span>ჩემი სურათები</span>
+                    <Link to="/account?tab=media" className={s.libraryAll}>მართვა</Link>
+                  </div>
+                  {myMedia === null ? (
+                    <div className={s.libraryHint}>იტვირთება…</div>
+                  ) : myMedia.length === 0 ? (
+                    <div className={s.libraryHint}>ატვირთული სურათები აქ შეინახება — სხვა დიზაინშიც ერთი დაჭერით გამოიყენებ.</div>
+                  ) : (
+                    <div className={s.libraryGrid}>
+                      {myMedia.slice(0, 30).map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className={s.libraryItem}
+                          onClick={() => addLibraryImage(m)}
+                          title={`დამატება: ${m.name}`}
+                        >
+                          <img src={`${API_URL}${m.url}`} alt={m.name} loading="lazy" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className={s.libraryHint}>
+                  <Link to="/login" state={{ from: location }} className={s.libraryAll}>შედი ანგარიშზე</Link> — ატვირთული სურათები შეინახება და სხვა დიზაინშიც გამოიყენებ.
+                </div>
               )}
             </>
           )}
@@ -3189,10 +3475,10 @@ export default function DesignPage() {
             </span>
             <div>
               <div className={s.orderName}>
-                {orderProduct ? orderProduct.name : activeCat.label}
+                {activeCat.label}
               </div>
               <div className={s.orderMeta}>
-                {activeCat.label}
+                შენი დიზაინით
               </div>
             </div>
           </div>
@@ -3304,11 +3590,64 @@ export default function DesignPage() {
             {cartAdded ? '✓ დამატებულია' : 'კალათაში დამატება'}
           </button>
 
+          <button
+            type="button"
+            className={s.saveDesignBtn}
+            onClick={openSave}
+            title={savedDesign?.tab === activeTab ? `„${savedDesign.name}“` : 'შეინახე ანგარიშზე შაბლონად'}
+          >
+            <Icon d="M5 3h11l3 3v15H5zM8 3v6h8V3M8 21v-7h8v7" size={17} width={1.8} />
+            {savedDesign?.tab === activeTab ? 'ცვლილებების შენახვა' : 'დიზაინის შენახვა'}
+          </button>
+
           {!orderProduct && (
             <div className={s.notForSale}>ეს პროდუქტი ჯერ არ იყიდება</div>
           )}
         </div>
       </aside>
+
+      {saveDialog && (
+        <div
+          className={s.modalBack}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !saving) setSaveDialog(null);
+          }}
+        >
+          <form
+            className={s.modal}
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitSave(false);
+            }}
+          >
+            <div className={s.modalTitle}>დიზაინის შენახვა</div>
+            <div className={s.modalSub}>შეინახება შენს ანგარიშზე — შემდეგ გახსნი, შეცვლი ან შაბლონად გამოიყენებ.</div>
+            <input
+              className={s.modalInput}
+              value={saveDialog.name}
+              onChange={(e) => setSaveDialog((d) => ({ ...d, name: e.target.value }))}
+              onKeyDown={(e) => e.key === 'Escape' && !saving && setSaveDialog(null)}
+              maxLength={80}
+              placeholder="დიზაინის სახელი"
+              autoFocus
+            />
+            {saveError && <div className={s.modalError}>{saveError}</div>}
+            <div className={s.modalActions}>
+              <button type="button" className={s.modalGhost} onClick={() => setSaveDialog(null)} disabled={saving}>
+                გაუქმება
+              </button>
+              {saveDialog.update && (
+                <button type="button" className={s.modalGhost} onClick={() => submitSave(true)} disabled={saving}>
+                  ახლად შენახვა
+                </button>
+              )}
+              <button type="submit" className={s.modalPrimary} disabled={saving}>
+                {saving ? 'ინახება…' : saveDialog.update ? 'განახლება' : 'შენახვა'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

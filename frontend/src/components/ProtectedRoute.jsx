@@ -9,7 +9,7 @@ import { useAuth } from '../context/auth-context';
  * with the original location in `state.from` so the login page can send them back.
  */
 export default function ProtectedRoute({ roles, redirectTo = '/login', children }) {
-  const { user, status } = useAuth();
+  const { user, status, signedOut } = useAuth();
   const location = useLocation();
 
   if (status === 'loading') {
@@ -19,6 +19,9 @@ export default function ProtectedRoute({ roles, redirectTo = '/login', children 
       </div>
     );
   }
+
+  // Signing out on a customer page goes home, not to the login form.
+  if (!user && signedOut && redirectTo === '/login') return <Navigate to="/" replace />;
 
   if (!user || (roles && !roles.includes(user.role))) {
     return <Navigate to={redirectTo} replace state={{ from: location }} />;

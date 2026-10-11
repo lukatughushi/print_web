@@ -54,6 +54,11 @@ export default function DashboardPage() {
           <span className={s.kpiValue}>{gel(stats.averageOrder)}</span>
           <span className={s.kpiHint}>გაუქმებულების გარეშე</span>
         </div>
+        <Link to="/admin/quotes?status=NEW" className={s.kpi} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <span className={s.kpiLabel}>კორპორატიული მოთხოვნები</span>
+          <span className={s.kpiValue}>{stats.newQuotes ?? 0}</span>
+          <span className={s.kpiHint}>ახალი, უპასუხო</span>
+        </Link>
         <div className={s.kpi}>
           <span className={s.kpiLabel}>პროდუქტები</span>
           <span className={s.kpiValue}>{stats.activeProducts}</span>

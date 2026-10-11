@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import api from '../../lib/api';
 import {
   CATEGORIES,
@@ -11,6 +11,8 @@ import {
 } from '../../lib/catalog';
 import { ProductImage } from '../../components/ProductCard';
 import { gel, getErrorMessage, uploadImage } from './adminShared';
+import Pager from './Pager';
+import useServerList, { useDebounced, usePageSize } from './useServerList';
 import s from './Admin.module.css';
 
 const EMPTY = {
@@ -247,40 +249,38 @@ function ProductForm({ product, onClose, onSaved }) {
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState(null);
-  const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
   const [query, setQuery] = useState('');
+  const search = useDebounced(query.trim());
   const [category, setCategory] = useState('');
   const [visibility, setVisibility] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = usePageSize('products');
   const [editing, setEditing] = useState(null); // product | 'new' | null
 
-  useEffect(() => {
-    api.get('/api/admin/products')
-      .then((r) => setProducts(r.data))
-      .catch((e) => setError(getErrorMessage(e, 'პროდუქტები ვერ ჩაიტვირთა')));
-  }, []);
+  const { data, setData, error: loadError, loading, reload } = useServerList(
+    '/api/admin/products',
+    { q: search, category, visibility, page, pageSize },
+    'პროდუქტები ვერ ჩაიტვირთა',
+  );
+  const error = actionError || loadError;
+  const products = data?.items ?? null;
+  const shown = products ?? [];
 
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return (products || []).filter((p) => {
-      if (category && p.category !== category) return false;
-      if (visibility === 'on' && !p.isActive) return false;
-      if (visibility === 'off' && p.isActive) return false;
-      if (visibility === 'sale' && !(p.oldPrice > priceOf(p))) return false;
-      return !q || p.name.toLowerCase().includes(q);
-    });
-  }, [products, query, category, visibility]);
+  // Any filter change goes back to page 1.
+  const filterBy = (setter) => (value) => { setter(value); setPage(1); };
 
-  const replace = (p) => setProducts((list) => list.map((x) => (x.id === p.id ? p : x)));
+  const replace = (p) => setData((d) => d && ({ ...d, items: d.items.map((x) => (x.id === p.id ? p : x)) }));
 
   const toggleActive = async (p) => {
     replace({ ...p, isActive: !p.isActive });
     try {
-      const { data } = await api.patch(`/api/products/${p.id}`, { isActive: !p.isActive });
-      replace(data);
+      const { data: updated } = await api.patch(`/api/products/${p.id}`, { isActive: !p.isActive });
+      replace(updated);
+      reload(); // header counts
     } catch (e) {
       replace(p);
-      setError(getErrorMessage(e, 'ვერ შეიცვალა'));
+      setActionError(getErrorMessage(e, 'ვერ შეიცვალა'));
     }
   };
 
@@ -288,15 +288,20 @@ export default function ProductsPage() {
     if (!window.confirm(`წავშალო „${p.name}“? ეს შეუქცევადია. (დამალვა „ჩანს მაღაზიაში“ გადამრთველითაც შეიძლება.)`)) return;
     try {
       await api.delete(`/api/products/${p.id}`);
-      setProducts((list) => list.filter((x) => x.id !== p.id));
+      reload();
     } catch (e) {
-      setError(getErrorMessage(e, 'წაშლა ვერ მოხერხდა'));
+      setActionError(getErrorMessage(e, 'წაშლა ვერ მოხერხდა'));
     }
   };
 
   const saved = (p, isNew) => {
-    setProducts((list) => (isNew ? [p, ...list] : list.map((x) => (x.id === p.id ? p : x))));
     setEditing(null);
+    if (isNew) {
+      setPage(1);
+      reload();
+    } else {
+      replace(p);
+    }
   };
 
   return (
@@ -304,18 +309,18 @@ export default function ProductsPage() {
       <div className={s.head}>
         <div>
           <h1 className={s.title}>პროდუქტები</h1>
-          <p className={s.sub}>{products ? `${products.filter((p) => p.isActive).length} ჩანს მაღაზიაში · სულ ${products.length}` : ' '}</p>
+          <p className={s.sub}>{data ? `${data.active} ჩანს მაღაზიაში · სულ ${data.all}` : ' '}</p>
         </div>
         <button type="button" className={s.btnPrimary} onClick={() => setEditing('new')}>+ ახალი პროდუქტი</button>
       </div>
 
       <div className={s.toolbar}>
-        <input className={s.search} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ძებნა სახელით…" />
-        <select className={s.select} value={category} onChange={(e) => setCategory(e.target.value)}>
+        <input className={s.search} type="search" value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="ძებნა სახელით…" />
+        <select className={s.select} value={category} onChange={(e) => filterBy(setCategory)(e.target.value)}>
           <option value="">ყველა კატეგორია</option>
           {CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
         </select>
-        <select className={s.select} value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+        <select className={s.select} value={visibility} onChange={(e) => filterBy(setVisibility)(e.target.value)}>
           <option value="">ყველა</option>
           <option value="on">ჩანს მაღაზიაში</option>
           <option value="off">დამალული</option>
@@ -328,7 +333,7 @@ export default function ProductsPage() {
       {products && shown.length === 0 && <div className={s.empty}>პროდუქტები ვერ მოიძებნა.</div>}
 
       {shown.length > 0 && (
-        <div className={s.tableWrap}>
+        <div className={`${s.tableWrap} ${loading ? s.tableBusy : ''}`}>
           <table className={s.table}>
             <thead>
               <tr>
@@ -381,6 +386,8 @@ export default function ProductsPage() {
           </table>
         </div>
       )}
+
+      {data && <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1); }} />}
 
       {editing && (
         <ProductForm

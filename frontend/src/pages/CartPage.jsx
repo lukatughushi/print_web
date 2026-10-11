@@ -2,19 +2,41 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import useCartStore from '../store/cartStore';
-import { money, shippingFor } from '../lib/catalog';
+import { COLORS, money, shippingFor, starterProduct } from '../lib/catalog';
+import { ProductImage } from '../components/ProductCard';
 import s from './storefront.module.css';
+
+// A constructor line with at least one image or text on it.
+function hasDesign(item) {
+  if (!item.canvasJson) return false;
+  try {
+    const d = typeof item.canvasJson === 'string' ? JSON.parse(item.canvasJson) : item.canvasJson;
+    return [d.images, d.texts, d.back?.images, d.back?.texts].some((list) => list?.length > 0);
+  } catch {
+    return false;
+  }
+}
+
+// Cart lines keep the garment colour as a hex value; the catalogue keys it by name.
+const colorKey = (hex) =>
+  Object.keys(COLORS).find((k) => COLORS[k].hex.toLowerCase() === String(hex || '').toLowerCase()) ?? 'white';
 
 export default function CartPage() {
   const navigate = useNavigate();
   const { items, removeItem, setQty } = useCartStore();
   const [settings, setSettings] = useState({ currency: '₾', freeShipThreshold: 150 });
   const [studioPath, setStudioPath] = useState('/shop');
+  const [productsById, setProductsById] = useState({});
 
   useEffect(() => {
     api.get('/api/settings').then((r) => r.data && setSettings((v) => ({ ...v, ...r.data }))).catch(() => {});
     api.get('/api/products')
-      .then((r) => { if (Array.isArray(r.data) && r.data[0]) setStudioPath(`/design/${r.data[0].id}`); })
+      .then((r) => {
+        if (!Array.isArray(r.data)) return;
+        const starter = starterProduct(r.data);
+        if (starter) setStudioPath(`/design/${starter.id}`);
+        setProductsById(Object.fromEntries(r.data.map((p) => [p.id, p])));
+      })
       .catch(() => {});
   }, []);
 
@@ -28,7 +50,7 @@ export default function CartPage() {
     return (
       <main className={s.page}>
         <div className={s.wrapMid}>
-          <h1 className={s.h1}>კალათა</h1>
+          <h1 className={s.h1} style={{ marginBottom: 24 }}>კალათა</h1>
           <div className={s.emptyCard}>
             <h2>კალათა ცარიელია</h2>
             <p>დაიწყე შენი დიზაინით ან აირჩიე მზა პროდუქტი.</p>
@@ -54,11 +76,14 @@ export default function CartPage() {
                 <div className={s.lineThumb}>
                   {it.previewUrl
                     ? <img src={it.previewUrl} alt={it.productName} />
-                    : <span className={s.muted}>PRENTA</span>}
+                    : productsById[it.productId]
+                      ? <ProductImage product={productsById[it.productId]} color={colorKey(it.shirtColor)} className={s.lineProductImg} />
+                      : <span className={s.muted}>PRENTA</span>}
                 </div>
                 <div className={s.lineInfo}>
                   <div className={s.lineTitle}>{it.productName || 'ჩემი დიზაინი'}</div>
-                  <div className={s.lineMeta}>ზომა: {it.size || '—'}</div>
+                  {it.size && <div className={s.lineMeta}>ზომა: {it.size}</div>}
+                  {hasDesign(it) && <div className={s.lineMeta}>შენი დიზაინით</div>}
                   <div className={s.lineMeta}>{money(it.basePrice, cur)} / ცალი</div>
                 </div>
                 <div className={s.lineRight}>

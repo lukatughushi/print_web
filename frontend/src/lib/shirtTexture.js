@@ -460,14 +460,49 @@ function drawTextNode(ctx, node, S) {
 export async function renderPrintFile(design = {}) {
   const canvas = createShirtCanvas();
   const visible = (item) => item.visible !== false;
+  const images = (design.images || []).filter(visible);
+  const textObjects = (design.texts || []).filter(visible);
+  if (!images.length && !textObjects.length) return null;
 
   await renderShirtCanvas(canvas, {
     shirtColor: 'rgba(0,0,0,0)',
-    images: (design.images || []).filter(visible),
-    textObjects: (design.texts || []).filter(visible),
+    images,
+    textObjects,
   });
 
-  return canvas.toDataURL('image/png');
+  return trimToArtwork(canvas).toDataURL('image/png');
+}
+
+/**
+ * Crops a transparent canvas to its non-transparent pixels (plus a small
+ * margin), so the print file is the artwork itself rather than the whole
+ * print area with the logo somewhere in a corner.
+ */
+function trimToArtwork(canvas, margin = 8) {
+  const { width, height } = canvas;
+  const data = canvas.getContext('2d').getImageData(0, 0, width, height).data;
+  let minX = width, minY = height, maxX = -1, maxY = -1;
+  for (let y = 0; y < height; y++) {
+    const row = y * width * 4;
+    for (let x = 0; x < width; x++) {
+      if (data[row + x * 4 + 3] > 8) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return canvas;
+  minX = Math.max(0, minX - margin);
+  minY = Math.max(0, minY - margin);
+  maxX = Math.min(width - 1, maxX + margin);
+  maxY = Math.min(height - 1, maxY + margin);
+  const out = document.createElement('canvas');
+  out.width = maxX - minX + 1;
+  out.height = maxY - minY + 1;
+  out.getContext('2d').drawImage(canvas, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
 }
 
 /* ═══════════════════════════════════════════════════════════

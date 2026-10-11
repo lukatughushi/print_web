@@ -5,6 +5,8 @@ import { AuthContext } from './auth-context';
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  // True after the user signs out themselves (not when a token expires).
+  const [signedOut, setSignedOut] = useState(false);
   const [status, setStatus] = useState(() => (authStorage.get() ? 'loading' : 'ready'));
 
   const refreshUser = useCallback(async () => {
@@ -36,6 +38,7 @@ export default function AuthProvider({ children }) {
 
   const startSession = useCallback(({ accessToken, user: nextUser }) => {
     authStorage.set(accessToken);
+    setSignedOut(false);
     setUser(nextUser);
     return nextUser;
   }, []);
@@ -58,6 +61,7 @@ export default function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     authStorage.clear();
+    setSignedOut(true);
     setUser(null);
   }, []);
 
@@ -67,12 +71,13 @@ export default function AuthProvider({ children }) {
       status,
       isAuthenticated: !!user,
       isAdmin: user?.role === 'admin',
+      signedOut,
       login,
       register,
       logout,
       refreshUser,
     }),
-    [user, status, login, register, logout, refreshUser],
+    [user, status, signedOut, login, register, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

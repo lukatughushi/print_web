@@ -303,14 +303,21 @@
 /* Text tool */
 
 .textArea {
-  resize: none;
+  /* The tool panel is a flex column: never let it squash the text box. */
+  flex: none;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
   padding: 12px 14px;
   border: 1.5px solid var(--line);
   border-radius: 12px;
-  background: var(--paper);
+  background: #fff;
   color: var(--navy);
-  font: 500 15px 'Noto Sans Georgian', sans-serif;
+  font: 500 15px/1.5 'Noto Sans Georgian', sans-serif;
+  transition: border-color .15s, box-shadow .15s;
 }
+.textArea::placeholder { color: #9AA1AF; }
 
 .textArea:focus,
 .select:focus,
@@ -318,6 +325,7 @@
   outline: none;
   border-color: var(--navy);
 }
+.textArea:focus { box-shadow: 0 0 0 3px rgba(22, 35, 59, .08); }
 
 .fontGrid {
   display: grid;
@@ -1351,3 +1359,132 @@
     top: 64px;
   }
 }
+
+/* ── Account: save design / image library ─────────────────── */
+
+.saveDesignBtn {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--navy);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: background .15s, text-decoration-color .15s;
+}
+.saveDesignBtn:hover { background: #f7f4ef; text-decoration-color: currentColor; }
+
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+.libraryHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+}
+.libraryAll {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ef5f7a;
+  text-decoration: none;
+}
+.libraryAll:hover { text-decoration: underline; color: #ef5f7a; }
+.libraryHint {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.libraryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.libraryItem {
+  aspect-ratio: 1 / 1;
+  padding: 6px;
+  border: 1px solid #ece6df;
+  border-radius: 12px;
+  background: repeating-conic-gradient(#f3eee8 0% 25%, #fbf8f5 0% 50%) 50% / 12px 12px;
+  cursor: pointer;
+  transition: border-color .15s, transform .15s;
+}
+.libraryItem:hover { border-color: var(--navy); transform: translateY(-1px); }
+.libraryItem img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+.modalBack {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(15, 26, 46, .45);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  animation: modalFade .15s ease;
+}
+@keyframes modalFade { from { opacity: 0; } }
+.modal {
+  width: min(440px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 30px 60px -20px rgba(15, 26, 46, .5);
+}
+.modalTitle { font-size: 18px; font-weight: 700; color: var(--navy); }
+.modalSub { font-size: 13px; line-height: 1.55; color: var(--muted); }
+.modalInput {
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #e4dcd3;
+  font: inherit;
+  font-size: 15px;
+  color: var(--navy);
+  outline: none;
+}
+.modalInput:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(22, 35, 59, .08); }
+.modalError {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fdecef;
+  color: #b4304b;
+  font-size: 13px;
+}
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.modalGhost, .modalPrimary {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.modalGhost { border: 1px solid #e4dcd3; background: #fff; color: var(--navy); }
+.modalGhost:hover:not(:disabled) { border-color: var(--navy); }
+.modalPrimary { border: 0; background: var(--navy); color: #fff; }
+.modalPrimary:hover:not(:disabled) { background: #ef5f7a; }
+.modalGhost:disabled, .modalPrimary:disabled { opacity: .5; cursor: default; }

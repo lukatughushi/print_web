@@ -29,6 +29,15 @@
   a { color: var(--navy); text-decoration: none; }
 }
 
+/* ─── Caret & focus ring (storefront, constructor and admin) ──
+   A text caret only belongs where you type. Chrome's caret browsing (F7) or a
+   focused button would otherwise draw one on any text. Buttons and links lose
+   the focus ring after a mouse click but keep it for keyboard (Tab) users. */
+body { caret-color: transparent; }
+input, textarea, select, [contenteditable]:not([contenteditable="false"]) { caret-color: auto; }
+:where(a, button, [role="button"], summary, label, [tabindex]):focus:not(:focus-visible) { outline: none; }
+:where(a, button, [role="button"], summary, [tabindex]):focus-visible { outline: 2px solid #EF5F7A; outline-offset: 2px; }
+
 :root {
   /* PRENTA brand — deep blue + coral + warm cream */
   --navy:       #16283F;

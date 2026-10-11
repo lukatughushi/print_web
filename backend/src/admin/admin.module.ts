@@ -8,15 +8,18 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { InjectModel, MongooseModule } from '@nestjs/mongoose';
 import { IsEnum } from 'class-validator';
 import { isValidObjectId, Model } from 'mongoose';
 import type { AuthUser } from '../auth/strategies/jwt.strategy';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { pageParams, PageQuery, searchRegex } from '../common/pagination';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Order, OrderSchema, OrderStatus } from '../orders/schemas/order.schema';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
+import { Quote, QuoteSchema, QuoteStatus } from '../quotes/quotes.module';
 import { Role, User, UserSchema } from '../users/schemas/user.schema';
 
 export class UpdateRoleDto {
@@ -32,6 +35,7 @@ export class AdminService {
     @InjectModel(Order.name) private readonly orderModel: Model<Order>,
     @InjectModel(Product.name) private readonly productModel: Model<Product>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(Quote.name) private readonly quoteModel: Model<Quote>,
   ) {}
 
   async stats() {
@@ -41,7 +45,7 @@ export class AdminService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [revenue, byStatus, daily, top, recent, products, activeProducts, users, todayOrders] =
+    const [revenue, byStatus, daily, top, recent, products, activeProducts, users, todayOrders, newQuotes] =
       await Promise.all([
         this.orderModel.aggregate<{ total: number; count: number }>([
           { $match: COUNTED },
@@ -80,6 +84,7 @@ export class AdminService {
         this.productModel.countDocuments({ isActive: true }),
         this.userModel.countDocuments(),
         this.orderModel.countDocuments({ createdAt: { $gte: today } }),
+        this.quoteModel.countDocuments({ status: QuoteStatus.New }),
       ]);
 
     // Fill missing days with zeros so the chart has 30 bars.
@@ -109,20 +114,51 @@ export class AdminService {
       products,
       activeProducts,
       users,
+      newQuotes,
     };
   }
 
-  /** Every product, hidden ones included. */
-  allProducts() {
-    return this.productModel.find().sort({ createdAt: -1, _id: -1 }).exec();
+  /** One page of products, hidden ones included. */
+  async allProducts(query: { q?: string; category?: string; visibility?: string } & PageQuery) {
+    const filter: Record<string, unknown> = {};
+    const rx = searchRegex(query.q);
+    if (rx) filter.name = rx;
+    if (query.category) filter.category = query.category;
+    if (query.visibility === 'on') filter.isActive = true;
+    if (query.visibility === 'off') filter.isActive = false;
+    if (query.visibility === 'sale') filter.$expr = { $gt: ['$oldPrice', '$price'] };
+
+    const { page, pageSize } = pageParams(query);
+    const [items, total, all, active] = await Promise.all([
+      this.productModel.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * pageSize).limit(pageSize).exec(),
+      this.productModel.countDocuments(filter).exec(),
+      this.productModel.countDocuments().exec(),
+      this.productModel.countDocuments({ isActive: true }).exec(),
+    ]);
+    return { items, total, page, pageSize, all, active };
   }
 
   /** Users with their order count and spend (orders are matched by e-mail). */
-  async users() {
+  async users(query: { q?: string; role?: string } & PageQuery) {
+    const filter: Record<string, unknown> = {};
+    const rx = searchRegex(query.q);
+    if (rx) filter.$or = [{ name: rx }, { email: rx }];
+    if (query.role === Role.Admin || query.role === Role.User) filter.role = query.role;
+    const { page, pageSize } = pageParams(query);
+    const [pageUsers, total] = await Promise.all([
+      this.userModel.find(filter).sort({ createdAt: -1 }).skip((page - 1) * pageSize).limit(pageSize).lean().exec(),
+      this.userModel.countDocuments(filter).exec(),
+    ]);
+    const items = await this.withOrderTotals(pageUsers);
+    return { items, total, page, pageSize };
+  }
+
+  /** Adds order count / spend to users (orders are matched by e-mail). */
+  private async withOrderTotals(pageUsers: (User & { _id: unknown; __v?: number; createdAt?: Date })[]) {
     const [users, totals] = await Promise.all([
-      this.userModel.find().sort({ createdAt: -1 }).lean().exec(),
+      Promise.resolve(pageUsers),
       this.orderModel.aggregate<{ _id: string; orders: number; spent: number; last: Date }>([
-        { $match: { customerEmail: { $exists: true, $ne: null } } },
+        { $match: { customerEmail: { $in: pageUsers.map((u) => u.email) } } },
         {
           $group: {
             _id: '$customerEmail',
@@ -162,13 +198,24 @@ export class AdminController {
   }
 
   @Get('products')
-  products() {
-    return this.admin.allProducts();
+  products(
+    @Query('q') q?: string,
+    @Query('category') category?: string,
+    @Query('visibility') visibility?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.admin.allProducts({ q, category, visibility, page, pageSize });
   }
 
   @Get('users')
-  users() {
-    return this.admin.users();
+  users(
+    @Query('q') q?: string,
+    @Query('role') role?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.admin.users({ q, role, page, pageSize });
   }
 
   @Patch('users/:id/role')
@@ -183,6 +230,7 @@ export class AdminController {
       { name: Order.name, schema: OrderSchema },
       { name: Product.name, schema: ProductSchema },
       { name: User.name, schema: UserSchema },
+      { name: Quote.name, schema: QuoteSchema },
     ]),
   ],
   controllers: [AdminController],

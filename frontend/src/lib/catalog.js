@@ -83,6 +83,15 @@ export function shippingFor(subtotal, settings) {
   return subtotal === 0 || subtotal >= freeFrom ? 0 : fee;
 }
 
+const NBSP = String.fromCharCode(160);
+
 export function money(amount, currency = '₾') {
-  return `${Math.round(Number(amount) || 0)} ${currency}`;
+  // Non-breaking space: the amount and ₾ never wrap onto separate lines.
+  return `${Math.round(Number(amount) || 0)}${NBSP}${currency}`;
+}
+
+/** Product the constructor opens with when none is chosen: a t-shirt, else the first one. */
+export function starterProduct(products) {
+  if (!Array.isArray(products) || !products.length) return null;
+  return products.find((p) => p.category === 'TSHIRT') ?? products[0];
 }

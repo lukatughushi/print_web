@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
 import {
   CATEGORIES,
@@ -133,7 +133,6 @@ function SearchIcon() {
 export default function ShopPage() {
   const [params, setParams] = useSearchParams();
   const { hash } = useLocation();
-  const navigate = useNavigate();
   const favIds = useFavStore((st) => st.ids);
   const [products, setProducts] = useState(null); // null = loading
   const [settings, setSettings] = useState({ currency: '₾' });
@@ -229,10 +228,6 @@ export default function ShopPage() {
 
   const singleCat = f.cat.length === 1 ? CATEGORY_BY_CODE[f.cat[0]] : null;
   const title = f.fav ? 'რჩეულები' : singleCat ? singleCat.label : 'ყველა პროდუქტი';
-  const startDesign = () => {
-    const first = all.find((p) => p.category === 'TSHIRT') || all[0];
-    navigate(first ? `/design/${first.id}` : '/');
-  };
 
   return (
     <div className={s.page}>
@@ -255,7 +250,12 @@ export default function ShopPage() {
             className={`${s.catTile} ${f.cat.length === 0 ? s.catTileOn : ''}`}
             onClick={() => update({ cat: [] })}
           >
-            <span className={s.catImg}><span className={s.catAll}>ALL</span></span>
+            <span className={s.catImg}>
+              <svg className={s.catAll} width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                <rect x="4" y="4" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" />
+                <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" />
+              </svg>
+            </span>
             <span className={s.catLabel}>ყველა</span>
           </button>
           {CATEGORIES.map((c) => (
@@ -413,7 +413,15 @@ export default function ShopPage() {
               </div>
             )}
 
-            {products && results.length === 0 && (
+            {products && results.length === 0 && f.fav && favIds.length === 0 && (
+              <div className={s.empty}>
+                <div className={s.emptyTitle}>რჩეულები ჯერ არ გაქვს</div>
+                <div className={s.emptyText}>პროდუქტის ბარათზე ♡ დააჭირე — აქ შეინახება.</div>
+                <button type="button" className={s.emptyBtn} onClick={clearAll}>ყველა პროდუქტი</button>
+              </div>
+            )}
+
+            {products && results.length === 0 && !(f.fav && favIds.length === 0) && (
               <div className={s.empty}>
                 <div className={s.emptyTitle}>ვერაფერი მოიძებნა</div>
                 <div className={s.emptyText}>სცადე ფილტრების შეცვლა</div>
@@ -457,7 +465,7 @@ export default function ShopPage() {
             <span className={s.eyebrow}>კორპორატიული შეკვეთები</span>
             <h3 className={s.corpTitle}>გუნდისთვის, ღონისძიებისთვის, ბრენდისთვის</h3>
             <p className={s.corpText}>10 ცალიდან — ფასდაკლება, ერთიანი დიზაინი და ზომების მიხედვით დაშლილი შეკვეთა.</p>
-            <button type="button" className={s.ctaPrimary} onClick={startDesign}>გამოთვალე ფასი →</button>
+            <Link to="/corporate" className={s.ctaPrimary}>გამოთვალე ფასი →</Link>
           </div>
           <div className={s.corpArt}><img src={corpImg} alt="" /></div>
         </div>

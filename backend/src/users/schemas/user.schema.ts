@@ -30,6 +30,20 @@ export class User {
 
   @Prop({ type: String, enum: Role, default: Role.User })
   role: Role;
+
+  // Delivery details, pre-filled at checkout.
+  @Prop({ default: '', trim: true })
+  phone: string;
+
+  @Prop({ default: '', trim: true })
+  city: string;
+
+  @Prop({ default: '', trim: true })
+  address: string;
+
+  // Favourite product ids, synced from the browser when signed in.
+  @Prop({ type: [String], default: [] })
+  favorites: string[];
 }
 
 export type UserDocument = HydratedDocument<User>;

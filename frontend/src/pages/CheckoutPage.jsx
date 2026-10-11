@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '../lib/api';
 import useCartStore from '../store/cartStore';
+import { useAuth } from '../context/auth-context';
 import { money, priceOf, shippingFor } from '../lib/catalog';
 import s from './storefront.module.css';
 
@@ -13,15 +14,19 @@ const PAY_OPTS = [
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Custom design for one cart line: layer data, preview, and a print-ready PNG.
+// Custom design for one cart line: layer data, and per side (front / back)
+// a mockup showing the placement plus a print-ready PNG of the artwork.
 async function buildDesign(item) {
   const canvas = typeof item.canvasJson === 'string' ? JSON.parse(item.canvasJson) : item.canvasJson;
   let printUrl = null;
+  let backPrintUrl = null;
   try {
     // Loaded on demand: shirtTexture pulls in three.js, which the rest of
     // the storefront doesn't need.
     const { renderPrintFile } = await import('../lib/shirtTexture');
+    // Front artwork is the top-level images/texts; the back has its own.
     printUrl = await renderPrintFile(canvas);
+    if (canvas?.back) backPrintUrl = await renderPrintFile(canvas.back);
   } catch {
     // The order still carries the layers; admins can re-create the print file.
   }
@@ -29,6 +34,8 @@ async function buildDesign(item) {
     canvasJson: canvas,
     ...(item.previewUrl ? { previewUrl: item.previewUrl } : {}),
     ...(printUrl ? { printUrl } : {}),
+    ...(backPrintUrl ? { backPrintUrl } : {}),
+    ...(item.backPreviewUrl ? { backPreviewUrl: item.backPreviewUrl } : {}),
     ...(canvas?.model ? { model: canvas.model } : {}),
   };
 }
@@ -47,6 +54,24 @@ export default function CheckoutPage() {
 
   const [settings, setSettings] = useState({ currency: '₾', freeShipThreshold: 150 });
   const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', addr: '' });
+  const { user, refreshUser } = useAuth();
+  const [remember, setRemember] = useState(true);
+
+  // Signed in: pre-fill empty fields from the account once it is known.
+  const [filledFor, setFilledFor] = useState(null);
+  if (user && filledFor !== user.id) {
+    setFilledFor(user.id);
+    setForm((f) => ({
+      name: f.name || user.name || '',
+      phone: f.phone || user.phone || '',
+      email: f.email || user.email || '',
+      city: f.city || user.city || '',
+      addr: f.addr || user.address || '',
+    }));
+  }
+  const detailsChanged = !!user && (
+    form.phone.trim() !== (user.phone || '') || form.city.trim() !== (user.city || '') || form.addr.trim() !== (user.address || '')
+  );
   const [pay, setPay] = useState('cash');
   const [error, setError] = useState('');
   const [placing, setPlacing] = useState(false);
@@ -151,6 +176,11 @@ export default function CheckoutPage() {
       };
 
       const { data } = await api.post('/api/orders', payload);
+      if (detailsChanged && remember) {
+        api.patch('/api/me/profile', { phone: form.phone.trim(), city: form.city.trim(), address: form.addr.trim() })
+          .then(() => refreshUser())
+          .catch(() => {});
+      }
       setDone({ orderNo: data.number || `PR-${data.id.slice(-6).toUpperCase()}` });
       clear();
     } catch (err) {
@@ -231,6 +261,12 @@ export default function CheckoutPage() {
                 <input className={s.input} value={form.addr} onChange={set('addr')} placeholder="ჭავჭავაძის 12, ბ. 4" />
               </label>
             </div>
+            {detailsChanged && (
+              <label className={s.rememberRow}>
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                ტელეფონი და მისამართი ანგარიშზე შევინახო შემდეგი შეკვეთისთვის
+              </label>
+            )}
 
             <div className={s.fieldLabel} style={{ marginTop: 6 }}>გადახდა</div>
             <div className={s.payList}>

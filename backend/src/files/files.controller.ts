@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Res,
   UploadedFile,
   UseInterceptors,
@@ -30,8 +31,18 @@ export class FilesController {
 
   @Public()
   @Get(':id')
-  async download(@Param('id') id: string, @Res() res: Response) {
+  async download(
+    @Param('id') id: string,
+    @Res() res: Response,
+    @Query('download') asAttachment?: string,
+    @Query('name') name?: string,
+  ) {
     const { file, stream, contentType } = await this.filesService.open(id);
+    if (asAttachment) {
+      // ?download=1&name=PR-123-front.png saves the file instead of opening it.
+      const filename = String(name || file.filename || 'file').replace(/[^\w.\-]+/g, '_').slice(0, 120);
+      res.set('Content-Disposition', `attachment; filename="${filename}"`);
+    }
     res.set({
       'Content-Type': contentType,
       'Content-Length': String(file.length),

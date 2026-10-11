@@ -8,7 +8,8 @@ export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/account';
+  const fromLoc = location.state?.from;
+  const from = fromLoc?.pathname ? `${fromLoc.pathname}${fromLoc.search || ''}` : '/account';
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
