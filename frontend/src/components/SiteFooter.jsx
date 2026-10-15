@@ -4,10 +4,13 @@ import s from './SiteFooter.module.css';
 import { useI18n } from '../i18n/i18n-context';
 
 const DEFAULTS = {
-  contactPhone: '+995 555 12 34 56',
+  contactPhone: '',
   contactEmail: 'info@prenta.ge',
-  contactAddress: 'თბილისი, ჭავჭავაძის 12',
+  contactAddress: 'თბილისი, ოდესის ქ. 14',
 };
+
+// Google Maps pin for the office address.
+const MAP_URL = 'https://maps.app.goo.gl/UDuy3SRruh8H1mS47';
 
 export default function SiteFooter({ settings = {} }) {
   const { t } = useI18n();
@@ -20,8 +23,8 @@ export default function SiteFooter({ settings = {} }) {
             <img src={logo} alt="" />
             <span>PRENTA</span>
           </div>
-          <span>{t(info.contactAddress)}</span>
-          <span>{info.contactPhone}</span>
+          <a href={MAP_URL} target="_blank" rel="noopener noreferrer">{t(info.contactAddress)}</a>
+          {info.contactPhone && <span>{info.contactPhone}</span>}
           <span>{info.contactEmail}</span>
         </div>
         <div className={s.col}>
@@ -47,7 +50,7 @@ export default function SiteFooter({ settings = {} }) {
       <div className={s.bar}>
         <div className={s.barInner}>
           <span>© {new Date().getFullYear()} Prenta · {t('ყველა უფლება დაცულია')}</span>
-          <span>{t('გადახდა: ბარათით, კურიერთან ან განვადებით')}</span>
+          <span>{t('გადახდა: წინასწარ, ბარათით')}</span>
         </div>
       </div>
     </footer>

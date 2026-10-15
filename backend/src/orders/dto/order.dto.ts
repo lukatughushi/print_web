@@ -18,7 +18,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { OrderStatus, PAYMENT_METHODS } from '../schemas/order.schema';
+import { OrderStatus, CHECKOUT_PAYMENT_METHODS } from '../schemas/order.schema';
 
 export class OrderDesignDto {
   /** Editor layers; stored as a JSON file. */
@@ -52,7 +52,7 @@ export class CreateOrderDto {
   @IsString() @MinLength(5) @MaxLength(40) phone: string;
   @IsString() @MinLength(3) @MaxLength(300) address: string;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
-  @IsOptional() @IsIn(PAYMENT_METHODS) payment?: string;
+  @IsOptional() @IsIn(CHECKOUT_PAYMENT_METHODS) payment?: string;
   /** Total the customer saw; the order is refused if the server's differs. */
   @IsOptional() @IsNumber() expectedTotal?: number;
 }

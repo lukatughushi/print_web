@@ -8,6 +8,8 @@
   gap: 28px;
 }
 .about { display: flex; flex-direction: column; gap: 10px; font-size: 13px; line-height: 1.6; }
+.about a { color: inherit; text-decoration: none; }
+.about a:hover { color: #EF5F7A; }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand img { width: 30px; height: 30px; object-fit: contain; }
 .brand span {

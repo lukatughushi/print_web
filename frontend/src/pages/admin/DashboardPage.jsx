@@ -30,7 +30,7 @@ export default function DashboardPage() {
           <h1 className={s.title}>მიმოხილვა</h1>
           <p className={s.sub}>მაღაზიის მდგომარეობა ერთ გვერდზე</p>
         </div>
-        <Link to="/admin/orders" className={s.btn}>ყველა შეკვეთა →</Link>
+        <Link to="/admin/orders" className={s.btn}>ყველა შეკვეთა</Link>
       </div>
 
       <div className={s.kpis}>

@@ -43,7 +43,7 @@ export enum QuoteStatus {
   Lost = 'LOST',
 }
 
-const PRODUCTS = ['tee', 'polo', 'ls', 'hoodie', 'cap', 'bag', 'vest'] as const;
+const PRODUCTS = ['tee', 'ls', 'polo', 'polo_ls', 'hoodie', 'zip_hoodie', 'bomber', 'cap', 'bag', 'vest'] as const;
 const ZONES = ['front', 'back', 'sleeve'] as const;
 
 /** Corporate (B2B) quote request from the /corporate page. */

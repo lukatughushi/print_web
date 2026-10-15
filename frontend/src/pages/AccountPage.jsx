@@ -126,7 +126,7 @@ function OrdersTab({ orders }) {
     return (
       <div className={s.empty}>
         <p>{t('შეკვეთები ჯერ არ გაქვს.')}</p>
-        <Link to="/shop" className={s.btnPrimary}>{t('მაღაზიაში გადასვლა →')}</Link>
+        <Link to="/shop" className={s.btnPrimary}>{t('მაღაზიაში გადასვლა')}</Link>
       </div>
     );
   }

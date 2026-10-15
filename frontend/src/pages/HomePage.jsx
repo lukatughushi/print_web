@@ -25,14 +25,17 @@ import { useI18n } from '../i18n/i18n-context';
 const DEFAULT_SETTINGS = {
   announcementText: '',
   announcementActive: false,
-  heroCtaText: 'დაიწყე დიზაინი',
+  heroCtaText: 'შექმენი დიზაინი',
   heroCtaLink: '',
   freeShipThreshold: 150,
   currency: '₾',
-  contactPhone: '+995 555 12 34 56',
+  contactPhone: '',
   contactEmail: 'info@prenta.ge',
-  contactAddress: 'თბილისი, ჭავჭავაძის 12',
+  contactAddress: 'თბილისი, ოდესის ქ. 14',
 };
+
+// Starting price shown on the hero chip (a printed T-shirt).
+const HERO_FROM_PRICE = 29;
 
 // Category cards. `cats` are the shop categories whose lowest price the tile shows;
 // `from` is the fallback while products load.
@@ -49,15 +52,15 @@ const BENTO = [
 const TICKER = ['მაისური', 'ჰუდი', 'პოლო', 'ბომბერი', 'ჩანთა', 'კეპი', 'ჭიქა', 'DTF ბეჭდვა', '1 ცალიდან', 'მიწოდება 3 დღეში'];
 
 const STEPS = [
-  { t: 'აირჩიე პროდუქტი', d: '10 კატეგორია, 8 ფერი, XS–XXL ზომები.' },
-  { t: 'ატვირთე დიზაინი', d: 'წინ, უკან ან სახელოზე — ფასი მაშინვე ითვლება.' },
-  { t: 'მიიღე 3 დღეში', d: null },
+  { t: 'აირჩიე პროდუქტი', d: 'ფერების ფართო არჩევანი, ზომები XS-დან 3XL-მდე.' },
+  { t: 'ატვირთე სასურველი დიზაინი', d: 'დაიტანე შენი დიზაინი პროდუქტის ნებისმიერ ნაწილზე.' },
+  { t: 'მიიღე შეკვეთა 3 დღეში', d: 'მიწოდება მთელი საქართველოს მასშტაბით.' },
 ];
 
 const STATS = [
-  { n: '50+', t: 'რეცხვას უძლებს', d: 'DTF ბეჭდვა არ სკდება და ფერს ინარჩუნებს.' },
-  { n: '3 დღე', t: 'შეკვეთიდან კარამდე', d: 'თბილისში — ხშირად მეორე დღესვე.' },
-  { n: '100%', t: 'ბამბა', d: 'მაისურები 180–220 გრ/მ² ქსოვილისგან.' },
+  { n: '200+', t: 'რეცხვას უძლებს', d: 'ვიყენებთ უმაღლესი ხარისხის საბეჭდ მასალას — ნაბეჭდი არ სკდება და არ იცვლის ფერს.' },
+  { n: '3 დღე', t: 'შეკვეთიდან კარამდე', d: 'თბილისში მიწოდება მეორე დღეს.' },
+  { n: '100%', t: 'ბამბის, პრემიალური ხარისხის მაისურები', d: 'გთავაზობთ 150, 180, 200 და 300 გრამიან მაისურებს.' },
 ];
 
 
@@ -85,7 +88,7 @@ export default function HomePage() {
   const designLink = settings.heroCtaLink || (firstProductId ? `/design/${firstProductId}` : '/shop');
   const goDesign = () => navigate(designLink.startsWith('/') ? designLink : '/shop');
 
-  // Lowest price per category, for the category cards and the hero chip.
+  // Lowest price per category, for the category cards.
   const fromPrice = {};
   products.forEach((p) => {
     const price = priceOf(p);
@@ -95,8 +98,6 @@ export default function HomePage() {
     const prices = tile.cats.map((c) => fromPrice[c]).filter((v) => v !== undefined);
     return prices.length ? Math.min(...prices) : tile.from;
   };
-  const allPrices = Object.values(fromPrice);
-  const lowest = allPrices.length ? Math.min(...allPrices) : 35;
 
   // Best sellers: discounted first, then new arrivals, one of each category at most.
   const popular = [];
@@ -111,7 +112,6 @@ export default function HomePage() {
     });
 
   const money = (n) => `${Math.round(n)} ${settings.currency}`;
-  const freeShip = Number(settings.freeShipThreshold) || 0;
 
   return (
     <div className={s.page}>
@@ -125,13 +125,13 @@ export default function HomePage() {
         <div className={s.heroGlow} />
         <div className={s.heroInner}>
           <div className={s.heroCopy}>
-            <h1 className={s.heroTitle}>{t('შენი იდეა.')} <br /><span>{t('ჩვენი ბეჭდვა.')}</span></h1>
+            <h1 className={s.heroTitle}>{t('შექმენი შენი დიზაინი')} <br /><span>{t('ჩვენთან.')}</span></h1>
             <p className={s.heroText}>
-              {t('ატვირთე სურათი, ლოგო ან ტექსტი — დავბეჭდავთ მაისურზე, ჰუდზე, ჩანთაზე, კეპზე ან ჭიქაზე და მოგიტანთ 3 დღეში.')}
+              {t('ატვირთე სურათი, ლოგო ან ტექსტი — მიიღე უმაღლესი ხარისხის ბეჭდვითი მომსახურება „პრენტასგან“.')}
             </p>
             <div className={s.heroCtas}>
               <button type="button" className={`${s.btn} ${s.btnPink} ${s.btnLg}`} onClick={goDesign}>
-                {t(settings.heroCtaText)} →
+                {t(settings.heroCtaText)}
               </button>
               <Link to="/shop" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>{t('მზა პროდუქცია')}</Link>
             </div>
@@ -150,11 +150,11 @@ export default function HomePage() {
               <img className={s.heroImg} src={heroImg} alt={t('მაისურები')} fetchPriority="high" />
               <div className={`${s.chip} ${s.chipA}`}>
                 <span className={s.chipIcon}>✓</span>
-                <div><div className={s.chipTitle}>{t('მზადაა 3 დღეში')}</div><div className={s.chipSub}>{t('მიწოდება კარამდე')}</div></div>
+                <div><div className={s.chipTitle}>{t('მზადდება 2 სამუშაო დღეში')}</div><div className={s.chipSub}>{t('მიწოდება მესამე დღეს')}</div></div>
               </div>
               <div className={`${s.chip} ${s.chipB}`}>
                 <span className={s.chipIcon}>₾</span>
-                <div><div className={s.chipTitle}>{t('{price}-დან', { price: money(lowest) })}</div><div className={s.chipSub}>{t('ფასი ბეჭდვით')}</div></div>
+                <div><div className={s.chipTitle}>{t('{price}-დან', { price: money(HERO_FROM_PRICE) })}</div><div className={s.chipSub}>{t('საფასური ბეჭდვით')}</div></div>
               </div>
             </div>
           </div>
@@ -198,8 +198,8 @@ export default function HomePage() {
             ))}
             <Link to="/shop" className={`${s.cat} ${s.catAll}`}>
               <span className={s.catAllBody}>
-                <span className={s.catAllNum}>10</span>
-                <span className={s.catAllText}>{t('კატეგორია, 8 ფერი და ზომები XS–XXL')}</span>
+                <span className={s.catAllTitle}>{t('მრავალფეროვანი არჩევანი')}</span>
+                <span className={s.catAllText}>{t('ზომები XS-დან XL-მდე.')}</span>
               </span>
               <span className={s.catBar}>
                 <span className={s.catName}>{t('ყველა პროდუქტი')}</span>
@@ -215,8 +215,8 @@ export default function HomePage() {
             <div className={s.stepsIntro}>
               <span className={s.kicker}>{t('როგორ მუშაობს')}</span>
               <h2 className={s.h2}>{t('სამი ნაბიჯი შენს პროდუქტამდე')}</h2>
-              <p className={s.muted}>{t('არ გჭირდება დიზაინერი — კონსტრუქტორში ყველაფერს თვითონ ნახავ, ფასსაც ჩათვლით.')}</p>
-              <button type="button" className={`${s.btn} ${s.btnNavy}`} onClick={goDesign}>{t('გახსენი კონსტრუქტორი →')}</button>
+              <p className={s.muted}>{t('შექმენი შენი დიზაინი, გადაიხადე საფასური და მიიღე პროდუქტი სასურველ მისამართზე. ყველაფერი ერთ სივრცეში — გამოიყენე ჩვენი კონსტრუქტორი.')}</p>
+              <button type="button" className={`${s.btn} ${s.btnNavy}`} onClick={goDesign}>{t('გახსენი კონსტრუქტორი')}</button>
             </div>
             <ol className={s.stepList}>
               {STEPS.map((st, i) => (
@@ -225,9 +225,7 @@ export default function HomePage() {
                   <div>
                     <div className={s.stepTitle}>{t(st.t)}</div>
                     <div className={s.stepText}>
-                      {st.d ? t(st.d) : (freeShip > 0
-                        ? t('მიწოდება მთელ საქართველოში, {price}-დან უფასოდ.', { price: money(freeShip) })
-                        : t('მიწოდება მთელ საქართველოში.'))}
+                      {t(st.d)}
                     </div>
                   </div>
                 </li>
@@ -258,9 +256,9 @@ export default function HomePage() {
             <div className={s.corpBody}>
               <span className={s.kicker}>{t('ბიზნესისთვის')}</span>
               <h2 className={s.h2}>{t('გუნდის ფორმა, ლოგოთი — 10 ცალიდან')}</h2>
-              <p className={s.corpText}>{t('Modern Roofing, Sushi Icons, Ratto Bistro და კიდევ ათობით კომპანია უკვე ჩვენთან ბეჭდავს.')}</p>
+              <p className={s.corpText}>{t('Modern Roofing, Sushi Icons, Ratto Bistro და კიდევ ათობით კომპანიამ უკვე გამოსცადა ჩვენი მომსახურება.')}</p>
               <div className={s.corpBtns}>
-                <Link to="/corporate#quote" className={`${s.btn} ${s.btnPink}`}>{t('გამოთვალე ფასი →')}</Link>
+                <Link to="/corporate#quote" className={`${s.btn} ${s.btnPink}`}>{t('გამოთვალე ფასი')}</Link>
                 <Link to="/corporate#work" className={`${s.btn} ${s.btnOutline}`}>{t('ნამუშევრები')}</Link>
               </div>
             </div>
@@ -287,8 +285,8 @@ export default function HomePage() {
         <section className={`${s.section} ${s.sectionEnd}`}>
           <div className={s.final}>
             <h2 className={s.finalTitle}>{t('მზად ხარ? შექმენი პირველი დიზაინი 2 წუთში.')}</h2>
-            <p className={s.finalText}>{t('რეგისტრაცია არ არის საჭირო. ნახე, როგორ გამოიყურება, სანამ შეუკვეთავ.')}</p>
-            <button type="button" className={`${s.btn} ${s.btnNavy} ${s.btnXl}`} onClick={goDesign}>{t('დაიწყე ახლა →')}</button>
+            <p className={s.finalText}>{t('რეგისტრაცია არ არის საჭირო. ნახე, როგორ გამოიყურება, ვიდრე შეუკვეთავ.')}</p>
+            <button type="button" className={`${s.btn} ${s.btnNavy} ${s.btnXl}`} onClick={goDesign}>{t('დაიწყე ახლა')}</button>
           </div>
         </section>
       </main>

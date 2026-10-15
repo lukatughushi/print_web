@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import api, { getErrorMessage } from '../lib/api';
 import SiteFooter from '../components/SiteFooter';
@@ -12,7 +12,7 @@ const PHOTOS = Object.fromEntries(
     .map(([path, url]) => [path.split('/').pop().replace('.webp', ''), url]),
 );
 
-const CATS = [['all', 'ყველა'], ['tee', 'მაისური'], ['polo', 'პოლო'], ['cap', 'კეპი'], ['bag', 'ჩანთა'], ['vest', 'ჟილეტი']];
+const CATS = [['tee', 'მაისური'], ['polo', 'პოლო'], ['cap', 'კეპი'], ['bag', 'ჩანთა'], ['vest', 'ჟილეტი']];
 const CAT_LABEL = Object.fromEntries(CATS);
 
 const WORKS = [
@@ -37,23 +37,29 @@ const WORKS = [
 const BRANDS = ['Modern Roofing', 'Sushi Icons', 'Ratto Bistro', 'EPO Yapı Kimya', 'istOria', 'დელფი მოტორსი', 'პრაიმ შაურმა', '670 Festival', 'Vaxo Shonia’s Vlog', 'ქართული სამზარეულო'];
 
 // Calculator: base price per piece (₾), extra per print zone, quantity discounts.
-const PRODS = [['tee', 'მაისური', 22], ['polo', 'პოლო', 34], ['ls', 'გრძელმკლავიანი', 30], ['hoodie', 'ჰუდი', 58], ['cap', 'კეპი', 18], ['bag', 'ჩანთა', 14], ['vest', 'ჟილეტი', 20]];
+const PRODS = [
+  ['tee', 'მაისური მოკლე', 22], ['ls', 'მაისური გრძელმკლავიანი', 30],
+  ['polo', 'პოლო მაისური მოკლე', 34], ['polo_ls', 'პოლო გრძელმკლავიანი', 42],
+  ['hoodie', 'ჰუდი', 58], ['zip_hoodie', 'ჰუდი ელვა შესაკრავით', 65], ['bomber', 'ბომბერი', 55],
+  ['cap', 'კეპი', 18], ['bag', 'ჩანთა', 14], ['vest', 'სამუშაო ჟილეტი', 20],
+];
 const ZONES = [['front', 'წინა მხარე', 0], ['back', 'ზურგი', 8], ['sleeve', 'სახელო', 4]];
+// Design options: one side (front) or two (front + back), plus the sleeve.
+const DESIGN_OPTS = [['one', 'ერთ მხარეს'], ['two', 'ორ მხარეს'], ['sleeve', 'სახელო']];
 const TIERS = [[10, '10–49 · −5%', 0.05], [50, '50–99 · −12%', 0.12], [100, '100–299 · −20%', 0.2], [300, '300+ · −25%', 0.25]];
 
 const STEPS = [
-  ['01', 'მოთხოვნა', 'გამოგვიგზავნე ლოგო, რაოდენობა და ვადა. 1 საათში დაგიკავშირდებით.'],
-  ['02', 'მაკეტი', 'ვამზადებთ ციფრულ მაკეტს — ზომა, განთავსება, ფერი. უფასოდ.'],
-  ['03', 'ნიმუში', '50+ ცალზე ვბეჭდავთ ერთ საცდელ ნიმუშს დასამტკიცებლად.'],
-  ['04', 'წარმოება და მიწოდება', '3–5 სამუშაო დღე. ზომების მიხედვით შეფუთული, ინვოისით.'],
+  ['01', 'მოთხოვნა', 'მომხმარებლისგან სრული ინფორმაციის მიღება.'],
+  ['02', 'ნიმუში და შეკვეთა', 'ვირტუალური ნიმუშის დამზადება და შეკვეთის გაფორმება.'],
+  ['03', 'წარმოება და მიწოდება', '3–4 სამუშაო დღეში საბოლოო პროდუქტის მიწოდება სასურველ მისამართზე.'],
 ];
 
 const FAQ = [
-  ['რა არის მინიმალური რაოდენობა?', 'კორპორატიული ფასი მოქმედებს 10 ცალიდან. შეიძლება სხვადასხვა ზომისა და ფერის შერევა ერთ შეკვეთაში.'],
-  ['რა ფორმატით გამოგიგზავნოთ ლოგო?', 'საუკეთესოა ვექტორული PDF. PNG/JPG-საც ვიღებთ — საჭიროების შემთხვევაში ვექტორიზაციას ჩვენ გავაკეთებთ. AI ან SVG ფაილი შეინახე PDF-ად და ისე ატვირთე.'],
-  ['რამდენ ხანში მზადდება შეკვეთა?', 'მაკეტის დამტკიცებიდან 3–5 სამუშაო დღეში. 300+ ცალზე ვადას ინდივიდუალურად ვათანხმებთ.'],
-  ['რამდენად გამძლეა ბეჭდვა?', 'DTF ბეჭდვა უძლებს 50+ რეცხვას 40°C-ზე, არ სკდება და ფერს ინარჩუნებს.'],
-  ['გაქვთ ინვოისით გადახდა?', 'დიახ — ვმუშაობთ იურიდიულ პირებთან ინვოისითა და ზედნადებით, ასევე წინასწარი 50%-იანი გადახდით.'],
+  ['რა არის შეკვეთის მინიმალური რაოდენობა?', 'პრენტა გთავაზობთ როგორც საცალო, ისე საბითუმო მომსახურებას. 10 ერთეული ან მეტი პროდუქციის შეკვეთისას გთავაზობთ საბითუმო საწარმოო ფასს.'],
+  ['რა ფორმატით გამოგიგზავნოთ ლოგო?', 'ატვირთე ლოგო PDF, PNG, JPG ან WEBP ფორმატში. საუკეთესო შედეგისთვის გამოიყენე ვექტორული PDF ან მაღალი გარჩევადობის PNG. AI ან SVG ფაილი ჯერ PDF-ად შეინახე და ისე ატვირთე.'],
+  ['რა დრო სჭირდება შეკვეთის დამზადებას?', 'ინდივიდუალური, საცალო შეკვეთის შემთხვევაში წარმოების სავარაუდო დრო 2–3 დღეა, საბითუმო შეკვეთის შემთხვევაში — 3–4 დღე.'],
+  ['რამდენად ხარისხიანია ნაბეჭდი?', 'ბეჭდვისთვის ვიყენებთ უმაღლესი ხარისხის მასალას — ჩვენ მიერ დაბეჭდილი დიზაინი არ კარგავს ფერს და არ სკდება.'],
+  ['როგორ შემიძლია გადახდა?', 'გადახდა შესაძლებელია როგორც ბარათით, ისე საბანკო გადარიცხვით, ინვოისის საფუძველზე.'],
 ];
 
 const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
@@ -114,7 +120,6 @@ function Lightbox({ work, index, onIndex, onClose }) {
 export default function CorporatePage() {
   const { t } = useI18n();
   const [settings, setSettings] = useState({});
-  const [cat, setCat] = useState('all');
   const [lb, setLb] = useState(null); // { work, index }
   const [prod, setProd] = useState('tee');
 
@@ -140,18 +145,19 @@ export default function CorporatePage() {
     api.get('/api/settings').then((r) => r.data && setSettings(r.data)).catch(() => {});
   }, []);
 
-  const works = useMemo(() => (cat === 'all' ? WORKS : WORKS.filter((w) => w.cats.includes(cat))), [cat]);
 
   const product = PRODS.find((p) => p[0] === prod);
   const zoneAdd = ZONES.filter((z) => zones.includes(z[0])).reduce((a, z) => a + z[2], 0);
   const tier = [...TIERS].reverse().find((tr) => qty >= tr[0]);
   const unit = Math.round((product[2] + zoneAdd) * (1 - tier[2]) * 10) / 10;
   const total = Math.round(unit * qty);
-  const zoneNames = ZONES.filter((z) => zones.includes(z[0])).map((z) => t(z[1]).toLowerCase()).join(', ');
+  const designOn = (id) => (id === 'sleeve' ? zones.includes('sleeve') : zones.includes('back') === (id === 'two'));
+  const zoneNames = DESIGN_OPTS.filter(([id]) => designOn(id)).map(([, label]) => t(label).toLowerCase()).join(', ');
 
-  const toggleZone = (id) => setZones((z) => {
-    const next = z.includes(id) ? z.filter((x) => x !== id) : [...z, id];
-    return next.length ? next : z;
+  const pickDesign = (id) => setZones((z) => {
+    const sleeve = z.includes('sleeve');
+    if (id === 'sleeve') return [...z.filter((x) => x !== 'sleeve'), ...(sleeve ? [] : ['sleeve'])];
+    return [...(id === 'two' ? ['front', 'back'] : ['front']), ...(sleeve ? ['sleeve'] : [])];
   });
 
   const set = (key) => (e) => { setError(''); setForm((f) => ({ ...f, [key]: e.target.value })); };
@@ -198,7 +204,8 @@ export default function CorporatePage() {
     setLogo(null);
   };
 
-  const phone = settings.contactPhone || '+995 555 12 34 56';
+  const phone = settings.contactPhone || '';
+  const freeShip = Number(settings.freeShipThreshold) || 150;
 
   return (
     <div className={s.page}>
@@ -207,17 +214,17 @@ export default function CorporatePage() {
         <div className={s.heroGlow} />
         <div className={s.heroInner}>
           <div className={s.heroText}>
-            <span className={s.eyebrow}>{t('PRENTA BUSINESS · 10 ცალიდან')}</span>
-            <h1 className={s.heroTitle}>{t('შენი ბრენდი —')} <span>{t('გუნდის ტანსაცმელზე.')}</span></h1>
-            <p className={s.heroLead}>{t('მაისურები, პოლოები, კეპები, ჩანთები და სამუშაო ჟილეტები ლოგოთი. ერთი მენეჯერი, ერთი ინვოისი, ზომების მიხედვით დალაგებული შეკვეთა.')}</p>
+            <span className={s.eyebrow}>{t('შენზე მორგებული ფასი')}</span>
+            <h1 className={s.heroTitle}>{t('განავითარე შენი ბრენდი')} <span>{t('პრენტასთან ერთად.')}</span></h1>
+            <p className={s.heroLead}>{t('გამოიყენე ჩვენს ვებგვერდზე ჩაშენებული ფასის გამომთვლელი და მიიღე შენზე მორგებული შეთავაზება.')}</p>
             <div className={s.heroCtas}>
-              <a href="#quote" className={s.btnPinkLg}>{t('გამოთვალე ფასი →')}</a>
+              <a href="#quote" className={s.btnPinkLg}>{t('გამოთვალე ფასი')}</a>
               <a href="#work" className={s.btnGhostLg}>{t('ჩვენი ნამუშევრები')}</a>
             </div>
             <div className={s.stats}>
-              <div><div className={s.statValue}>10+</div><div className={s.statLabel}>{t('მინიმალური შეკვეთა')}</div></div>
-              <div><div className={s.statValue}>{t('3–5 დღე')}</div><div className={s.statLabel}>{t('წარმოების ვადა')}</div></div>
-              <div><div className={s.statValue}>−20%</div><div className={s.statLabel}>{t('100 ცალიდან')}</div></div>
+              <div><div className={s.statValue}>10+</div><div className={s.statLabel}>{t('მინიმალური საბითუმო შეკვეთა')}</div></div>
+              <div><div className={s.statValue}>{t('3–5 დღე')}</div><div className={s.statLabel}>{t('დამზადების ვადა')}</div></div>
+              <div><div className={s.statValue}>{t('უფასო')}</div><div className={s.statLabel}>{t('მიწოდება {price}-დან', { price: `${freeShip} ${settings.currency || '₾'}` })}</div></div>
             </div>
           </div>
           <div className={s.mosaic}>
@@ -231,7 +238,7 @@ export default function CorporatePage() {
       {/* ── Trusted by ───────────────────────────────────── */}
       <section className={s.trust}>
         <div className={s.trustInner}>
-          <span className={s.trustLabel}>{t('გვენდობიან')}</span>
+          <span className={s.trustLabel}>{t('პარტნიორი კომპანიები')}</span>
           <div className={s.marqueeMask}>
             <div className={s.marquee}>
               {[...BRANDS, ...BRANDS].map((b, i) => <span key={i} aria-hidden={i >= BRANDS.length}>{t(b)}</span>)}
@@ -246,22 +253,15 @@ export default function CorporatePage() {
           <div className={s.sectionHead}>
             <div className={s.headText}>
               <span className={s.kicker}>{t('პორტფოლიო')}</span>
-              <h2 className={s.h2}>{t('უკვე შექმნილი კორპორატიული პროდუქცია')}</h2>
-            </div>
-            <div className={s.chips}>
-              {CATS.map(([id, label]) => (
-                <button key={id} type="button" className={`${s.chip} ${cat === id ? s.chipOn : ''}`} onClick={() => setCat(id)}>
-                  {t(label)}<span>{id === 'all' ? WORKS.length : WORKS.filter((w) => w.cats.includes(id)).length}</span>
-                </button>
-              ))}
+              <h2 className={s.h2}>{t('დასრულებული პროექტები')}</h2>
             </div>
           </div>
           <div className={s.works}>
-            {works.map((w) => (
+            {WORKS.map((w) => (
               <button
                 key={w.client}
                 type="button"
-                className={`${s.work} ${w.big && cat === 'all' ? s.workBig : ''}`}
+                className={`${s.work} ${w.big ? s.workBig : ''}`}
                 onClick={() => setLb({ work: w, index: 0 })}
               >
                 <img src={w.photos[0]} alt={t(w.client)} loading="lazy" />
@@ -281,7 +281,7 @@ export default function CorporatePage() {
         <section className={s.sectionTop}>
           <div className={s.headText}>
             <span className={s.kicker}>{t('როგორ ვმუშაობთ')}</span>
-            <h2 className={s.h2}>{t('ლოგოდან მიწოდებამდე — 4 ნაბიჯი')}</h2>
+            <h2 className={s.h2}>{t('იდეიდან მზა პროდუქტამდე — 3 ნაბიჯი')}</h2>
           </div>
           <div className={s.steps}>
             {STEPS.map(([n, title, d]) => (
@@ -326,13 +326,13 @@ export default function CorporatePage() {
               </div>
 
               <div className={s.calcGroup}>
-                <span className={s.calcLabel}>{t('ბეჭდვის ზონები')}</span>
+                <span className={s.calcLabel}>{t('დიზაინი')}</span>
                 <div className={s.chips}>
-                  {ZONES.map(([id, label, add]) => {
-                    const on = zones.includes(id);
+                  {DESIGN_OPTS.map(([id, label]) => {
+                    const on = designOn(id);
                     return (
-                      <button key={id} type="button" className={`${s.zone} ${on ? s.zoneOn : ''}`} onClick={() => toggleZone(id)} aria-pressed={on}>
-                        <span className={s.zoneBox}>{on ? '✓' : ''}</span>{t(label)}{add ? ` +${add} ₾` : ''}
+                      <button key={id} type="button" className={`${s.zone} ${on ? s.zoneOn : ''}`} onClick={() => pickDesign(id)} aria-pressed={on}>
+                        <span className={s.zoneBox}>{on ? '✓' : ''}</span>{t(label)}
                       </button>
                     );
                   })}
@@ -341,11 +341,11 @@ export default function CorporatePage() {
 
               <div className={s.calcFoot}>
                 <div>
-                  <div className={s.calcLabel}>{t('ერთეული')}</div>
+                  <div className={s.calcLabel}>{t('ერთეულის ფასი')}</div>
                   <div className={s.unit}>{unit.toFixed(unit % 1 ? 1 : 0)} ₾ / {t('ცალი')}</div>
                 </div>
                 <div className={s.totalBox}>
-                  <div className={s.calcLabel}>{t('სულ, სავარაუდოდ')}</div>
+                  <div className={s.calcLabel}>{t('სულ სავარაუდო ფასი')}</div>
                   <div className={s.total}>{fmt(total)} ₾</div>
                 </div>
               </div>
@@ -377,7 +377,7 @@ export default function CorporatePage() {
                   </label>
                   {error && <div className={s.error}>{error}</div>}
                   <button type="submit" className={s.btnPinkLg} disabled={sending}>{sending ? t('იგზავნება…') : t('გაგზავნა')}</button>
-                  <div className={s.formNote}>{t('ვპასუხობთ 1 საათში, სამუშაო დღეებში 10:00–19:00')} · <a href={`tel:${phone.replace(/\s/g, '')}`}>{phone}</a></div>
+                  <div className={s.formNote}>{t('ვპასუხობთ 1 საათში, სამუშაო დღეებში 10:00–19:00')}{phone && <> · <a href={`tel:${phone.replace(/\s/g, '')}`}>{phone}</a></>}</div>
                 </form>
               )}
             </div>

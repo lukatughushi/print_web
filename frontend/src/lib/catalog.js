@@ -51,6 +51,21 @@ export const COLORS = {
 
 export const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
+// Children's sizes, offered on top of the product's own sizes for T-shirts and
+// hoodies. The stored size names the age. Keep in sync with
+// backend/src/products/kids-sizes.ts.
+export const KIDS_SIZES = [
+  'XS (4–5 წ.)',
+  'S (6–7 წ.)',
+  'M (8–9 წ.)',
+  'L (10–11 წ.)',
+  'XL (12–13 წ.)',
+  '2XL (14–15 წ.)',
+];
+const KIDS_SIZE_CATEGORIES = ['TSHIRT', 'HOODIE', 'ZIP_HOODIE'];
+export const kidsSizesFor = (product) =>
+  KIDS_SIZE_CATEGORIES.includes(product?.category) ? KIDS_SIZES : [];
+
 export const GENDERS = { unisex: 'უნისექსი', men: 'მამაკაცის', women: 'ქალის' };
 
 // The API returns `price`; older data used `basePrice`.

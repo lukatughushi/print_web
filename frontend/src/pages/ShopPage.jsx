@@ -21,10 +21,8 @@ import { productName } from '../i18n/products';
 
 const PAGE_SIZE = 20;
 
-// Accessories have no sizes; they filter as "ერთი ზომა".
-const ONE_SIZE = 'ONE';
-const sizesOf = (p) => (p.sizes?.length ? p.sizes : [ONE_SIZE]);
-const sizeLabel = (z) => (z === ONE_SIZE ? 'ერთი ზომა' : z);
+// Accessories have no sizes, so a size filter leaves them out.
+const sizesOf = (p) => p.sizes || [];
 
 const SORTS = [
   { key: 'pop', label: 'პოპულარული' },
@@ -43,7 +41,6 @@ function readFilters(params) {
     size: list('size'),
     max: params.get('max') ? Number(params.get('max')) : null,
     sale: params.get('sale') === '1',
-    fresh: params.get('new') === '1',
     fav: params.get('fav') === '1',
     q: params.get('q') || '',
     sort: params.get('sort') || 'pop',
@@ -58,7 +55,6 @@ function matches(p, f, favIds, skip, lang = 'ka') {
   if (skip !== 'size' && f.size.length && !sizesOf(p).some((z) => f.size.includes(z))) return false;
   if (f.max !== null && priceOf(p) > f.max) return false;
   if (f.sale && !isOnSale(p)) return false;
-  if (f.fresh && !p.newArrival) return false;
   if (f.fav && !favIds.includes(p.id)) return false;
   if (f.q) {
     const q = f.q.toLowerCase();
@@ -204,7 +200,7 @@ export default function ShopPage() {
 
   const availableSizes = useMemo(() => {
     const set = new Set(all.flatMap(sizesOf));
-    return [...SIZE_ORDER.filter((z) => set.has(z)), ...[...set].filter((z) => !SIZE_ORDER.includes(z) && z !== ONE_SIZE), ...(set.has(ONE_SIZE) ? [ONE_SIZE] : [])];
+    return [...SIZE_ORDER.filter((z) => set.has(z)), ...[...set].filter((z) => !SIZE_ORDER.includes(z))];
   }, [all]);
 
   const availableColors = useMemo(() => {
@@ -222,10 +218,9 @@ export default function ShopPage() {
   const chips = [
     ...f.cat.map((v) => ({ key: `cat-${v}`, label: CATEGORY_BY_CODE[v]?.label || v, clear: () => toggle('cat', v) })),
     ...f.color.map((v) => ({ key: `color-${v}`, label: COLORS[v]?.name || v, clear: () => toggle('color', v) })),
-    ...f.size.map((v) => ({ key: `size-${v}`, label: sizeLabel(v), clear: () => toggle('size', v) })),
+    ...f.size.map((v) => ({ key: `size-${v}`, label: v, clear: () => toggle('size', v) })),
     ...(f.max !== null && f.max < priceMax ? [{ key: 'max', label: `≤ ${f.max} ₾`, clear: () => update({ max: null }) }] : []),
     ...(f.sale ? [{ key: 'sale', label: 'ფასდაკლებით', clear: () => update({ sale: false }) }] : []),
-    ...(f.fresh ? [{ key: 'new', label: 'მხოლოდ ახალი', clear: () => update({ new: false }) }] : []),
     ...(f.fav ? [{ key: 'fav', label: 'რჩეულები', clear: () => update({ fav: false }) }] : []),
     ...(f.q ? [{ key: 'q', label: `„${f.q}“`, clear: () => update({ q: '' }) }] : []),
   ];
@@ -356,7 +351,7 @@ export default function ShopPage() {
                     const on = f.size.includes(z);
                     return (
                       <button key={z} type="button" className={`${s.sizeBtn} ${on ? s.sizeBtnOn : ''}`} onClick={() => toggle('size', z)} aria-pressed={on}>
-                        {t(sizeLabel(z))}
+                        {z}
                       </button>
                     );
                   })}
@@ -367,7 +362,6 @@ export default function ShopPage() {
             <div className={s.group}>
               <div className={s.groupTitle}>{t('სხვა')}</div>
               <Toggle on={f.sale} label={t('ფასდაკლებით')} onChange={() => update({ sale: !f.sale })} />
-              <Toggle on={f.fresh} label={t('მხოლოდ ახალი')} onChange={() => update({ new: !f.fresh })} />
               <Toggle on={f.fav} label={`${t('რჩეულები')} (${favIds.length})`} onChange={() => update({ fav: !f.fav })} />
             </div>
 
@@ -467,9 +461,9 @@ export default function ShopPage() {
         <div className={s.corp}>
           <div className={s.corpBody}>
             <span className={s.eyebrow}>{t('კორპორატიული შეკვეთები')}</span>
-            <h3 className={s.corpTitle}>{t('გუნდისთვის, ღონისძიებისთვის, ბრენდისთვის')}</h3>
-            <p className={s.corpText}>{t('10 ცალიდან — ფასდაკლება, ერთიანი დიზაინი და ზომების მიხედვით დაშლილი შეკვეთა.')}</p>
-            <Link to="/corporate" className={s.ctaPrimary}>{t('გამოთვალე ფასი →')}</Link>
+            <h3 className={s.corpTitle}>{t('შენი ბიზნესისთვის, თანამშრომლებისთვის, ღონისძიებისთვის, სკოლებისა და უნივერსიტეტებისთვის')}</h3>
+            <p className={s.corpText}>{t('10 ცალიდან — მიიღე სპეციალური, შენზე მორგებული საბითუმო ფასი.')}</p>
+            <Link to="/corporate" className={s.ctaPrimary}>{t('გამოთვალე ფასი')}</Link>
           </div>
           <div className={s.corpArt}><img src={corpImg} alt="" /></div>
         </div>

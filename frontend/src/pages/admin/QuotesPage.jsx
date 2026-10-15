@@ -15,7 +15,7 @@ const QUOTE_STATUSES = [
 ];
 const STATUS = Object.fromEntries(QUOTE_STATUSES.map((st) => [st.key, st]));
 
-const PRODUCTS = { tee: 'მაისური', polo: 'პოლო', ls: 'გრძელმკლავიანი', hoodie: 'ჰუდი', cap: 'კეპი', bag: 'ჩანთა', vest: 'ჟილეტი' };
+const PRODUCTS = { tee: 'მაისური მოკლე', ls: 'მაისური გრძელმკლავიანი', polo: 'პოლო მაისური მოკლე', polo_ls: 'პოლო გრძელმკლავიანი', hoodie: 'ჰუდი', zip_hoodie: 'ჰუდი ელვა შესაკრავით', bomber: 'ბომბერი', cap: 'კეპი', bag: 'ჩანთა', vest: 'სამუშაო ჟილეტი' };
 const ZONES = { front: 'წინა მხარე', back: 'ზურგი', sleeve: 'სახელო' };
 
 const isEmail = (v) => /\S+@\S+\.\S+/.test(v);

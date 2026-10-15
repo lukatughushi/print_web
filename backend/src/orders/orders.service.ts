@@ -8,6 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model, Types } from 'mongoose';
 import { countBy, paginate, PageQuery, searchRegex } from '../common/pagination';
 import { FilesService } from '../files/files.service';
+import { offersKidsSize } from '../products/kids-sizes';
 import { Product } from '../products/schemas/product.schema';
 import { SettingsService } from '../settings/settings.service';
 import { CreateOrderDto, OrderDesignDto, UpdateOrderDto } from './dto/order.dto';
@@ -51,7 +52,7 @@ export class OrdersService {
     const lines = dto.items.map((item) => {
       const product = byId.get(item.productId)!;
       const size = item.size ?? '';
-      if (product.sizes.length && !product.sizes.includes(size)) {
+      if (product.sizes.length && !product.sizes.includes(size) && !offersKidsSize(product.category, size)) {
         throw new BadRequestException({
           message: `ზომა „${size}“ აღარ არის ხელმისაწვდომი: ${product.name}`,
           code: 'INVALID_SIZE',
@@ -100,7 +101,7 @@ export class OrdersService {
         phone: dto.phone,
         address: dto.address,
         notes: dto.notes ?? '',
-        payment: dto.payment ?? 'cash',
+        payment: dto.payment ?? 'card',
         subtotal,
         shipping,
         total,

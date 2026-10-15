@@ -3,15 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '../lib/api';
 import useCartStore from '../store/cartStore';
 import { useAuth } from '../context/auth-context';
-import { money, priceOf, shippingFor } from '../lib/catalog';
+import { kidsSizesFor, money, priceOf, shippingFor } from '../lib/catalog';
 import s from './storefront.module.css';
 import { useI18n } from '../i18n/i18n-context';
 import { productName } from '../i18n/products';
 
 const PAY_OPTS = [
-  ['cash', 'გადახდა კურიერთან'],
-  ['card', 'ბარათით ონლაინ'],
-  ['bog', 'ბანკის განვადება'],
+  ['card', 'გადახდა ბარათით'],
+  ['transfer', 'გადახდა საბანკო ანგარიშზე გადმორიცხვით'],
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -76,7 +75,7 @@ export default function CheckoutPage() {
   const detailsChanged = !!user && (
     form.phone.trim() !== (user.phone || '') || form.city.trim() !== (user.city || '') || form.addr.trim() !== (user.address || '')
   );
-  const [pay, setPay] = useState('cash');
+  const [pay, setPay] = useState('card');
   const [error, setError] = useState('');
   const [placing, setPlacing] = useState(false);
   const [done, setDone] = useState(null); // { orderNo }
@@ -106,12 +105,12 @@ export default function CheckoutPage() {
         updateItem(i, { basePrice: livePrice, productName: p.name });
       }
       // With only one size on offer there is nothing to ask the customer.
-      if (p.sizes.length === 1 && it.size !== p.sizes[0]) {
+      if (p.sizes.length === 1 && it.size !== p.sizes[0] && !kidsSizesFor(p).includes(it.size)) {
         updateItem(i, { size: p.sizes[0] });
       }
     });
 
-    const sizesById = Object.fromEntries(products.map((p) => [p.id, p.sizes]));
+    const sizesById = Object.fromEntries(products.map((p) => [p.id, p.sizes.length ? [...p.sizes, ...kidsSizesFor(p)] : p.sizes]));
     setPriceCheck({ status: 'ok', changed, unavailableIds, sizesById });
   }, [updateItem]);
 

@@ -10,7 +10,10 @@ export enum OrderStatus {
   Cancelled = 'CANCELLED',
 }
 
-export const PAYMENT_METHODS = ['cash', 'card', 'bog'] as const;
+/** Every method an order may carry; 'cash' and 'bog' remain for older orders. */
+export const PAYMENT_METHODS = ['cash', 'card', 'bog', 'transfer'] as const;
+/** Methods offered at checkout: card, or a transfer to the bank account. */
+export const CHECKOUT_PAYMENT_METHODS = ['card', 'transfer'] as const;
 
 /** Customer design attached to a line. Ids are GridFS files (see FilesModule). */
 @Schema({ _id: false })
@@ -54,7 +57,7 @@ export class Order {
   @Prop({ required: true, trim: true }) phone: string;
   @Prop({ required: true, trim: true }) address: string;
   @Prop({ default: '' }) notes: string;
-  @Prop({ enum: PAYMENT_METHODS, default: 'cash' }) payment: string;
+  @Prop({ enum: PAYMENT_METHODS, default: 'card' }) payment: string;
 
   @Prop({ required: true, min: 0 }) subtotal: number;
   @Prop({ required: true, min: 0 }) shipping: number;

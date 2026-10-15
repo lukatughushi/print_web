@@ -334,7 +334,7 @@
   gap: 8px;
   padding: 24px 20px 0;
 }
-.catAllNum { font-family: var(--serif); font-weight: 800; font-size: clamp(40px, 5vw, 64px); line-height: 1; color: #EF5F7A; }
+.catAllTitle { font-family: var(--serif); font-weight: 800; font-size: clamp(22px, 2.4vw, 30px); line-height: 1.2; color: #EF5F7A; }
 .catAllText { font-size: 14px; line-height: 1.5; color: #C9CFDB; max-width: 22ch; }
 
 /* ── How it works ────────────────────────────────────────── */

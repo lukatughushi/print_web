@@ -16,6 +16,7 @@ export const PAYMENT_LABELS = {
   cash: 'კურიერთან',
   card: 'ბარათით',
   bog: 'განვადება',
+  transfer: 'გადმორიცხვით',
 };
 
 export function gel(amount) {

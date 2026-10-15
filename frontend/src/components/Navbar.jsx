@@ -54,7 +54,7 @@ export default function Navbar() {
           <Link to={studioPath} className={`${s.link} ${studioActive ? s.linkActive : ''}`}>
             {t('კონსტრუქტორი')}
           </Link>
-          <NavLink to="/corporate" className={({ isActive }) => `${s.link} ${isActive ? s.linkActive : ''}`}>{t('კორპორატიული')}</NavLink>
+          <NavLink to="/corporate" className={({ isActive }) => `${s.link} ${isActive ? s.linkActive : ''}`}>{t('B2B კომპანიებისთვის')}</NavLink>
         </nav>
 
         {/* ── Cart ──────────────────────────────────────────── */}

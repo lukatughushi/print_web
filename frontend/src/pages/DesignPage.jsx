@@ -7,7 +7,7 @@ import api, { getErrorMessage } from '../lib/api';
 import { API_URL } from '../lib/config';
 import { useAuth } from '../context/auth-context';
 import useToast from '../store/toastStore';
-import { priceOf } from '../lib/catalog';
+import { kidsSizesFor, priceOf } from '../lib/catalog';
 import ShirtViewer3D from '../components/ShirtViewer3D';
 import { WEBGL_AVAILABLE } from '../lib/webgl';
 import {
@@ -412,9 +412,6 @@ const clampRot = (v) =>
 
 const clampFont = (v) =>
   clamp(Math.round(v), 8, 300);
-
-const clampOpacity = (v) =>
-  Math.round(clamp(v, 0.1, 1) * 100) / 100;
 
 const nudgeAmount = (e) =>
   e.shiftKey ? NUDGE_STEP_SHIFT : NUDGE_STEP;
@@ -869,6 +866,10 @@ export default function DesignPage() {
 
   const [size, setSize] =
     useState('M');
+
+  // Children's sizes list (T-shirts, hoodies) is folded away by default.
+  const [kidsOpen, setKidsOpen] =
+    useState(false);
 
   const [quantity, setQuantity] =
     useState(1);
@@ -1583,10 +1584,16 @@ export default function DesignPage() {
       ? []
       : SIZES;
 
+  const kidsOptions = oneSize
+    ? []
+    : kidsSizesFor(orderProduct);
+  const isKidsSize =
+    kidsOptions.includes(size);
+
   // Fall back to the middle size when the chosen one isn't offered.
   const selectedSize = oneSize
     ? ''
-    : sizeOptions.includes(size)
+    : sizeOptions.includes(size) || isKidsSize
       ? size
       : sizeOptions[
           Math.floor(
@@ -2872,28 +2879,6 @@ export default function DesignPage() {
                         onKeyUp={commitHistory}
                       />
                     </label>
-
-                    <label className={s.sliderField}>
-                      <span className={s.sliderHead}>
-                        <span>{t('გამჭვირვალობა')}</span>
-                        <b>{Math.round((selectedImage.opacity ?? 1) * 100)}%</b>
-                      </span>
-                      <input
-                        type="range"
-                        min="10"
-                        max="100"
-                        value={Math.round((selectedImage.opacity ?? 1) * 100)}
-                        onChange={(e) =>
-                          updateImage(
-                            selectedImage.id,
-                            { opacity: clampOpacity(+e.target.value / 100) },
-                            false
-                          )
-                        }
-                        onPointerUp={commitHistory}
-                        onKeyUp={commitHistory}
-                      />
-                    </label>
                   </div>
 
                   <div className={s.field}>
@@ -3246,9 +3231,6 @@ export default function DesignPage() {
               {ICONS.rotate}
               {selectedImage.rotation ?? 0}°
             </button>
-            <span className={s.ctxMeta}>
-              {Math.round((selectedImage.opacity ?? 1) * 100)}%
-            </span>
             <button
               type="button"
               className={`${s.ctxBtn} ${s.ctxDanger}`}
@@ -3548,6 +3530,39 @@ export default function DesignPage() {
                   </button>
                 ))}
               </div>
+              {kidsOptions.length > 0 && (
+                <div className={s.kidsSizes}>
+                  <button
+                    type="button"
+                    aria-expanded={kidsOpen || isKidsSize}
+                    className={`${s.kidsToggle} ${isKidsSize ? s.sizeBtnActive : ''}`}
+                    onClick={() => setKidsOpen((v) => !v)}
+                  >
+                    {isKidsSize
+                      ? `${t('ბავშვის ზომა')}: ${selectedSize}`
+                      : t('ბავშვის ზომები')}
+                    <span className={`${s.kidsChevron} ${kidsOpen ? s.kidsChevronOpen : ''}`}>▾</span>
+                  </button>
+                  {kidsOpen && (
+                    <div className={s.kidsList}>
+                      {kidsOptions.map((sz) => (
+                        <button
+                          key={sz}
+                          type="button"
+                          aria-pressed={selectedSize === sz}
+                          className={`${s.kidsOption} ${selectedSize === sz ? s.sizeBtnActive : ''}`}
+                          onClick={() => {
+                            setSize(sz);
+                            setKidsOpen(false);
+                          }}
+                        >
+                          {sz}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

@@ -22,7 +22,7 @@ export class Settings {
   })
   heroSubtitle: string;
 
-  @Prop({ default: 'დაიწყე დიზაინი' })
+  @Prop({ default: 'შექმენი დიზაინი' })
   heroCtaText: string;
 
   @Prop({ default: '' })
@@ -39,13 +39,13 @@ export class Settings {
   @Prop({ default: '₾' })
   currency: string;
 
-  @Prop({ default: '+995 555 12 34 56' })
+  @Prop({ default: '' })
   contactPhone: string;
 
   @Prop({ default: 'info@prenta.ge' })
   contactEmail: string;
 
-  @Prop({ default: 'თბილისი, ჭავჭავაძის 12' })
+  @Prop({ default: 'თბილისი, ოდესის ქ. 14' })
   contactAddress: string;
 }
 
