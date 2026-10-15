@@ -7,7 +7,7 @@ import api, { getErrorMessage } from '../lib/api';
 import { API_URL } from '../lib/config';
 import { useAuth } from '../context/auth-context';
 import useToast from '../store/toastStore';
-import { kidsSizesFor, priceOf } from '../lib/catalog';
+import { COLORS, kidsSizesFor, priceOf } from '../lib/catalog';
 import ShirtViewer3D from '../components/ShirtViewer3D';
 import { WEBGL_AVAILABLE } from '../lib/webgl';
 import {
@@ -208,6 +208,12 @@ const SHIRT_COLORS = [
   { key: 'blue', hex: '#2244cc', name: 'ლურჯი' },
   { key: 'green', hex: '#228833', name: 'მწვანე' },
 ];
+
+// A garment colour by key: the editor's own shades first, then the shop
+// palette (including colours added in admin).
+const colorInfo = (key) =>
+  SHIRT_COLORS.find((c) => c.key === key) ??
+  (COLORS[key] ? { key, hex: COLORS[key].hex, name: COLORS[key].name } : null);
 
 const TEXT_COLORS = [
   '#ffffff',
@@ -1005,10 +1011,7 @@ export default function DesignPage() {
     useRef(null);
 
   const shirtHex =
-    SHIRT_COLORS.find(
-      (c) =>
-        c.key === shirtColor
-    )?.hex ?? '#ffffff';
+    colorInfo(shirtColor)?.hex ?? '#ffffff';
 
   const [designCanvas] =
     useState(
@@ -1572,6 +1575,23 @@ export default function DesignPage() {
     activeCat.category === product.category
       ? product
       : null;
+
+  // Switched off in admin when out of stock: shown, but can't be ordered.
+  const outOfStock =
+    orderProduct?.inStock === false;
+
+  // Colours this product is offered in (set in admin); the editor's
+  // default palette when it has none. A colour the product doesn't offer
+  // falls back to its first one.
+  const productColors = (orderProduct?.colors ?? [])
+    .map(colorInfo)
+    .filter(Boolean);
+  const colorOptions = productColors.length
+    ? productColors
+    : SHIRT_COLORS;
+  if (!colorOptions.some((c) => c.key === shirtColor)) {
+    setShirtColor(colorOptions[0].key);
+  }
 
   // A product without sizes (cap, bag) is one size: no size picker.
   const oneSize =
@@ -2479,7 +2499,7 @@ export default function DesignPage() {
       : '';
 
   const shirtColorInfo =
-    SHIRT_COLORS.find((c) => c.key === shirtColor) ?? SHIRT_COLORS[0];
+    colorInfo(shirtColor) ?? colorOptions[0];
 
   // Lowest active price per category, for the product cards.
   const fromPrice = (category) => {
@@ -2552,6 +2572,11 @@ export default function DesignPage() {
               <div className={s.productList}>
                 {CATEGORIES.map((c) => {
                   const from = c.category ? fromPrice(c.category) : null;
+                  const tabProduct = c.category
+                    ? products?.find((p) => p.id === productByCategory[c.category]) ??
+                      products?.find((p) => p.category === c.category)
+                    : null;
+                  const soldOut = tabProduct?.inStock === false;
                   const active = activeTab === c.id;
                   return (
                     <button
@@ -2568,7 +2593,9 @@ export default function DesignPage() {
                       </span>
                       <span className={s.productRowName}>{t(c.label)}</span>
                       <span className={s.productRowPrice}>
-                        {from !== null ? t('{price}-დან', { price: `${from} ₾` }) : t('მალე')}
+                        {soldOut
+                          ? t('მარაგში არ არის')
+                          : from !== null ? t('{price}-დან', { price: `${from} ₾` }) : t('მალე')}
                       </span>
                     </button>
                   );
@@ -2587,7 +2614,7 @@ export default function DesignPage() {
               </div>
 
               <div className={s.swatchGrid}>
-                {SHIRT_COLORS.map((c) => (
+                {colorOptions.map((c) => (
                   <button
                     key={c.key}
                     type="button"
@@ -3615,7 +3642,7 @@ export default function DesignPage() {
             type="button"
             className={s.orderBtn}
             onClick={handleAddToCart}
-            disabled={!orderProduct}
+            disabled={!orderProduct || outOfStock}
           >
             {t(GEO.order)}
           </button>
@@ -3624,7 +3651,7 @@ export default function DesignPage() {
             type="button"
             className={`${s.cartBtn} ${cartAdded ? s.cartBtnAdded : ''}`}
             onClick={handleAddToCart}
-            disabled={cartAdded || !orderProduct}
+            disabled={cartAdded || !orderProduct || outOfStock}
           >
             {ICONS.cart}
             {cartAdded ? t('✓ დამატებულია') : t('კალათაში დამატება')}
@@ -3640,6 +3667,9 @@ export default function DesignPage() {
             {savedDesign?.tab === activeTab ? t('ცვლილებების შენახვა') : t('დიზაინის შენახვა')}
           </button>
 
+          {outOfStock && (
+            <div className={s.notForSale}>{t('ეს პროდუქტი დროებით მარაგში არ არის')}</div>
+          )}
           {!orderProduct && (
             <div className={s.notForSale}>{t('ეს პროდუქტი ჯერ არ იყიდება')}</div>
           )}

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AuthProvider from './context/AuthProvider';
 import I18nProvider from './i18n/I18nProvider';
@@ -16,6 +16,8 @@ import CheckoutPage from './pages/CheckoutPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AccountPage from './pages/AccountPage';
+import api from './lib/api';
+import { registerColors } from './lib/catalog';
 
 // Heavy or rarely used pages load on demand, so the storefront doesn't
 // download the 3D/editor libraries (three.js, Konva) or the admin panel.
@@ -31,6 +33,7 @@ const AdminUsers = lazy(() => import('./pages/admin/UsersPage'));
 const AdminQuotes = lazy(() => import('./pages/admin/QuotesPage'));
 const AdminLogs = lazy(() => import('./pages/admin/LogsPage'));
 const SettingsPage = lazy(() => import('./pages/admin/SettingsPage'));
+const AdminConstructor = lazy(() => import('./pages/admin/ConstructorPage'));
 
 // Fetch the constructor code once the current page is idle, so opening it
 // later is instant without slowing down the first page load.
@@ -43,6 +46,17 @@ function usePrefetchDesignPage() {
   }, []);
 }
 
+// Colours added in admin live in the settings; load them once so every page
+// (swatches, constructor, admin) knows their names and shades.
+function useCustomColors() {
+  const [, setLoaded] = useState(false);
+  useEffect(() => {
+    api.get('/api/settings')
+      .then((r) => { registerColors(r.data?.customColors); setLoaded(true); })
+      .catch(() => {});
+  }, []);
+}
+
 function PageLoading() {
   return <div style={{ minHeight: '60vh' }} aria-busy="true" />;
 }
@@ -51,6 +65,7 @@ function AppContent() {
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith('/admin');
   usePrefetchDesignPage();
+  useCustomColors();
 
   return (
     <>
@@ -86,6 +101,7 @@ function AppContent() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="products" element={<AdminProducts />} />
+            <Route path="constructor" element={<AdminConstructor />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="quotes" element={<AdminQuotes />} />
             <Route path="logs" element={<AdminLogs />} />

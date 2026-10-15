@@ -546,3 +546,58 @@
   font-size: 22px;
   cursor: pointer;
 }
+
+/* ── Constructor page: folding cards and colour chips ─────── */
+.foldHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+div.foldHead { cursor: default; flex-wrap: wrap; }
+.foldTitle { font-size: 14.5px; font-weight: 700; color: #16233B; }
+.foldMeta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto; font-size: 13px; font-weight: 600; color: #4A5368; }
+.foldOut,
+.foldDirty { padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+.foldOut { background: #FDF0F1; color: #B3263C; }
+.foldDirty { background: #FFF4E0; color: #9A6200; }
+.foldChevron { font-size: 12px; color: #8A8F9C; transition: transform .15s; }
+.foldChevronOpen { transform: rotate(180deg); }
+.foldBody { margin-top: 16px; padding-top: 16px; border-top: 1px solid #F1ECE6; }
+
+.colorChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 6px 0 8px;
+  border: 1px solid #DED7CF;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #16233B;
+}
+.colorChipDot { width: 18px; height: 18px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); }
+.colorChipX {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #F4EFE9;
+  color: #B3263C;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.colorChipX:hover { background: #FDF0F1; }
+.colorInput { width: 40px; height: 36px; padding: 0; border: 0; background: none; cursor: pointer; }

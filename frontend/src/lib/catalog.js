@@ -49,6 +49,22 @@ export const COLORS = {
   olive: { hex: '#6B6B3A', name: 'ზეთისხილისფერი' },
 };
 
+export const BUILTIN_COLOR_KEYS = Object.keys(COLORS);
+
+/** Adds the colours created in admin (settings.customColors) to COLORS. */
+export function registerColors(list) {
+  (Array.isArray(list) ? list : []).forEach((c) => {
+    if (c?.key && /^#[0-9a-f]{6}$/i.test(c.hex || '') && !BUILTIN_COLOR_KEYS.includes(c.key)) {
+      COLORS[c.key] = { hex: c.hex, name: c.name || c.key };
+    }
+  });
+}
+
+/** Drops a colour added in admin (built-in colours stay). */
+export function unregisterColor(key) {
+  if (!BUILTIN_COLOR_KEYS.includes(key)) delete COLORS[key];
+}
+
 export const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
 // Children's sizes, offered on top of the product's own sizes for T-shirts and
@@ -63,8 +79,12 @@ export const KIDS_SIZES = [
   '2XL (14–15 წ.)',
 ];
 const KIDS_SIZE_CATEGORIES = ['TSHIRT', 'HOODIE', 'ZIP_HOODIE'];
+// Kids' sizes a product offers: chosen in admin, or the default list on
+// T-shirts and hoodies never edited there.
 export const kidsSizesFor = (product) =>
-  KIDS_SIZE_CATEGORIES.includes(product?.category) ? KIDS_SIZES : [];
+  Array.isArray(product?.kidsSizes)
+    ? product.kidsSizes
+    : KIDS_SIZE_CATEGORIES.includes(product?.category) ? KIDS_SIZES : [];
 
 export const GENDERS = { unisex: 'უნისექსი', men: 'მამაკაცის', women: 'ქალის' };
 

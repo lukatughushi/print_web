@@ -3,18 +3,14 @@ import logo from '../assets/prenta/logo_prenta.webp';
 import s from './SiteFooter.module.css';
 import { useI18n } from '../i18n/i18n-context';
 
-const DEFAULTS = {
-  contactPhone: '',
-  contactEmail: 'info@prenta.ge',
-  contactAddress: 'თბილისი, ოდესის ქ. 14',
-};
 
 // Google Maps pin for the office address.
 const MAP_URL = 'https://maps.app.goo.gl/UDuy3SRruh8H1mS47';
 
 export default function SiteFooter({ settings = {} }) {
   const { t } = useI18n();
-  const info = { ...DEFAULTS, ...settings };
+  // Contact details come only from admin settings; empty ones are hidden.
+  const info = settings;
   return (
     <footer className={s.footer}>
       <div className={s.grid}>
@@ -23,9 +19,9 @@ export default function SiteFooter({ settings = {} }) {
             <img src={logo} alt="" />
             <span>PRENTA</span>
           </div>
-          <a href={MAP_URL} target="_blank" rel="noopener noreferrer">{t(info.contactAddress)}</a>
+          {info.contactAddress && <a href={MAP_URL} target="_blank" rel="noopener noreferrer">{t(info.contactAddress)}</a>}
           {info.contactPhone && <span>{info.contactPhone}</span>}
-          <span>{info.contactEmail}</span>
+          {info.contactEmail && <span>{info.contactEmail}</span>}
         </div>
         <div className={s.col}>
           <span className={s.colTitle}>{t('პროდუქცია')}</span>

@@ -34,6 +34,8 @@ export default {
   "დასრულებული პროექტები": "Completed projects",
   "იდეიდან მზა პროდუქტამდე — 3 ნაბიჯი": "From idea to finished product — 3 steps",
   "ნიმუში და შეკვეთა": "Mock-up and order",
+  "მარაგში არ არის": "Out of stock",
+  "ეს პროდუქტი დროებით მარაგში არ არის": "This product is temporarily out of stock",
   "მომხმარებლისგან სრული ინფორმაციის მიღება.": "We gather all the details from you.",
   "ვირტუალური ნიმუშის დამზადება და შეკვეთის გაფორმება.": "We make a digital mock-up and place the order.",
   "3–4 სამუშაო დღეში საბოლოო პროდუქტის მიწოდება სასურველ მისამართზე.": "The finished product is delivered to your address in 3–4 working days.",

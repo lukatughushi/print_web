@@ -29,6 +29,11 @@ export class CreateProductDto {
   sizes?: string[];
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  kidsSizes?: string[];
+
+  @IsOptional()
   @IsString()
   @MaxLength(120)
   material?: string;
@@ -53,4 +58,8 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  inStock?: boolean;
 }

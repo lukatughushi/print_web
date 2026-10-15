@@ -23,6 +23,10 @@ export class Product {
   @Prop({ type: [String], default: [] })
   sizes: string[];
 
+  // Children's sizes, set in admin. Unset = the default list (see kids-sizes.ts).
+  @Prop({ type: [String], default: undefined })
+  kidsSizes?: string[];
+
   @Prop({ trim: true })
   material?: string;
 
@@ -43,6 +47,11 @@ export class Product {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  // Switched off in admin when the product runs out: it stays visible but
+  // can't be ordered.
+  @Prop({ default: true })
+  inStock: boolean;
 }
 
 export type ProductDocument = HydratedDocument<Product>;

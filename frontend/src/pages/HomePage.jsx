@@ -21,17 +21,18 @@ import corpDelfi from '../assets/corp/delfi-1.webp';
 import { useI18n } from '../i18n/i18n-context';
 
 
-/* ── Static defaults (overridden by /api/settings) ─────────── */
+/* ── Defaults until /api/settings arrives. Texts edited in admin have no
+   fallback: what admin leaves empty is not shown at all. ──────────── */
 const DEFAULT_SETTINGS = {
   announcementText: '',
   announcementActive: false,
-  heroCtaText: 'შექმენი დიზაინი',
+  heroCtaText: '',
   heroCtaLink: '',
   freeShipThreshold: 150,
   currency: '₾',
   contactPhone: '',
-  contactEmail: 'info@prenta.ge',
-  contactAddress: 'თბილისი, ოდესის ქ. 14',
+  contactEmail: '',
+  contactAddress: '',
 };
 
 // Starting price shown on the hero chip (a printed T-shirt).
@@ -130,9 +131,11 @@ export default function HomePage() {
               {t('ატვირთე სურათი, ლოგო ან ტექსტი — მიიღე უმაღლესი ხარისხის ბეჭდვითი მომსახურება „პრენტასგან“.')}
             </p>
             <div className={s.heroCtas}>
-              <button type="button" className={`${s.btn} ${s.btnPink} ${s.btnLg}`} onClick={goDesign}>
-                {t(settings.heroCtaText)}
-              </button>
+              {settings.heroCtaText && (
+                <button type="button" className={`${s.btn} ${s.btnPink} ${s.btnLg}`} onClick={goDesign}>
+                  {t(settings.heroCtaText)}
+                </button>
+              )}
               <Link to="/shop" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>{t('მზა პროდუქცია')}</Link>
             </div>
             <div className={s.proof}>

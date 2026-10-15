@@ -154,8 +154,9 @@ export default function ProductCard({ product, currency = '₾' }) {
             type="button"
             className={`${s.add} ${added ? s.added : ''}`}
             onClick={addToCart}
-            aria-label={t('კალათაში დამატება')}
-            title={t('კალათაში დამატება')}
+            disabled={product.inStock === false}
+            aria-label={product.inStock === false ? t('მარაგში არ არის') : t('კალათაში დამატება')}
+            title={product.inStock === false ? t('მარაგში არ არის') : t('კალათაში დამატება')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d={added ? 'M5 12l5 5 9-10' : 'M12 5v14M5 12h14'} />

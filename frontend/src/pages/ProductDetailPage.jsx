@@ -147,7 +147,9 @@ export default function ProductDetailPage() {
             </div>
 
             <div className={s.actions}>
-              <button className={s.btnDark} onClick={addToCart}>{t('კალათაში დამატება')}</button>
+              <button className={s.btnDark} onClick={addToCart} disabled={product.inStock === false}>
+                {product.inStock === false ? t('მარაგში არ არის') : t('კალათაში დამატება')}
+              </button>
               {DESIGNABLE.has(product.category) && (
                 <button className={s.btnOutline} onClick={() => navigate(`/design/${product.id}`)}>{t('დიზაინის შექმნა')}</button>
               )}

@@ -1,28 +1,26 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-/** Site-wide storefront settings: a single document (key = 'site'). */
+/** Site-wide storefront settings: a single document (key = 'site').
+ *  Texts default to empty: the storefront shows only what admin fills in. */
 @Schema({ timestamps: true, versionKey: false, toJSON: { virtuals: true } })
 export class Settings {
   @Prop({ default: 'site', unique: true })
   key: string;
 
-  @Prop({ default: '★ 2 400+ დაბეჭდილი შეკვეთა · ბეჭდვა 3 დღეში · მიწოდება მთელ საქართველოში' })
+  @Prop({ default: '' })
   announcementText: string;
 
   @Prop({ default: true })
   announcementActive: boolean;
 
-  @Prop({ default: 'დაბეჭდე საკუთარი დიზაინი' })
+  @Prop({ default: '' })
   heroTitle: string;
 
-  @Prop({
-    default:
-      'ატვირთე სურათი ან დაწერე ტექსტი, აწყვე დიზაინი პირდაპირ ბრაუზერში და მიიღე მზა პროდუქტი 3 დღეში. მინიმალური შეკვეთა — 1 ცალი.',
-  })
+  @Prop({ default: '' })
   heroSubtitle: string;
 
-  @Prop({ default: 'შექმენი დიზაინი' })
+  @Prop({ default: '' })
   heroCtaText: string;
 
   @Prop({ default: '' })
@@ -42,11 +40,15 @@ export class Settings {
   @Prop({ default: '' })
   contactPhone: string;
 
-  @Prop({ default: 'info@prenta.ge' })
+  @Prop({ default: '' })
   contactEmail: string;
 
-  @Prop({ default: 'თბილისი, ოდესის ქ. 14' })
+  @Prop({ default: '' })
   contactAddress: string;
+
+  /** Garment colours added in admin, on top of the built-in palette. */
+  @Prop({ type: [{ _id: false, key: String, name: String, hex: String }], default: [] })
+  customColors: { key: string; name: string; hex: string }[];
 }
 
 export type SettingsDocument = HydratedDocument<Settings>;
