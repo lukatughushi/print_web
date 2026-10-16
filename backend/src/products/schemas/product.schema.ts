@@ -52,6 +52,16 @@ export class Product {
   // can't be ordered.
   @Prop({ default: true })
   inStock: boolean;
+
+  // Managed on the admin Constructor page, separately from the shop: the
+  // product a constructor tab orders (one per category). It can be ordered
+  // from the constructor even when hidden from the shop (isActive false).
+  @Prop({ default: false, index: true })
+  inConstructor: boolean;
+
+  // Switched off in admin to drop the tab from the constructor.
+  @Prop({ default: true })
+  constructorEnabled: boolean;
 }
 
 export type ProductDocument = HydratedDocument<Product>;

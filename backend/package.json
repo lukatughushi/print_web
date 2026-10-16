@@ -14,6 +14,7 @@
     "seed:prod": "node dist/database/seed.js",
     "demo:delete": "ts-node src/database/delete-demo.ts",
     "demo:delete:prod": "node dist/database/delete-demo.js",
+    "constructor:setup": "ts-node src/database/setup-constructor.ts",
     "db:memory": "node scripts/memory-db.js",
     "typecheck": "tsc --noEmit"
   },

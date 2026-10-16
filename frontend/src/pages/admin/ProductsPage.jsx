@@ -31,7 +31,7 @@ const EMPTY = {
 };
 
 // Accessories are one size (see catalog seed).
-const ONE_SIZE = new Set(['BAG', 'CAP', 'MUG']);
+const ONE_SIZE = new Set(['BAG', 'CAP', 'MUG', 'PILLOW']);
 
 function toForm(p) {
   return {

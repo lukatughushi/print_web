@@ -39,7 +39,13 @@ export class OrdersService {
 
   async create(dto: CreateOrderDto) {
     const ids = [...new Set(dto.items.map((i) => i.productId))];
-    const products = await this.productModel.find({ _id: { $in: ids }, isActive: true }).exec();
+    // Shop products, or constructor products (which may be hidden from the shop).
+    const products = await this.productModel
+      .find({
+        _id: { $in: ids },
+        $or: [{ isActive: true }, { inConstructor: true, constructorEnabled: true }],
+      })
+      .exec();
     if (products.length !== ids.length) {
       throw new BadRequestException({
         message: 'ზოგიერთი პროდუქტი აღარ იყიდება',

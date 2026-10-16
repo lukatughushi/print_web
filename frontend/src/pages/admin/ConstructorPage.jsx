@@ -24,11 +24,15 @@ const TABS = [
   ['BAG', 'ჩანთა'],
   ['CAP', 'კეპი'],
   ['MUG', 'ჭიქა'],
+  ['PILLOW', 'ბალიშის პირი'],
 ];
-const ONE_SIZE = new Set(['BAG', 'CAP', 'MUG']);
+const ONE_SIZE = new Set(['BAG', 'CAP', 'MUG', 'PILLOW']);
 const HEX_RE = /^#?[0-9a-f]{6}$/i;
 
 const formOf = (p) => ({
+  name: p.name || '',
+  enabled: p.constructorEnabled !== false,
+  inShop: !!p.isActive,
   price: String(priceOf(p) || ''),
   colors: p.colors || [],
   sizes: p.sizes || [],
@@ -148,25 +152,71 @@ function SizePicker({ options, value, onChange, placeholder }) {
   );
 }
 
-/** One constructor tab's product (the newest active product of its
- *  category, as the constructor picks it), folded by default. */
+/** A constructor type with no product yet: set a price, then create it. */
+function NewTabCard({ label, category, onCreated }) {
+  const [price, setPrice] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const create = async () => {
+    const value = Number(price);
+    if (price === '' || !(value >= 0)) return setError('ჩაწერე ფასი');
+    setBusy(true);
+    setError('');
+    try {
+      const { data } = await api.post('/api/products', {
+        name: label,
+        category,
+        price: value,
+        inConstructor: true,
+        constructorEnabled: true,
+        isActive: false,
+        inStock: true,
+        colors: [],
+        sizes: ONE_SIZE.has(category) ? [] : SIZE_ORDER,
+      });
+      onCreated(data);
+    } catch (err) {
+      setError(getErrorMessage(err, 'ვერ დაემატა'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={s.card}>
+      <div className={s.foldHead}>
+        <span className={s.foldTitle}>{label}</span>
+        <span className={s.foldMeta}><span className={s.foldOut}>კონსტრუქტორში არ არის</span></span>
+      </div>
+      <div className={`${s.chipsPick} ${s.foldBody}`} style={{ alignItems: 'center' }}>
+        <input
+          className={s.input}
+          style={{ maxWidth: 140 }}
+          type="number"
+          min="0"
+          step="0.01"
+          value={price}
+          onChange={(e) => { setPrice(e.target.value); setError(''); }}
+          placeholder="ფასი (₾)"
+          aria-label={`${label} — ფასი`}
+        />
+        <button type="button" className={`${s.btnPrimary} ${s.btnSm}`} onClick={create} disabled={busy}>
+          {busy ? 'ემატება…' : 'კონსტრუქტორში დამატება'}
+        </button>
+        {error && <span className={s.hint} style={{ color: '#B3263C' }}>{error}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** One constructor tab's product, folded by default. */
 function TabCard({ label, product, onSaved, addPaletteColor }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(() => (product ? formOf(product) : null));
+  const [form, setForm] = useState(() => formOf(product));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-
-  if (!product) {
-    return (
-      <div className={s.card}>
-        <div className={s.foldHead}>
-          <span className={s.foldTitle}>{label}</span>
-          <span className={s.hint}>აქტიური პროდუქტი არ არის — დაამატე „პროდუქტების“ გვერდზე</span>
-        </div>
-      </div>
-    );
-  }
 
   const category = product.category;
   const oneSize = ONE_SIZE.has(category);
@@ -190,6 +240,9 @@ function TabCard({ label, product, onSaved, addPaletteColor }) {
     setError('');
     try {
       const { data } = await api.patch(`/api/products/${product.id}`, {
+        name: form.name.trim() || label,
+        constructorEnabled: form.enabled,
+        isActive: form.inShop,
         price,
         inStock: form.inStock,
         colors: form.colors.filter((c) => COLORS[c]),
@@ -212,6 +265,7 @@ function TabCard({ label, product, onSaved, addPaletteColor }) {
         <span className={s.foldTitle}>{label}</span>
         <span className={s.foldMeta}>
           {gel(priceOf(product))}
+          {product.constructorEnabled === false && <span className={s.foldOut}>გამორთულია</span>}
           {product.inStock === false && <span className={s.foldOut}>მარაგში არ არის</span>}
           {dirty && <span className={s.foldDirty}>შეუნახავი</span>}
         </span>
@@ -222,6 +276,39 @@ function TabCard({ label, product, onSaved, addPaletteColor }) {
         <div className={`${s.section} ${s.foldBody}`}>
           {error && <div className={s.error}>{error}</div>}
           {notice && <div className={s.success}>{notice}</div>}
+
+          <button
+            type="button"
+            className={s.switchLabel}
+            style={{ border: 0, background: 'none', padding: 0, font: 'inherit', alignSelf: 'flex-start' }}
+            onClick={() => change({ enabled: !form.enabled })}
+            aria-pressed={form.enabled}
+          >
+            <span className={`${s.switch} ${form.enabled ? s.switchOn : ''}`} />
+            {form.enabled ? 'ჩანს კონსტრუქტორში' : 'კონსტრუქტორში არ ჩანს'}
+          </button>
+
+          <button
+            type="button"
+            className={s.switchLabel}
+            style={{ border: 0, background: 'none', padding: 0, font: 'inherit', alignSelf: 'flex-start' }}
+            onClick={() => change({ inShop: !form.inShop })}
+            aria-pressed={form.inShop}
+          >
+            <span className={`${s.switch} ${form.inShop ? s.switchOn : ''}`} />
+            {form.inShop ? 'მაღაზიაშიც ჩანს' : 'მაღაზიაში არ ჩანს — მხოლოდ კონსტრუქტორში'}
+          </button>
+
+          <div className={s.field} style={{ maxWidth: 360 }}>
+            <label className={s.label} htmlFor={`c-name-${category}`}>სახელი (კალათასა და შეკვეთაში)</label>
+            <input
+              id={`c-name-${category}`}
+              className={s.input}
+              value={form.name}
+              maxLength={120}
+              onChange={(e) => change({ name: e.target.value })}
+            />
+          </div>
 
           <button
             type="button"
@@ -310,7 +397,7 @@ export default function ConstructorPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([api.get('/api/products'), api.get('/api/settings')])
+    Promise.all([api.get('/api/products/constructor'), api.get('/api/settings')])
       .then(([p, st]) => {
         const colors = st.data?.customColors || [];
         registerColors(colors);
@@ -354,6 +441,7 @@ export default function ConstructorPage() {
   };
 
   const onSaved = (updated) => setProducts((list) => list.map((p) => (p.id === updated.id ? updated : p)));
+  const onCreated = (created) => setProducts((list) => [...list, created]);
 
   return (
     <div className={s.page}>
@@ -387,15 +475,14 @@ export default function ConstructorPage() {
         )}
       </div>
 
-      {TABS.map(([category, label]) => (
-        <TabCard
-          key={category}
-          label={label}
-          product={products.find((p) => p.category === category)}
-          onSaved={onSaved}
-          addPaletteColor={addPaletteColor}
-        />
-      ))}
+      {TABS.map(([category, label]) => {
+        const product = products.find((p) => p.category === category);
+        return product ? (
+          <TabCard key={category} label={label} product={product} onSaved={onSaved} addPaletteColor={addPaletteColor} />
+        ) : (
+          <NewTabCard key={category} label={label} category={category} onCreated={onCreated} />
+        );
+      })}
     </div>
   );
 }

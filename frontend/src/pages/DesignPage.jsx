@@ -170,7 +170,7 @@ const CATEGORIES = [
     // Line icon for the product picker.
     icon: 'M4 6c3 1 13 1 16 0-1 4-1 8 0 12-3-1-13-1-16 0 1-4 1-8 0-12z',
     label: 'ბალიშის პირი',
-    category: null,
+    category: 'PILLOW',
     front: pillow,
     back: pillow,
     hasBack: true,
@@ -820,6 +820,22 @@ export default function DesignPage() {
   const [products, setProducts] =
     useState(null);
 
+  // Constructor products (admin → Constructor), one per category. The
+  // constructor orders these, independently of the shop's products.
+  const [ctorProducts, setCtorProducts] =
+    useState([]);
+
+  // A category's constructor product, if it is switched on in admin.
+  const ctorFor = (category) =>
+    category
+      ? ctorProducts.find((p) => p.category === category && p.constructorEnabled !== false) ?? null
+      : null;
+
+  // Tabs admin switched on. With none set up yet, every tab shows so the
+  // editor still works (ordering stays off).
+  const enabledTabs = CATEGORIES.filter((c) => ctorFor(c.category));
+  const visibleTabs = enabledTabs.length ? enabledTabs : CATEGORIES;
+
   const [loading, setLoading] =
     useState(true);
 
@@ -827,11 +843,6 @@ export default function DesignPage() {
     products?.find(
       (p) => p.id === productId
     ) ?? null;
-
-  // Last product id used per category, so switching tabs back and forth
-  // returns to the product the customer came from.
-  const [productByCategory, setProductByCategory] =
-    useState({});
 
   const [syncedProductId, setSyncedProductId] =
     useState(null);
@@ -1474,22 +1485,12 @@ export default function DesignPage() {
     )
       return;
 
-    const target =
-      products?.find(
-        (p) =>
-          p.id ===
-          productByCategory[category]
-      ) ??
-      products?.find(
-        (p) => p.category === category
-      );
+    const target = ctorFor(category);
 
-    if (target) {
-      navigate(
-        `/design/${target.id}`,
-        { replace: true }
-      );
-    }
+    navigate(
+      target ? `/design/${target.id}` : '/design/start',
+      { replace: true }
+    );
   }
 
   function goToSide(
@@ -1526,19 +1527,17 @@ export default function DesignPage() {
   }
 
   useEffect(() => {
-    api
-      .get('/api/products')
-      .then((r) => {
-        setProducts(
-          Array.isArray(r.data)
-            ? r.data
-            : []
-        );
-        setLoading(false);
-      })
-      .catch(() =>
-        setLoading(false)
-      );
+    const list = (r) => (Array.isArray(r?.data) ? r.data : []);
+    Promise.all([
+      api.get('/api/products').catch(() => null),
+      api.get('/api/products/constructor').catch(() => null),
+    ]).then(([shop, ctor]) => {
+      const ctorList = list(ctor);
+      const ctorIds = new Set(ctorList.map((p) => p.id));
+      setCtorProducts(ctorList);
+      setProducts([...ctorList, ...list(shop).filter((p) => !ctorIds.has(p.id))]);
+      setLoading(false);
+    });
   }, []);
 
   // When the URL's product changes (first load, a tab switch, or arriving
@@ -1549,10 +1548,6 @@ export default function DesignPage() {
     product.id !== syncedProductId
   ) {
     setSyncedProductId(product.id);
-    setProductByCategory((prev) => ({
-      ...prev,
-      [product.category]: product.id,
-    }));
 
     const tab = CATEGORIES.find(
       (c) =>
@@ -1568,13 +1563,15 @@ export default function DesignPage() {
     }
   }
 
-  // Product the current tab would order, or null if this tab has no
-  // product in the database (hat, pillow case, or none added yet).
+  // Product the current tab orders: its constructor product (set up on the
+  // admin Constructor page), or null when there is none.
   const orderProduct =
-    product &&
-    activeCat.category === product.category
-      ? product
-      : null;
+    ctorFor(activeCat.category) ?? null;
+
+  // A tab admin switched off can't stay open: move to the first one shown.
+  if (!loading && !visibleTabs.some((c) => c.id === activeTab)) {
+    resetForTab(visibleTabs[0].id);
+  }
 
   // Switched off in admin when out of stock: shown, but can't be ordered.
   const outOfStock =
@@ -2495,10 +2492,8 @@ export default function DesignPage() {
 
   // Lowest active price per category, for the product cards.
   const fromPrice = (category) => {
-    const prices = (products ?? [])
-      .filter((p) => p.category === category && priceOf(p) > 0)
-      .map(priceOf);
-    return prices.length ? Math.min(...prices) : null;
+    const p = ctorFor(category);
+    return p && priceOf(p) > 0 ? priceOf(p) : null;
   };
 
   const visibleCount = (side) =>
@@ -2562,12 +2557,9 @@ export default function DesignPage() {
               </div>
 
               <div className={s.productList}>
-                {CATEGORIES.map((c) => {
+                {visibleTabs.map((c) => {
                   const from = c.category ? fromPrice(c.category) : null;
-                  const tabProduct = c.category
-                    ? products?.find((p) => p.id === productByCategory[c.category]) ??
-                      products?.find((p) => p.category === c.category)
-                    : null;
+                  const tabProduct = ctorFor(c.category);
                   const soldOut = tabProduct?.inStock === false;
                   const active = activeTab === c.id;
                   return (

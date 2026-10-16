@@ -42,12 +42,17 @@ async function buildDesign(item) {
   };
 }
 
+// Shop products plus the constructor's own (which may be hidden from the
+// shop); a constructor product that is switched off counts as unavailable.
 async function fetchLiveCatalog() {
-  const [productsRes, settingsRes] = await Promise.all([
+  const [productsRes, ctorRes, settingsRes] = await Promise.all([
     api.get('/api/products'),
+    api.get('/api/products/constructor'),
     api.get('/api/settings'),
   ]);
-  return { products: productsRes.data || [], settings: settingsRes.data };
+  const ctor = (ctorRes.data || []).filter((p) => p.constructorEnabled !== false);
+  const ids = new Set(ctor.map((p) => p.id));
+  return { products: [...ctor, ...(productsRes.data || []).filter((p) => !ids.has(p.id))], settings: settingsRes.data };
 }
 
 export default function CheckoutPage() {

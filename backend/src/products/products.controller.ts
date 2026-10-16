@@ -16,6 +16,13 @@ export class ProductsController {
     return this.productsService.findAll(category);
   }
 
+  // Declared before ':id' so "constructor" isn't read as an id.
+  @Public()
+  @Get('constructor')
+  findConstructor() {
+    return this.productsService.findConstructor();
+  }
+
   @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {

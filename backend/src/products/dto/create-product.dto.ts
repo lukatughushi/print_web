@@ -62,4 +62,12 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   inStock?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  inConstructor?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  constructorEnabled?: boolean;
 }

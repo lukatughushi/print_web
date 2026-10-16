@@ -447,6 +447,7 @@ export default {
   "ჭავჭავაძის 12, ბ. 4": "12 Chavchavadze Ave, flat 4",
   "ჭიქა": "Mug",
   "ჭიქები": "Mugs",
+  "ბალიშის პირები": "Pillowcases",
   "ხშირად გვეკითხებიან": "Frequently asked",
   "ხშირად დასმული კითხვები": "FAQ",
   "ჯამი": "Total",

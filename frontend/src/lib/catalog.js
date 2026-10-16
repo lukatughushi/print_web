@@ -8,6 +8,7 @@ import imgHoodie from '../assets/shop/hoodie.webp';
 import imgBag from '../assets/shop/bag.webp';
 import imgCap from '../assets/shop/cap.webp';
 import imgMug from '../assets/shop/mug.webp';
+import imgPillow from '../assets/Product_img/pillow.png';
 
 // Storefront categories, in menu order. `code` is Product.category (must match
 // backend/src/database/catalog.ts). `img` is a neutral cut-out that is tinted
@@ -26,6 +27,7 @@ export const CATEGORIES = [
   { code: 'BAG', label: 'ჩანთა', plural: 'ჩანთები', en: 'Tote Bag', img: imgBag, tint: true, swatch: 'sand', group: 'acc' },
   { code: 'CAP', label: 'კეპი', plural: 'კეპები', en: 'Cap', img: imgCap, tint: true, swatch: 'royal', group: 'acc' },
   { code: 'MUG', label: 'ჭიქა', plural: 'ჭიქები', en: 'Mug', img: imgMug, tint: false, swatch: 'white', group: 'acc' },
+  { code: 'PILLOW', label: 'ბალიშის პირი', plural: 'ბალიშის პირები', en: 'Pillowcase', img: imgPillow, tint: false, swatch: 'white', group: 'acc' },
 ];
 
 export const CATEGORY_BY_CODE = Object.fromEntries(CATEGORIES.map((c) => [c.code, c]));

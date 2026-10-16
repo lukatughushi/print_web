@@ -19,6 +19,11 @@ export class ProductsService {
     return this.productModel.find(filter).sort({ createdAt: -1, _id: -1 }).exec();
   }
 
+  /** Constructor products (one per category), including switched-off ones. */
+  findConstructor() {
+    return this.productModel.find({ inConstructor: true }).sort({ createdAt: 1, _id: 1 }).exec();
+  }
+
   async findOne(id: string) {
     const product = isValidObjectId(id) ? await this.productModel.findById(id).exec() : null;
     if (!product) throw new NotFoundException('Product not found');
