@@ -25,7 +25,7 @@ export default function Navbar() {
       .then((r) => setFirstProductId(starterProduct(r.data)?.id ?? null))
       .catch(() => {});
   }, []);
-  const studioPath = firstProductId ? `/design/${firstProductId}` : '/';
+  const studioPath = firstProductId ? `/design/${firstProductId}` : '/design/start';
   const studioActive = pathname.startsWith('/design');
   const shopActive = pathname.startsWith('/shop') || pathname.startsWith('/product');
 

@@ -207,8 +207,8 @@ function DesignsTab({ designs, setDesigns, products }) {
   const openDesign = (d) => {
     const product = products.find((p) => p.id === d.productId)
       ?? products.find((p) => p.category === d.category);
-    const id = product?.id ?? firstProductId;
-    if (id) navigate(`/design/${id}?design=${d.id}`);
+    const id = product?.id ?? firstProductId ?? 'start';
+    navigate(`/design/${id}?design=${d.id}`);
   };
 
   const rename = async (e) => {
@@ -238,7 +238,7 @@ function DesignsTab({ designs, setDesigns, products }) {
     <div className={s.stack}>
       <div className={s.tabHead}>
         <p className={s.muted}>{t('კონსტრუქტორში „შენახვა“ დააჭირე — დიზაინი აქ გამოჩნდება და შემდეგ შეკვეთაში შაბლონად გამოიყენებ.')}</p>
-        {firstProductId && <Link to={`/design/${firstProductId}`} className={s.btnPrimary}>{t('ახალი დიზაინი +')}</Link>}
+        {<Link to={`/design/${firstProductId ?? 'start'}`} className={s.btnPrimary}>{t('ახალი დიზაინი +')}</Link>}
       </div>
       {error && <div className={s.error}>{error}</div>}
       {!designs.length ? (

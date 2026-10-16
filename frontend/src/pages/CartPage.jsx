@@ -28,7 +28,7 @@ export default function CartPage() {
   const navigate = useNavigate();
   const { items, removeItem, setQty } = useCartStore();
   const [settings, setSettings] = useState({ currency: '₾', freeShipThreshold: 150 });
-  const [studioPath, setStudioPath] = useState('/shop');
+  const [studioPath, setStudioPath] = useState('/design/start');
   const [productsById, setProductsById] = useState({});
 
   useEffect(() => {

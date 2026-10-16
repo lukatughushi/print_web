@@ -88,7 +88,7 @@ export default function HomePage() {
   }, []);
 
   const firstProductId = starterProduct(products)?.id;
-  const designLink = settings.heroCtaLink || (firstProductId ? `/design/${firstProductId}` : '/shop');
+  const designLink = settings.heroCtaLink || (firstProductId ? `/design/${firstProductId}` : '/design/start');
   const goDesign = () => navigate(designLink.startsWith('/') ? designLink : '/shop');
 
   // Lowest price per category, for the category cards.

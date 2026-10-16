@@ -2475,16 +2475,8 @@ export default function DesignPage() {
       </div>
     );
 
-  if (!product)
-    return (
-      <div
-        className={
-          s.loadingPage
-        }
-      >
-        {t('პროდუქტი ვერ მოიძებნა')}
-      </div>
-    );
+  // No matching product (e.g. none added yet): the editor still opens on
+  // the T-shirt tab; ordering stays off until admin adds products.
 
   const unitPrice = orderProduct
     ? priceOf(orderProduct)
