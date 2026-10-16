@@ -26,6 +26,19 @@ export class Settings {
   @Prop({ default: '' })
   heroCtaLink: string;
 
+  /** Proof line under the home hero: "10 000+ … · ★★★★★ 4.9 …". */
+  @Prop({ default: '10 000+' })
+  proofNumber: string;
+
+  @Prop({ default: 'შესრულებული საცალო შეკვეთა' })
+  proofText: string;
+
+  @Prop({ default: '4.9' })
+  proofRating: string;
+
+  @Prop({ default: 'შეფასება' })
+  proofRatingText: string;
+
   /** Order subtotal (₾) from which delivery is free. */
   @Prop({ default: 150, min: 0 })
   freeShipThreshold: number;

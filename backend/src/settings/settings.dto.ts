@@ -26,6 +26,10 @@ export class UpdateSettingsDto {
   @IsOptional() @IsString() @MaxLength(600) heroSubtitle?: string;
   @IsOptional() @IsString() @MaxLength(80) heroCtaText?: string;
   @IsOptional() @IsString() @MaxLength(300) heroCtaLink?: string;
+  @IsOptional() @IsString() @MaxLength(20) proofNumber?: string;
+  @IsOptional() @IsString() @MaxLength(80) proofText?: string;
+  @IsOptional() @IsString() @MaxLength(10) proofRating?: string;
+  @IsOptional() @IsString() @MaxLength(40) proofRatingText?: string;
   @IsOptional() @IsNumber() @Min(0) freeShipThreshold?: number;
   @IsOptional() @IsNumber() @Min(0) shippingFee?: number;
   @IsOptional() @IsString() @MaxLength(8) currency?: string;

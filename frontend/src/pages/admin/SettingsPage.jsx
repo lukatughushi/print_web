@@ -5,6 +5,7 @@ import s from './Admin.module.css';
 
 const TEXT_FIELDS = [
   'announcementText', 'heroTitle', 'heroSubtitle', 'heroCtaText', 'heroCtaLink',
+  'proofNumber', 'proofText', 'proofRating', 'proofRatingText',
   'currency', 'contactPhone', 'contactEmail', 'contactAddress',
 ];
 
@@ -90,6 +91,29 @@ export default function SettingsPage() {
           <div className={s.field}>
             <label className={s.label} htmlFor="s-hl">ღილაკის ბმული</label>
             <input id="s-hl" className={s.input} value={form.heroCtaLink || ''} onChange={set('heroCtaLink')} placeholder="ცარიელი = კონსტრუქტორი" />
+          </div>
+        </div>
+      </div>
+
+      <div className={`${s.card} ${s.section}`}>
+        <h2 className={s.sectionTitle}>მთავარი გვერდი — შეკვეთები და შეფასება</h2>
+        <p className={s.hint} style={{ margin: 0 }}>ღილაკის ქვემოთ: „10 000+ შესრულებული საცალო შეკვეთა · ★★★★★ 4.9 შეფასება“. ცარიელი ველი არ ჩანს.</p>
+        <div className={s.formGrid}>
+          <div className={s.field}>
+            <label className={s.label} htmlFor="s-pn">რიცხვი</label>
+            <input id="s-pn" className={s.input} value={form.proofNumber || ''} onChange={set('proofNumber')} placeholder="10 000+" />
+          </div>
+          <div className={s.field}>
+            <label className={s.label} htmlFor="s-pt">ტექსტი რიცხვის გვერდით</label>
+            <input id="s-pt" className={s.input} value={form.proofText || ''} onChange={set('proofText')} placeholder="შესრულებული საცალო შეკვეთა" />
+          </div>
+          <div className={s.field}>
+            <label className={s.label} htmlFor="s-pr">შეფასება (ვარსკვლავების გვერდით)</label>
+            <input id="s-pr" className={s.input} value={form.proofRating || ''} onChange={set('proofRating')} placeholder="4.9" />
+          </div>
+          <div className={s.field}>
+            <label className={s.label} htmlFor="s-prt">ტექსტი შეფასების გვერდით</label>
+            <input id="s-prt" className={s.input} value={form.proofRatingText || ''} onChange={set('proofRatingText')} placeholder="შეფასება" />
           </div>
         </div>
       </div>

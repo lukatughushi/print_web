@@ -148,6 +148,8 @@
   padding: 0 6px;
 }
 
+.loginIcon { display: none; }
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 720px) {
   .inner { padding: 10px 14px; row-gap: 8px; column-gap: 12px; }
@@ -169,9 +171,21 @@
   /* Logo and buttons share the first row; the four links fill the second. */
   .inner { padding: 8px 12px 6px; column-gap: 8px; }
   .logo { width: 32px; height: 32px; }
-  .wordmark { font-size: 17px; letter-spacing: .12em; }
+  .wordmark { font-size: 15px; letter-spacing: .08em; }
   .right { gap: 4px; }
+  .right { flex-wrap: nowrap; }
   .right > .link { padding: 7px 10px; }
+  /* Sign-in becomes a round icon button so logo and buttons fit one row. */
+  .loginLink {
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, .18);
+  }
+  .loginIcon { display: block; }
+  .loginLabel { display: none; }
   .iconBtn, .right .avatar { width: 36px; height: 36px; }
   /* The logo already links home, so phones show the other three links. */
   .nav { justify-content: space-around; gap: 2px; }

@@ -63,8 +63,17 @@ export default function Navbar() {
           {isAuthenticated ? (
             <UserMenu />
           ) : (
-            <NavLink to="/login" className={({ isActive }) => `${s.link} ${isActive ? s.linkActive : ''}`}>
-              {t('შესვლა')}
+            <NavLink
+              to="/login"
+              className={({ isActive }) => `${s.link} ${s.loginLink} ${isActive ? s.linkActive : ''}`}
+              aria-label={t('შესვლა')}
+              title={t('შესვლა')}
+            >
+              {/* Phones show a person icon instead of the word. */}
+              <svg className={s.loginIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <path d="M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" />
+              </svg>
+              <span className={s.loginLabel}>{t('შესვლა')}</span>
             </NavLink>
           )}
           <Link to="/shop?fav=1" className={s.iconBtn} aria-label={t('რჩეულები')} title={t('რჩეულები')}>
