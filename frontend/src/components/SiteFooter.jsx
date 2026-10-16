@@ -2,13 +2,14 @@ import { Link } from 'react-router-dom';
 import logo from '../assets/prenta/logo_prenta.webp';
 import s from './SiteFooter.module.css';
 import { useI18n } from '../i18n/i18n-context';
+import { settingText } from '../lib/settingText';
 
 
 // Google Maps pin for the office address.
 const MAP_URL = 'https://maps.app.goo.gl/UDuy3SRruh8H1mS47';
 
 export default function SiteFooter({ settings = {} }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   // Contact details come only from admin settings; empty ones are hidden.
   const info = settings;
   return (
@@ -19,7 +20,7 @@ export default function SiteFooter({ settings = {} }) {
             <img src={logo} alt="" />
             <span>PRENTA</span>
           </div>
-          {info.contactAddress && <a href={MAP_URL} target="_blank" rel="noopener noreferrer">{t(info.contactAddress)}</a>}
+          {info.contactAddress && <a href={MAP_URL} target="_blank" rel="noopener noreferrer">{settingText(info, 'contactAddress', lang, t)}</a>}
           {info.contactPhone && <span>{info.contactPhone}</span>}
           {info.contactEmail && <span>{info.contactEmail}</span>}
         </div>

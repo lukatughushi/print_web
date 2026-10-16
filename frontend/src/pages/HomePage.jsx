@@ -19,6 +19,7 @@ import corpVlog from '../assets/corp/vlog-1.webp';
 import corpFestival from '../assets/corp/festival-1.webp';
 import corpDelfi from '../assets/corp/delfi-1.webp';
 import { useI18n } from '../i18n/i18n-context';
+import { settingText } from '../lib/settingText';
 
 
 /* ── Defaults until /api/settings arrives. Texts edited in admin have no
@@ -68,7 +69,8 @@ const STATS = [
 
 
 export default function HomePage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const st = (key) => settingText(settings, key, lang, t);
   const navigate = useNavigate();
 
   /* ── Settings ───────────────────────────────────────────── */
@@ -122,7 +124,7 @@ export default function HomePage() {
     <div className={s.page}>
 
       {settings.announcementActive && settings.announcementText && (
-        <div className={s.announce}>{t(settings.announcementText)}</div>
+        <div className={s.announce}>{st('announcementText')}</div>
       )}
 
       {/* ── Hero ─────────────────────────────────────────── */}
@@ -137,7 +139,7 @@ export default function HomePage() {
             <div className={s.heroCtas}>
               {settings.heroCtaText && (
                 <button type="button" className={`${s.btn} ${s.btnPink} ${s.btnLg}`} onClick={goDesign}>
-                  {t(settings.heroCtaText)}
+                  {st('heroCtaText')}
                 </button>
               )}
               <Link to="/shop" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>{t('მზა პროდუქცია')}</Link>
@@ -149,7 +151,7 @@ export default function HomePage() {
               <div className={s.proofText}>
                 {hasOrders && (
                   <>
-                    {settings.proofNumber && <b>{settings.proofNumber}</b>} {settings.proofText && t(settings.proofText)}
+                    {settings.proofNumber && <b>{settings.proofNumber}</b>} {st('proofText')}
                     <br />
                   </>
                 )}

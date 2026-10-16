@@ -53,6 +53,14 @@ export class Settings {
   @Prop({ default: '' })
   contactAddress: string;
 
+  /**
+   * English and Russian versions of the admin texts, e.g.
+   * { en: { announcementText: '…' }, ru: { … } }. Empty = the Georgian text
+   * (run through the site dictionary).
+   */
+  @Prop({ type: Object, default: {} })
+  i18n: Record<string, Record<string, string>>;
+
   /** Garment colours added in admin, on top of the built-in palette. */
   @Prop({ type: [{ _id: false, key: String, name: String, hex: String }], default: [] })
   customColors: { key: string; name: string; hex: string }[];

@@ -384,7 +384,7 @@ function SecurityTab() {
       setForm({ currentPassword: '', newPassword: '', repeat: '' });
       toast(t('პაროლი შეიცვალა'));
     } catch (err) {
-      setError(err?.response?.status === 401 ? t('მიმდინარე პაროლი არასწორია') : getErrorMessage(err, t('პაროლი ვერ შეიცვალა')));
+      setError(err?.response?.data?.code === 'WRONG_PASSWORD' ? t('მიმდინარე პაროლი არასწორია') : getErrorMessage(err, t('პაროლი ვერ შეიცვალა')));
     } finally {
       setBusy(false);
     }

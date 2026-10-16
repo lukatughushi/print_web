@@ -1,4 +1,6 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import api from '../lib/api';
 import { useAuth } from '../context/auth-context';
 import logo from '../assets/prenta/logo_prenta.webp';
 import s from './AdminLayout.module.css';
@@ -25,10 +27,89 @@ const NAV = [
   { to: '/admin/logs', label: 'ჟურნალი', icon: 'logs' },
 ];
 
+/** Change-password dialog for the signed-in admin (POST /api/me/password). */
+function PasswordDialog({ onClose }) {
+  const [form, setForm] = useState({ currentPassword: '', newPassword: '', repeat: '' });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
+  const set = (k) => (e) => { setError(''); setForm((f) => ({ ...f, [k]: e.target.value })); };
+
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (form.newPassword.length < 8) return setError('ახალი პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს');
+    if (form.newPassword !== form.repeat) return setError('პაროლები არ ემთხვევა');
+    setBusy(true);
+    try {
+      await api.post('/api/me/password', { currentPassword: form.currentPassword, newPassword: form.newPassword });
+      setDone(true);
+    } catch (err) {
+      setError(err?.response?.data?.code === 'WRONG_PASSWORD' ? 'მიმდინარე პაროლი არასწორია' : 'პაროლი ვერ შეიცვალა');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={s.dialogBackdrop} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <form className={s.dialog} onSubmit={submit} role="dialog" aria-modal="true" aria-label="პაროლის შეცვლა">
+        <h2 className={s.dialogTitle}>პაროლის შეცვლა</h2>
+        {done ? (
+          <>
+            <p className={s.dialogOk}>პაროლი შეიცვალა.</p>
+            <div className={s.dialogActions}>
+              <button type="button" className={s.dialogPrimary} onClick={onClose}>დახურვა</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <label className={s.dialogField}>
+              <span>მიმდინარე პაროლი</span>
+              <input type="password" value={form.currentPassword} onChange={set('currentPassword')} autoComplete="current-password" autoFocus />
+            </label>
+            <label className={s.dialogField}>
+              <span>ახალი პაროლი (მინ. 8 სიმბოლო)</span>
+              <input type="password" value={form.newPassword} onChange={set('newPassword')} autoComplete="new-password" />
+            </label>
+            <label className={s.dialogField}>
+              <span>გაიმეორე ახალი პაროლი</span>
+              <input type="password" value={form.repeat} onChange={set('repeat')} autoComplete="new-password" />
+            </label>
+            {error && <p className={s.dialogError}>{error}</p>}
+            <div className={s.dialogActions}>
+              <button type="button" className={s.dialogGhost} onClick={onClose}>გაუქმება</button>
+              <button type="submit" className={s.dialogPrimary} disabled={busy || !form.currentPassword || !form.newPassword}>
+                {busy ? 'ინახება…' : 'შეცვლა'}
+              </button>
+            </div>
+          </>
+        )}
+      </form>
+    </div>
+  );
+}
+
 // Access is enforced by <ProtectedRoute roles={['admin']}> in App.jsx.
 export default function AdminLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close the user menu on an outside click.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onDown = (e) => { if (!menuRef.current?.contains(e.target)) setMenuOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [menuOpen]);
 
   const signOut = () => {
     logout();
@@ -61,22 +142,44 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        <div className={s.foot}>
-          {user && (
-            <div className={s.me}>
-              <span className={s.avatar}>{(user.name || user.email || '?').slice(0, 1).toUpperCase()}</span>
-              <span className={s.meText}>
-                <span className={s.meName}>{user.name}</span>
-                <span className={s.meMail}>{user.email}</span>
-              </span>
-            </div>
-          )}
-          <NavLink to="/" className={s.footLink}>← საიტზე დაბრუნება</NavLink>
-          <button type="button" className={s.footBtn} onClick={signOut}>გასვლა</button>
-        </div>
       </aside>
 
       <main className={s.main}>
+        {/* Top-right: open the storefront, who is signed in, sign out. */}
+        <header className={s.topbar}>
+          <Link to="/" className={s.topIcon} title="საიტის ნახვა" aria-label="საიტის ნახვა">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 4h18v12H3zM8 20h8M12 16v4" />
+            </svg>
+          </Link>
+          {user && (
+            <div className={s.meWrap} ref={menuRef}>
+              <button type="button" className={s.me} onClick={() => setMenuOpen((v) => !v)} aria-haspopup="menu" aria-expanded={menuOpen}>
+                <span className={s.avatar}>{(user.name || user.email || '?').slice(0, 1).toUpperCase()}</span>
+                <span className={s.meText}>
+                  <span className={s.meName}>{user.name}</span>
+                  <span className={s.meMail}>{user.email}</span>
+                </span>
+                <svg className={s.meChev} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+              {menuOpen && (
+                <div className={s.menu} role="menu">
+                  <div className={s.menuHead}>
+                    <span className={s.meName}>{user.name}</span>
+                    <span className={s.meMail}>{user.email}</span>
+                  </div>
+                  <button type="button" role="menuitem" className={s.menuItem} onClick={() => { setMenuOpen(false); setPwOpen(true); }}>
+                    პაროლის შეცვლა
+                  </button>
+                  <button type="button" role="menuitem" className={`${s.menuItem} ${s.menuDanger}`} onClick={signOut}>
+                    გასვლა
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </header>
+        {pwOpen && <PasswordDialog onClose={() => setPwOpen(false)} />}
         <Outlet />
       </main>
     </div>

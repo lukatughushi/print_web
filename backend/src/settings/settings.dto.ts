@@ -3,6 +3,7 @@ import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsObject,
   IsNumber,
   IsOptional,
   IsString,
@@ -34,6 +35,7 @@ export class UpdateSettingsDto {
   @IsOptional() @IsString() @MaxLength(60) contactPhone?: string;
   @IsOptional() @IsString() @MaxLength(120) contactEmail?: string;
   @IsOptional() @IsString() @MaxLength(200) contactAddress?: string;
+  @IsOptional() @IsObject() i18n?: Record<string, Record<string, string>>;
   @IsOptional() @IsArray() @ArrayMaxSize(60) @ValidateNested({ each: true }) @Type(() => CustomColorDto)
   customColors?: CustomColorDto[];
 }

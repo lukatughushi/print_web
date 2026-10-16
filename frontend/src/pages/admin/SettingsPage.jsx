@@ -25,6 +25,13 @@ export default function SettingsPage() {
   if (error && !form) return <div className={s.error}>{error}</div>;
   if (!form) return <div className={s.loading}>იტვირთება…</div>;
 
+  // English / Russian version of a text (settings.i18n); empty = Georgian.
+  const setLang = (lang, key) => (e) => {
+    setNotice('');
+    const value = e.target.value;
+    setForm((f) => ({ ...f, i18n: { ...f.i18n, [lang]: { ...f.i18n?.[lang], [key]: value } } }));
+  };
+
   const set = (key) => (e) => {
     setNotice('');
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -36,6 +43,7 @@ export default function SettingsPage() {
     e.preventDefault();
     const payload = Object.fromEntries(TEXT_FIELDS.map((k) => [k, String(form[k] ?? '')]));
     payload.announcementActive = !!form.announcementActive;
+    payload.i18n = form.i18n || {};
     payload.freeShipThreshold = Math.max(0, Number(form.freeShipThreshold) || 0);
     payload.shippingFee = Math.max(0, Number(form.shippingFee) || 0);
     setBusy(true);
@@ -78,6 +86,10 @@ export default function SettingsPage() {
         <div className={s.field}>
           <label className={s.label} htmlFor="s-ann">ტექსტი</label>
           <input id="s-ann" className={s.input} value={form.announcementText || ''} onChange={set('announcementText')} />
+            <div className={s.formGrid}>
+              <input className={s.input} value={form.i18n?.en?.announcementText || ''} onChange={setLang('en', 'announcementText')} placeholder="English" aria-label="English" />
+              <input className={s.input} value={form.i18n?.ru?.announcementText || ''} onChange={setLang('ru', 'announcementText')} placeholder="Русский" aria-label="Русский" />
+            </div>
         </div>
       </div>
 
@@ -87,6 +99,10 @@ export default function SettingsPage() {
           <div className={s.field}>
             <label className={s.label} htmlFor="s-hc">ღილაკის ტექსტი</label>
             <input id="s-hc" className={s.input} value={form.heroCtaText || ''} onChange={set('heroCtaText')} />
+            <div className={s.formGrid}>
+              <input className={s.input} value={form.i18n?.en?.heroCtaText || ''} onChange={setLang('en', 'heroCtaText')} placeholder="English" aria-label="English" />
+              <input className={s.input} value={form.i18n?.ru?.heroCtaText || ''} onChange={setLang('ru', 'heroCtaText')} placeholder="Русский" aria-label="Русский" />
+            </div>
           </div>
           <div className={s.field}>
             <label className={s.label} htmlFor="s-hl">ღილაკის ბმული</label>
@@ -106,6 +122,10 @@ export default function SettingsPage() {
           <div className={s.field}>
             <label className={s.label} htmlFor="s-pt">ტექსტი რიცხვის გვერდით</label>
             <input id="s-pt" className={s.input} value={form.proofText || ''} onChange={set('proofText')} placeholder="შესრულებული საცალო შეკვეთა" />
+            <div className={s.formGrid}>
+              <input className={s.input} value={form.i18n?.en?.proofText || ''} onChange={setLang('en', 'proofText')} placeholder="English" aria-label="English" />
+              <input className={s.input} value={form.i18n?.ru?.proofText || ''} onChange={setLang('ru', 'proofText')} placeholder="Русский" aria-label="Русский" />
+            </div>
           </div>
         </div>
       </div>
@@ -143,6 +163,10 @@ export default function SettingsPage() {
           <div className={s.field}>
             <label className={s.label} htmlFor="s-ad">მისამართი</label>
             <input id="s-ad" className={s.input} value={form.contactAddress || ''} onChange={set('contactAddress')} />
+            <div className={s.formGrid}>
+              <input className={s.input} value={form.i18n?.en?.contactAddress || ''} onChange={setLang('en', 'contactAddress')} placeholder="English" aria-label="English" />
+              <input className={s.input} value={form.i18n?.ru?.contactAddress || ''} onChange={setLang('ru', 'contactAddress')} placeholder="Русский" aria-label="Русский" />
+            </div>
           </div>
         </div>
       </div>

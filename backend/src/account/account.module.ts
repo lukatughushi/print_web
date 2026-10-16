@@ -12,7 +12,6 @@ import {
   Patch,
   Post,
   Put,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel, MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Type } from 'class-transformer';
@@ -176,7 +175,8 @@ export class AccountService {
   async changePassword(user: AuthUser, dto: PasswordDto) {
     const found = await this.users.findByEmailWithPassword(user.email);
     if (!found || !(await this.users.comparePassword(dto.currentPassword, found.password))) {
-      throw new UnauthorizedException('მიმდინარე პაროლი არასწორია');
+      // 400, not 401: the client signs out on a 401 (expired session).
+      throw new BadRequestException({ message: 'მიმდინარე პაროლი არასწორია', code: 'WRONG_PASSWORD' });
     }
     await this.users.setPassword(user.id, dto.newPassword);
     return { ok: true };

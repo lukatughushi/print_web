@@ -35,13 +35,123 @@
 .linkOn,
 .linkOn:hover { background: #F3EBE3; color: #16233B; font-weight: 600; }
 
-.foot { padding: 14px 14px 18px; border-top: 1px solid rgba(255, 255, 255, .08); display: flex; flex-direction: column; gap: 10px; }
-.me { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* ── Top bar (right corner of the content area) ───────────── */
+.topbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 18px; }
+.topIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid #ECE6DF;
+  background: #fff;
+  color: #16233B;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.topIcon:hover { border-color: #16233B; }
+.meWrap { position: relative; min-width: 0; }
+.me {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 280px;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid #ECE6DF;
+  border-radius: 999px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.me:hover { border-color: #16233B; }
+.meChev { flex: none; color: #8A8F9C; }
+
+/* User menu: password change and sign out. */
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 60;
+  width: 240px;
+  padding: 6px;
+  border: 1px solid #ECE6DF;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(22, 35, 59, .14);
+  display: flex;
+  flex-direction: column;
+}
+.menuHead { display: flex; flex-direction: column; padding: 8px 10px 10px; margin-bottom: 4px; border-bottom: 1px solid #F1ECE6; min-width: 0; }
+.menuItem {
+  padding: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: #16233B;
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.menuItem:hover { background: #F6F2ED; }
+.menuDanger { color: #C8323C; }
+
+/* Change-password dialog. */
+.dialogBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(22, 35, 59, .45);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.dialog {
+  width: min(420px, 100%);
+  padding: 22px;
+  border-radius: 18px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dialogTitle { margin: 0; font-size: 17px; font-weight: 700; }
+.dialogField { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 600; color: #4A5368; }
+.dialogField input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #DED7CF;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  color: #16233B;
+}
+.dialogField input:focus { outline: none; border-color: #16233B; }
+.dialogError { margin: 0; padding: 10px 12px; border-radius: 10px; background: #FDF0F1; color: #B3263C; font-size: 13px; }
+.dialogOk { margin: 0; padding: 10px 12px; border-radius: 10px; background: #E2F3E6; color: #2F6B3F; font-size: 13.5px; }
+.dialogActions { display: flex; justify-content: flex-end; gap: 8px; }
+.dialogPrimary,
+.dialogGhost {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dialogPrimary { border: 0; background: #EF5F7A; color: #fff; }
+.dialogPrimary:disabled { opacity: .5; cursor: default; }
+.dialogGhost { border: 1px solid #ECE6DF; background: #fff; color: #16233B; }
 .avatar {
   width: 32px;
   height: 32px;
   border-radius: 999px;
   background: #EF5F7A;
+  color: #fff;
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -50,20 +160,7 @@
 }
 .meText { display: flex; flex-direction: column; min-width: 0; }
 .meName { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.meMail { font-size: 11.5px; color: rgba(255, 255, 255, .5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.footLink { font-size: 13px; color: rgba(255, 255, 255, .6); text-decoration: none; }
-.footLink:hover { color: #fff; }
-.footBtn {
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, .2);
-  background: transparent;
-  color: #fff;
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
-.footBtn:hover { background: rgba(255, 255, 255, .08); }
+.meMail { font-size: 11.5px; color: #8A8F9C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .main { flex: 1; min-width: 0; padding: 28px clamp(16px, 3vw, 36px) 48px; }
 
@@ -77,6 +174,9 @@
   .nav::-webkit-scrollbar { display: none; }
   .link { white-space: nowrap; padding: 8px 10px; }
   .link svg { display: none; }
-  .foot { display: none; }
+  .meText { display: none; }
+  .me { padding: 4px; }
   .main { padding: 18px 16px 40px; }
+  .topbar { margin-bottom: 10px; }
+  .menu { width: min(240px, calc(100vw - 32px)); }
 }
