@@ -30,8 +30,6 @@ const DEFAULT_SETTINGS = {
   heroCtaLink: '',
   proofNumber: '',
   proofText: '',
-  proofRating: '',
-  proofRatingText: '',
   freeShipThreshold: 150,
   currency: '₾',
   contactPhone: '',
@@ -116,9 +114,8 @@ export default function HomePage() {
       }
     });
 
-  // Proof line under the hero buttons, edited in admin settings.
+  // Orders line under the hero buttons, edited in admin settings.
   const hasOrders = Boolean(settings.proofNumber || settings.proofText);
-  const hasRating = Boolean(settings.proofRating || settings.proofRatingText);
   const money = (n) => `${Math.round(n)} ${settings.currency}`;
 
   return (
@@ -145,26 +142,20 @@ export default function HomePage() {
               )}
               <Link to="/shop" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>{t('მზა პროდუქცია')}</Link>
             </div>
-            {(hasOrders || hasRating) && (
-              <div className={s.proof}>
-                <div className={s.avatars}>
-                  {[corpSushi, corpRoofing, corpVlog].map((src) => <img key={src} src={src} alt="" />)}
-                </div>
-                <div className={s.proofText}>
-                  {hasOrders && (
-                    <>
-                      {settings.proofNumber && <b>{settings.proofNumber}</b>} {settings.proofText && t(settings.proofText)}
-                    </>
-                  )}
-                  {hasOrders && hasRating && <br />}
-                  {hasRating && (
-                    <>
-                      <span className={s.stars}>★★★★★</span> {settings.proofRating} {settings.proofRatingText && t(settings.proofRatingText)}
-                    </>
-                  )}
-                </div>
+            <div className={s.proof}>
+              <div className={s.avatars}>
+                {[corpSushi, corpRoofing, corpVlog].map((src) => <img key={src} src={src} alt="" />)}
               </div>
-            )}
+              <div className={s.proofText}>
+                {hasOrders && (
+                  <>
+                    {settings.proofNumber && <b>{settings.proofNumber}</b>} {settings.proofText && t(settings.proofText)}
+                    <br />
+                  </>
+                )}
+                <span className={s.stars}>★★★★★</span> {t('4.9 შეფასება')}
+              </div>
+            </div>
           </div>
           <div className={s.heroArt}>
             <div className={s.heroArtBox}>

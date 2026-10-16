@@ -21,6 +21,7 @@ export default {
   "ვიყენებთ უმაღლესი ხარისხის საბეჭდ მასალას — ნაბეჭდი არ სკდება და არ იცვლის ფერს.": "We use top-quality print materials — prints don't crack or fade.",
   "DTF ბეჭდვა — არ სკდება და არ ცვივა 50+ რეცხვის შემდეგ.": "DTF printing — doesn't crack or peel even after 50+ washes.",
   "Modern Roofing, Sushi Icons, Ratto Bistro და კიდევ ათობით კომპანიამ უკვე გამოსცადა ჩვენი მომსახურება.": "Modern Roofing, Sushi Icons, Ratto Bistro and dozens of other companies have already tried our service.",
+  "4.9 შეფასება": "4.9 rating",
   "შეფასება": "rating",
   "შენზე მორგებული ფასი": "A price tailored to you",
   "{count} ელემენტი": "{count} elements",
