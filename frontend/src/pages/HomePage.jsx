@@ -59,7 +59,7 @@ const STEPS = [
 ];
 
 const STATS = [
-  { n: '200+', t: 'რეცხვას უძლებს', d: 'ვიყენებთ უმაღლესი ხარისხის საბეჭდ მასალას — ნაბეჭდი არ სკდება და არ იცვლის ფერს.' },
+  { n: '200+', t: 'რეცხვა', d: 'ვიყენებთ უმაღლესი ხარისხის საბეჭდ მასალას — ნაბეჭდი არ სკდება და არ იცვლის ფერს.' },
   { n: '3 დღე', t: 'შეკვეთიდან კარამდე', d: 'თბილისში მიწოდება მეორე დღეს.' },
   { n: '100%', t: 'ბამბის, პრემიალური ხარისხის მაისურები', d: 'გთავაზობთ 150, 180, 200 და 300 გრამიან მაისურებს.' },
 ];
@@ -143,7 +143,7 @@ export default function HomePage() {
                 {[corpSushi, corpRoofing, corpVlog].map((src) => <img key={src} src={src} alt="" />)}
               </div>
               <div className={s.proofText}>
-                <b>2 400+</b> {t('დაბეჭდილი შეკვეთა')}<br />
+                <b>10 000+</b> {t('შესრულებული საცალო შეკვეთა')}<br />
                 <span className={s.stars}>★★★★★</span> {t('4.9 შეფასება')}
               </div>
             </div>
@@ -258,7 +258,7 @@ export default function HomePage() {
           <div className={s.corp}>
             <div className={s.corpBody}>
               <span className={s.kicker}>{t('ბიზნესისთვის')}</span>
-              <h2 className={s.h2}>{t('გუნდის ფორმა, ლოგოთი — 10 ცალიდან')}</h2>
+              <h2 className={s.h2}>{t('ფორმა შენი გუნდისთვის — საბითუმო შეთავაზება 10 ცალიდან')}</h2>
               <p className={s.corpText}>{t('Modern Roofing, Sushi Icons, Ratto Bistro და კიდევ ათობით კომპანიამ უკვე გამოსცადა ჩვენი მომსახურება.')}</p>
               <div className={s.corpBtns}>
                 <Link to="/corporate#quote" className={`${s.btn} ${s.btnPink}`}>{t('გამოთვალე ფასი')}</Link>
