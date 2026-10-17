@@ -35,6 +35,9 @@ export class UpdateSettingsDto {
   @IsOptional() @IsString() @MaxLength(60) contactPhone?: string;
   @IsOptional() @IsString() @MaxLength(120) contactEmail?: string;
   @IsOptional() @IsString() @MaxLength(200) contactAddress?: string;
+  @IsOptional() @IsString() @MaxLength(30) chatWhatsapp?: string;
+  @IsOptional() @IsString() @MaxLength(30) chatViber?: string;
+  @IsOptional() @IsString() @MaxLength(200) chatMessenger?: string;
   @IsOptional() @IsObject() i18n?: Record<string, Record<string, string>>;
   @IsOptional() @IsArray() @ArrayMaxSize(60) @ValidateNested({ each: true }) @Type(() => CustomColorDto)
   customColors?: CustomColorDto[];

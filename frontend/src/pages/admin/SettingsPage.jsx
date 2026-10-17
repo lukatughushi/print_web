@@ -7,6 +7,7 @@ const TEXT_FIELDS = [
   'announcementText', 'heroTitle', 'heroSubtitle', 'heroCtaText', 'heroCtaLink',
   'proofNumber', 'proofText',
   'currency', 'contactPhone', 'contactEmail', 'contactAddress',
+  'chatWhatsapp', 'chatViber', 'chatMessenger',
 ];
 
 export default function SettingsPage() {
@@ -167,6 +168,27 @@ export default function SettingsPage() {
               <input className={s.input} value={form.i18n?.en?.contactAddress || ''} onChange={setLang('en', 'contactAddress')} placeholder="English" aria-label="English" />
               <input className={s.input} value={form.i18n?.ru?.contactAddress || ''} onChange={setLang('ru', 'contactAddress')} placeholder="Русский" aria-label="Русский" />
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`${s.card} ${s.section}`}>
+        <h2 className={s.sectionTitle}>ჩატის ღილაკი (საიტის კუთხეში)</h2>
+        <p className={s.hint} style={{ margin: 0 }}>
+          ღილაკი „მოგვწერე“ საიტის ქვედა მარჯვენა კუთხეში. ჩანს მხოლოდ შევსებული არხები; თუ სამივე ცარიელია, ღილაკი არ ჩანს.
+        </p>
+        <div className={s.formGrid3}>
+          <div className={s.field}>
+            <label className={s.label} htmlFor="s-wa">WhatsApp ნომერი</label>
+            <input id="s-wa" className={s.input} value={form.chatWhatsapp || ''} onChange={set('chatWhatsapp')} placeholder="+995 5XX XX XX XX" />
+          </div>
+          <div className={s.field}>
+            <label className={s.label} htmlFor="s-vb">Viber ნომერი</label>
+            <input id="s-vb" className={s.input} value={form.chatViber || ''} onChange={set('chatViber')} placeholder="+995 5XX XX XX XX" />
+          </div>
+          <div className={s.field}>
+            <label className={s.label} htmlFor="s-ms">Messenger (Facebook გვერდი)</label>
+            <input id="s-ms" className={s.input} value={form.chatMessenger || ''} onChange={set('chatMessenger')} placeholder="მაგ. prenta.ge ან facebook.com/prenta.ge" />
           </div>
         </div>
       </div>

@@ -53,6 +53,16 @@ export class Settings {
   @Prop({ default: '' })
   contactAddress: string;
 
+  /** Floating chat button: WhatsApp / Viber numbers and a Messenger page. Empty = hidden. */
+  @Prop({ default: '' })
+  chatWhatsapp: string;
+
+  @Prop({ default: '' })
+  chatViber: string;
+
+  @Prop({ default: '' })
+  chatMessenger: string;
+
   /**
    * English and Russian versions of the admin texts, e.g.
    * { en: { announcementText: '…' }, ru: { … } }. Empty = the Georgian text

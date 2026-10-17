@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import FavoritesSync from './components/FavoritesSync';
 import ScrollToTop from './components/ScrollToTop';
 import Toast from './components/Toast';
+import ChatButton from './components/ChatButton';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
@@ -75,6 +76,7 @@ function AppContent() {
     <>
       {!isAdmin && <Navbar />}
       <Toast />
+      <ChatButton />
       <FavoritesSync />
       <ScrollToTop />
       <Suspense fallback={<PageLoading />}>
