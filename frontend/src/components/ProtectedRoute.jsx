@@ -4,11 +4,13 @@ import { useAuth } from '../context/auth-context';
 /**
  * Guards a route (as a layout route with <Outlet/>, or by wrapping children).
  *   <Route element={<ProtectedRoute />}>…</Route>
- *   <Route element={<ProtectedRoute roles={['admin']} redirectTo="/admin/login" />}>…</Route>
+ *   <Route element={<ProtectedRoute roles={['admin']} fallback={<NotFoundPage />} />}>…</Route>
  * Unauthenticated users, or users without a required role, are sent to `redirectTo`
  * with the original location in `state.from` so the login page can send them back.
+ * With `fallback` they see that element instead (the admin panel shows a plain
+ * "not found", so nobody can tell it is there).
  */
-export default function ProtectedRoute({ roles, redirectTo = '/login', children }) {
+export default function ProtectedRoute({ roles, redirectTo = '/login', fallback, children }) {
   const { user, status, signedOut } = useAuth();
   const location = useLocation();
 
@@ -24,6 +26,7 @@ export default function ProtectedRoute({ roles, redirectTo = '/login', children 
   if (!user && signedOut && redirectTo === '/login') return <Navigate to="/" replace />;
 
   if (!user || (roles && !roles.includes(user.role))) {
+    if (fallback) return fallback;
     return <Navigate to={redirectTo} replace state={{ from: location }} />;
   }
 

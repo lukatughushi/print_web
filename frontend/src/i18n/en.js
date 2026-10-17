@@ -1,5 +1,6 @@
 // English translations. Keys are the Georgian source text (see i18n-context.js).
 export default {
+  "ძალიან ბევრი მცდელობა — სცადე 10 წუთში": "Too many attempts — try again in 10 minutes",
   "ელფოსტის დადასტურება": "Confirm your e-mail",
   "მოწმდება…": "Checking…",
   "ბმული არასწორია ან ვადაგასულია": "The link is invalid or has expired",

@@ -28,8 +28,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(form.email, form.password);
-      navigate(from, { replace: true });
+      const user = await login(form.email, form.password);
+      navigate(user?.role === 'admin' && !fromLoc ? '/admin/dashboard' : from, { replace: true });
     } catch (err) {
       if (err?.response?.data?.code === 'EMAIL_NOT_VERIFIED') setUnverified(true);
       else setError(getErrorMessage(err, t('შესვლა ვერ მოხერხდა')));

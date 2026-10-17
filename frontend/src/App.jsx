@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AuthProvider from './context/AuthProvider';
+import { useAuth } from './context/auth-context';
 import I18nProvider from './i18n/I18nProvider';
 import Navbar from './components/Navbar';
 import FavoritesSync from './components/FavoritesSync';
@@ -26,7 +27,6 @@ const loadDesignPage = () => import('./pages/DesignPage');
 const DesignPage = lazy(loadDesignPage);
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AdminLayout = lazy(() => import('./components/AdminLayout'));
-const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage'));
 const AdminOrders = lazy(() => import('./pages/admin/OrdersPage'));
 const AdminProducts = lazy(() => import('./pages/admin/ProductsPage'));
@@ -64,7 +64,9 @@ function PageLoading() {
 
 function AppContent() {
   const { pathname } = useLocation();
-  const isAdmin = pathname.startsWith('/admin');
+  const { user } = useAuth();
+  // Only signed-in admins get the panel; everyone else sees the normal site.
+  const isAdmin = pathname.startsWith('/admin') && user?.role === 'admin';
   usePrefetchDesignPage();
   useCustomColors();
 
@@ -97,10 +99,9 @@ function AppContent() {
         </Route>
 
         {/* Public admin login */}
-        <Route path="/admin/login" element={<AdminLoginPage />} />
 
         {/* Protected admin panel */}
-        <Route element={<ProtectedRoute roles={['admin']} redirectTo="/admin/login" />}>
+        <Route element={<ProtectedRoute roles={['admin']} fallback={<NotFoundPage />} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />

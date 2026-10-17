@@ -115,7 +115,7 @@ export default function AdminLayout() {
 
   const signOut = () => {
     logout();
-    navigate('/admin/login');
+    navigate('/');
   };
 
   return (
