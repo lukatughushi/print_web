@@ -10,11 +10,37 @@ const SALT_ROUNDS = 12;
 export class UsersService {
   constructor(@InjectModel(User.name) private readonly userModel: Model<User>) {}
 
-  async create(data: { name: string; email: string; password: string; role?: Role }) {
+  async create(data: { name: string; email: string; password: string; role?: Role; emailVerified?: boolean }) {
     const exists = await this.userModel.exists({ email: data.email.toLowerCase() });
     if (exists) throw new ConflictException('Email is already registered');
     const password = await bcrypt.hash(data.password, SALT_ROUNDS);
     return this.userModel.create({ ...data, password });
+  }
+
+  hashPassword(plain: string) {
+    return bcrypt.hash(plain, SALT_ROUNDS);
+  }
+
+  findByEmail(email: string) {
+    return this.userModel.findOne({ email: email.toLowerCase() }).exec();
+  }
+
+  /** The user whose one-time link token matches and hasn't expired. */
+  findByToken(hashField: string, expiresField: string, hash: string, extra = '') {
+    return this.userModel
+      .findOne({ [hashField]: hash, [expiresField]: { $gt: new Date() } })
+      .select(`+${hashField} +${expiresField} ${extra}`.trim())
+      .exec();
+  }
+
+  update(id: string, set: Record<string, unknown>, unset: string[] = []) {
+    const update: Record<string, unknown> = { $set: set };
+    if (unset.length) update.$unset = Object.fromEntries(unset.map((k) => [k, 1]));
+    return this.userModel.updateOne({ _id: id }, update).exec();
+  }
+
+  findByIdWith(id: string, fields: string) {
+    return this.userModel.findById(id).select(fields).exec();
   }
 
   findByEmailWithPassword(email: string) {

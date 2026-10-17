@@ -7,6 +7,7 @@ import { AdminModule } from './admin/admin.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { MailModule } from './mail/mail.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { validateEnv } from './config/env.validation';
 import { FilesModule } from './files/files.module';
@@ -28,6 +29,7 @@ import { UsersModule } from './users/users.module';
       }),
     }),
     RealtimeModule,
+    MailModule,
     AuditModule,
     UsersModule,
     AuthModule,

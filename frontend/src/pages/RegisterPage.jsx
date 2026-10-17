@@ -4,6 +4,7 @@ import { AuthCard, Field, FormError, SubmitButton } from '../components/AuthCard
 import { useAuth } from '../context/auth-context';
 import { getErrorMessage } from '../lib/api';
 import { useI18n } from '../i18n/i18n-context';
+import { CheckEmail } from './AuthLinkPages';
 
 export default function RegisterPage() {
   const { t } = useI18n();
@@ -15,6 +16,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState('');
 
   if (isAuthenticated) return <Navigate to={from} replace />;
 
@@ -30,8 +32,9 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register({ name: form.name.trim(), email: form.email, password: form.password });
-      navigate(from, { replace: true });
+      const res = await register({ name: form.name.trim(), email: form.email, password: form.password });
+      if (res?.verifyRequired) setVerifyEmail(res.email);
+      else navigate(from, { replace: true });
     } catch (err) {
       setError(getErrorMessage(err, t('რეგისტრაცია ვერ მოხერხდა')));
     } finally {
@@ -52,6 +55,7 @@ export default function RegisterPage() {
         </>
       }
     >
+      {verifyEmail ? <CheckEmail email={verifyEmail} /> : (
       <form onSubmit={handleSubmit} noValidate>
         <FormError message={error} />
         <Field label={t('სახელი')} id="name" name="name" autoComplete="name"
@@ -64,6 +68,7 @@ export default function RegisterPage() {
           value={form.confirm} onChange={update} required />
         <SubmitButton loading={loading}>{t('რეგისტრაცია')}</SubmitButton>
       </form>
+      )}
     </AuthCard>
   );
 }

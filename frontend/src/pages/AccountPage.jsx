@@ -380,9 +380,9 @@ function SecurityTab() {
     setBusy(true);
     setError('');
     try {
-      await api.post('/api/me/password', { currentPassword: form.currentPassword, newPassword: form.newPassword });
+      const { data } = await api.post('/api/me/password', { currentPassword: form.currentPassword, newPassword: form.newPassword });
       setForm({ currentPassword: '', newPassword: '', repeat: '' });
-      toast(t('პაროლი შეიცვალა'));
+      toast(data?.pending ? t('დადასტურების ბმული გამოგზავნილია მეილზე — პაროლი ბმულის გახსნის შემდეგ შეიცვლება') : t('პაროლი შეიცვალა'));
     } catch (err) {
       setError(err?.response?.data?.code === 'WRONG_PASSWORD' ? t('მიმდინარე პაროლი არასწორია') : getErrorMessage(err, t('პაროლი ვერ შეიცვალა')));
     } finally {

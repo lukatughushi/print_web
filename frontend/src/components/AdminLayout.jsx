@@ -32,7 +32,7 @@ function PasswordDialog({ onClose }) {
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', repeat: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(''); // message once accepted
   const set = (k) => (e) => { setError(''); setForm((f) => ({ ...f, [k]: e.target.value })); };
 
   useEffect(() => {
@@ -47,8 +47,10 @@ function PasswordDialog({ onClose }) {
     if (form.newPassword !== form.repeat) return setError('პაროლები არ ემთხვევა');
     setBusy(true);
     try {
-      await api.post('/api/me/password', { currentPassword: form.currentPassword, newPassword: form.newPassword });
-      setDone(true);
+      const { data } = await api.post('/api/me/password', { currentPassword: form.currentPassword, newPassword: form.newPassword });
+      setDone(data?.pending
+        ? 'დადასტურების ბმული გამოგზავნილია შენს მეილზე. პაროლი შეიცვლება, როცა ბმულს გახსნი.'
+        : 'პაროლი შეიცვალა.');
     } catch (err) {
       setError(err?.response?.data?.code === 'WRONG_PASSWORD' ? 'მიმდინარე პაროლი არასწორია' : 'პაროლი ვერ შეიცვალა');
     } finally {
@@ -62,7 +64,7 @@ function PasswordDialog({ onClose }) {
         <h2 className={s.dialogTitle}>პაროლის შეცვლა</h2>
         {done ? (
           <>
-            <p className={s.dialogOk}>პაროლი შეიცვალა.</p>
+            <p className={s.dialogOk}>{done}</p>
             <div className={s.dialogActions}>
               <button type="button" className={s.dialogPrimary} onClick={onClose}>დახურვა</button>
             </div>

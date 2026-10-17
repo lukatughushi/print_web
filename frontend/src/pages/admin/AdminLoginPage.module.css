@@ -114,3 +114,14 @@
   font-size: 13px;
   text-align: center;
 }
+
+/* "Forgot password?" link under the form. */
+.forgot {
+  display: block;
+  margin-top: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: #6B7385;
+  text-decoration: none;
+}
+.forgot:hover { color: #16233B; }

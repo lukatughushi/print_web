@@ -13,6 +13,8 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { escapeHtml, newToken } from '../auth/auth.service';
+import { MailService } from '../mail/mail.service';
 import { InjectModel, MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Type } from 'class-transformer';
 import {
@@ -159,6 +161,7 @@ export class AccountService {
     @InjectModel(SavedDesign.name) private readonly designModel: Model<SavedDesign>,
     private readonly files: FilesService,
     private readonly users: UsersService,
+    private readonly mail: MailService,
   ) {}
 
   /* Profile */
@@ -178,8 +181,30 @@ export class AccountService {
       // 400, not 401: the client signs out on a 401 (expired session).
       throw new BadRequestException({ message: 'მიმდინარე პაროლი არასწორია', code: 'WRONG_PASSWORD' });
     }
-    await this.users.setPassword(user.id, dto.newPassword);
-    return { ok: true };
+    // With e-mail set up, the new password only takes effect once the link
+    // sent to the account's address is opened.
+    if (!this.mail.enabled) {
+      await this.users.setPassword(user.id, dto.newPassword);
+      return { ok: true };
+    }
+    const { token, hash } = newToken();
+    await this.users.update(user.id, {
+      pendingPassword: await this.users.hashPassword(dto.newPassword),
+      pendingPasswordTokenHash: hash,
+      pendingPasswordExpires: new Date(Date.now() + 60 * 60 * 1000),
+    });
+    const link = `${this.mail.appUrl}/confirm-password?token=${token}`;
+    await this.mail.send(
+      found.email,
+      'დაადასტურე პაროლის შეცვლა — Prenta',
+      this.mail.layout(
+        'პაროლის შეცვლა',
+        `გამარჯობა, ${escapeHtml(found.name)}! ახალი პაროლი ძალაში შევა, როცა ქვემოთ ღილაკს დააჭერ. ბმული 1 საათი მოქმედებს.`,
+        'პაროლის შეცვლის დადასტურება',
+        link,
+      ),
+    );
+    return { pending: true };
   }
 
   async setFavorites(userId: string, ids: string[]) {

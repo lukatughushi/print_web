@@ -27,6 +27,12 @@ services:
         sync: false
       - key: MAX_UPLOAD_MB
         value: "10"
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        value: Prenta <info@prenta.ge>
+      - key: APP_URL
+        value: https://www.prenta.ge
       - key: SEED_ADMIN_EMAIL
         sync: false
       - key: SEED_ADMIN_PASSWORD

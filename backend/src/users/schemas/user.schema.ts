@@ -6,6 +6,14 @@ export enum Role {
   Admin = 'admin',
 }
 
+// One-time e-mail links (stored as SHA-256 hashes) and a password waiting
+// for confirmation; never sent to the client.
+const SECRET_FIELDS = [
+  'verifyTokenHash', 'verifyTokenExpires', 'verifySentAt',
+  'resetTokenHash', 'resetTokenExpires',
+  'pendingPassword', 'pendingPasswordTokenHash', 'pendingPasswordExpires',
+];
+
 @Schema({
   timestamps: true,
   toJSON: {
@@ -13,6 +21,7 @@ export enum Role {
     transform: (_doc, ret: Record<string, any>) => {
       delete ret.password;
       delete ret.__v;
+      for (const key of SECRET_FIELDS) delete ret[key];
       return ret;
     },
   },
@@ -44,6 +53,23 @@ export class User {
   // Favourite product ids, synced from the browser when signed in.
   @Prop({ type: [String], default: [] })
   favorites: string[];
+
+  // false until the e-mail link is opened. Accounts made before e-mail
+  // checks existed have no value and count as verified.
+  @Prop()
+  emailVerified?: boolean;
+
+  @Prop({ select: false }) verifyTokenHash?: string;
+  @Prop({ select: false }) verifyTokenExpires?: Date;
+  @Prop({ select: false }) verifySentAt?: Date;
+
+  @Prop({ select: false }) resetTokenHash?: string;
+  @Prop({ select: false }) resetTokenExpires?: Date;
+
+  // New password (already hashed) applied when the e-mailed link is opened.
+  @Prop({ select: false }) pendingPassword?: string;
+  @Prop({ select: false }) pendingPasswordTokenHash?: string;
+  @Prop({ select: false }) pendingPasswordExpires?: Date;
 }
 
 export type UserDocument = HydratedDocument<User>;

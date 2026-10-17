@@ -51,10 +51,12 @@ export default function AuthProvider({ children }) {
     [startSession],
   );
 
+  // With e-mail checks on, the server asks to confirm the address first
+  // ({ verifyRequired, email }) instead of signing in.
   const register = useCallback(
     async ({ name, email, password }) => {
       const { data } = await api.post('/api/auth/register', { name, email, password });
-      return startSession(data);
+      return data.accessToken ? startSession(data) : data;
     },
     [startSession],
   );
@@ -74,10 +76,11 @@ export default function AuthProvider({ children }) {
       signedOut,
       login,
       register,
+      startSession,
       logout,
       refreshUser,
     }),
-    [user, status, signedOut, login, register, logout, refreshUser],
+    [user, status, signedOut, login, register, startSession, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

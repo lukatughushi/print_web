@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/auth-context';
 import { getErrorMessage } from '../../lib/api';
 import styles from './AdminLoginPage.module.css';
@@ -79,6 +79,7 @@ export default function AdminLoginPage() {
           </button>
 
           {error && <div className={styles.error}>{error}</div>}
+          <Link to="/forgot-password" className={styles.forgot}>დაგავიწყდა პაროლი?</Link>
         </form>
       </div>
     </div>
