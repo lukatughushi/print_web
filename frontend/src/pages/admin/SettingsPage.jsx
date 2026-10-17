@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import { getErrorMessage } from './adminShared';
+import { messengerLink } from '../../lib/messenger';
 import s from './Admin.module.css';
 
 const TEXT_FIELDS = [
@@ -188,7 +189,10 @@ export default function SettingsPage() {
           </div>
           <div className={s.field}>
             <label className={s.label} htmlFor="s-ms">Messenger (Facebook გვერდი)</label>
-            <input id="s-ms" className={s.input} value={form.chatMessenger || ''} onChange={set('chatMessenger')} placeholder="მაგ. prenta.ge ან facebook.com/prenta.ge" />
+            <input id="s-ms" className={s.input} value={form.chatMessenger || ''} onChange={set('chatMessenger')} placeholder="მაგ. facebook.com/prenta.ge" />
+            {form.chatMessenger && (messengerLink(form.chatMessenger)
+              ? <span className={s.hint}>ჩატი გაიხსნება: {messengerLink(form.chatMessenger)}</span>
+              : <span className={s.hint} style={{ color: '#B3263C' }}>ეს Facebook-ის გვერდის მისამართი არ არის — ჩასვი Facebook გვერდის ბმული (მაგ. facebook.com/prenta.ge)</span>)}
           </div>
         </div>
       </div>
