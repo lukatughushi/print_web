@@ -6,7 +6,7 @@ import ProductCard from '../components/ProductCard';
 import SiteFooter from '../components/SiteFooter';
 import s from './HomePage.module.css';
 
-import heroImg from '../assets/home/hero.webp';
+import HeroParticles from '../components/HeroParticles';
 import teeImg from '../assets/home/tee.webp';
 import hoodieImg from '../assets/home/hoodie.webp';
 import longsleeveImg from '../assets/home/longsleeve.webp';
@@ -136,11 +136,9 @@ export default function HomePage() {
               {t('ატვირთე სურათი, ლოგო ან ტექსტი — მიიღე უმაღლესი ხარისხის ბეჭდვითი მომსახურება „პრენტასგან“.')}
             </p>
             <div className={s.heroCtas}>
-              {settings.heroCtaText && (
-                <button type="button" className={`${s.btn} ${s.btnPink} ${s.btnLg}`} onClick={goDesign}>
-                  {st('heroCtaText')}
-                </button>
-              )}
+              <button type="button" className={`${s.btn} ${s.btnPink} ${s.btnLg}`} onClick={goDesign}>
+                {settings.heroCtaText ? st('heroCtaText') : t('შექმენი დიზაინი')}
+              </button>
               <Link to="/shop" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>{t('მზა პროდუქცია')}</Link>
             </div>
             <div className={s.proof}>
@@ -160,7 +158,7 @@ export default function HomePage() {
           </div>
           <div className={s.heroArt}>
             <div className={s.heroArtBox}>
-              <img className={s.heroImg} src={heroImg} alt={t('მაისურები')} fetchPriority="high" />
+              <HeroParticles className={s.heroParticles} label={t('მაისურები')} />
               <div className={`${s.chip} ${s.chipA}`}>
                 <span className={s.chipIcon}>✓</span>
                 <div><div className={s.chipTitle}>{t('მზადდება 2 სამუშაო დღეში')}</div><div className={s.chipSub}>{t('მიწოდება მესამე დღეს')}</div></div>

@@ -64,13 +64,15 @@
   position: relative;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 64px 20px 72px;
+  padding: 28px 20px 56px;
   display: grid;
   grid-template-columns: 1.05fr .95fr;
   gap: 32px;
   align-items: center;
 }
 .heroCopy {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -130,7 +132,7 @@
 .heroArtBox {
   position: relative;
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
 }
 .heroImg {
   display: block;
@@ -139,6 +141,18 @@
   object-fit: cover;
   -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
   mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+}
+/* Particle product models (HeroParticles): larger than the art box,
+   spilling evenly to both sides; the hero copy stays above it (see .heroCopy). */
+.heroParticles {
+  position: relative;
+  /* Wider than the art box so the wide products (long sleeve) fit as they turn. */
+  width: 140%;
+  /* Pulled up into the space above the model. */
+  margin: -6% -20% -2%;
+  aspect-ratio: 7 / 5;
+  cursor: crosshair;
+  touch-action: pan-y;
 }
 .chip {
   position: absolute;
@@ -495,9 +509,33 @@
 .final .btnNavy:hover { background: #0F1A2E; }
 
 /* ── Responsive ──────────────────────────────────────────── */
-@media (max-width: 899px) {
-  .heroInner { grid-template-columns: 1fr; padding: 40px 20px 36px; }
+/* Hero: roomier on wide screens; chips pulled in on narrower desktops;
+   one column (copy, then the animation) below 960px. */
+@media (min-width: 1280px) {
+  .heroInner { padding: 32px 32px 64px; gap: 48px; }
+}
+@media (max-width: 1100px) {
+  .heroInner { gap: 16px; }
+  .chipA { left: 0; }
+  .chipB { right: 0; }
+}
+@media (max-width: 959px) {
+  .heroInner { grid-template-columns: 1fr; padding: 36px 24px 24px; gap: 0; }
+  .heroText { max-width: 560px; }
+  .heroArtBox { max-width: 460px; }
+}
+@media (max-width: 599px) {
+  .heroInner { padding: 32px 16px 12px; }
+  .heroCopy { gap: 16px; }
+  .heroTitle { font-size: clamp(30px, 9.4vw, 42px); }
+  .heroCtas .btn { flex: 1 1 150px; justify-content: center; padding: 0 18px; }
+  .proof { margin-top: 0; }
   .heroArtBox { max-width: 380px; }
+  /* Small spill on phones; the hero clips it at the screen edge. */
+  .heroParticles { width: 124%; margin: 0 -12%; }
+}
+
+@media (max-width: 899px) {
   .section { padding-top: 56px; }
   .sectionEnd { padding-bottom: 64px; }
   .steps,
