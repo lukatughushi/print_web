@@ -341,7 +341,7 @@ function TabCard({ label, product, onSaved, addPaletteColor }) {
                 <ColorChip key={k} colorKey={k} onRemove={() => change({ colors: form.colors.filter((c) => c !== k) })} />
               ))}
               {form.colors.filter((k) => COLORS[k]).length === 0 && (
-                <span className={s.hint}>ფერი არ არის — კონსტრუქტორი სტანდარტულ ფერებს აჩვენებს.</span>
+                <span className={s.hint}>ფერი არ არის — კონსტრუქტორში მხოლოდ თეთრი გამოჩნდება.</span>
               )}
             </div>
             {freeColors.length > 0 && (

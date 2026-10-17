@@ -209,11 +209,15 @@ const SHIRT_COLORS = [
   { key: 'green', hex: '#228833', name: 'მწვანე' },
 ];
 
-// A garment colour by key: the editor's own shades first, then the shop
-// palette (including colours added in admin).
+// A garment colour by key, from the palette managed in admin (built-in and
+// added colours); the editor's legacy shades only for old saved designs.
 const colorInfo = (key) =>
+  (COLORS[key] ? { key, hex: COLORS[key].hex, name: COLORS[key].name } : null) ??
   SHIRT_COLORS.find((c) => c.key === key) ??
-  (COLORS[key] ? { key, hex: COLORS[key].hex, name: COLORS[key].name } : null);
+  null;
+
+// Shown when a product has no colours set in admin: plain white only.
+const NO_COLORS = [{ key: 'white', hex: COLORS.white.hex, name: COLORS.white.name }];
 
 const TEXT_COLORS = [
   '#ffffff',
@@ -1577,15 +1581,14 @@ export default function DesignPage() {
   const outOfStock =
     orderProduct?.inStock === false;
 
-  // Colours this product is offered in (set in admin); the editor's
-  // default palette when it has none. A colour the product doesn't offer
-  // falls back to its first one.
+  // Only the colours chosen for this product in admin (plain white when it
+  // has none). A colour the product doesn't offer falls back to its first.
   const productColors = (orderProduct?.colors ?? [])
     .map(colorInfo)
     .filter(Boolean);
   const colorOptions = productColors.length
     ? productColors
-    : SHIRT_COLORS;
+    : NO_COLORS;
   if (!colorOptions.some((c) => c.key === shirtColor)) {
     setShirtColor(colorOptions[0].key);
   }
