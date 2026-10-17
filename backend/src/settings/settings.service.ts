@@ -22,6 +22,33 @@ function cleanI18n(input: Record<string, Record<string, string>>) {
   return out;
 }
 
+/**
+ * Facebook "share" links (facebook.com/share/…) hide which page they point
+ * to, so the chat button can't build a Messenger link from them. Follow the
+ * redirect once and keep the page address it leads to (e.g.
+ * facebook.com/profile.php?id=…). Anything else is returned unchanged.
+ */
+async function resolveFacebookShare(value: string) {
+  const raw = value.trim();
+  if (!/^(https?:\/\/)?(www\.|m\.)?facebook\.com\/share\//i.test(raw)) return raw;
+  try {
+    const res = await fetch(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`, {
+      redirect: 'manual',
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(8000),
+    });
+    const location = res.headers.get('location');
+    if (!location) return raw;
+    const target = new URL(location, 'https://www.facebook.com');
+    const id = target.searchParams.get('id');
+    if (target.pathname === '/profile.php' && id) return `https://www.facebook.com/profile.php?id=${id}`;
+    if (/facebook\.com$/i.test(target.hostname) && target.pathname.length > 1) return `https://www.facebook.com${target.pathname}`;
+    return raw;
+  } catch {
+    return raw;
+  }
+}
+
 @Injectable()
 export class SettingsService {
   constructor(@InjectModel(Settings.name) private readonly settingsModel: Model<Settings>) {}
@@ -35,7 +62,8 @@ export class SettingsService {
 
   async update(dto: UpdateSettingsDto) {
     await this.get();
-    const patch = dto.i18n ? { ...dto, i18n: cleanI18n(dto.i18n) } : dto;
+    const patch: UpdateSettingsDto = dto.i18n ? { ...dto, i18n: cleanI18n(dto.i18n) } : { ...dto };
+    if (patch.chatMessenger) patch.chatMessenger = await resolveFacebookShare(patch.chatMessenger);
     return this.settingsModel.findOneAndUpdate({ key: 'site' }, patch, { new: true, runValidators: true }).exec();
   }
 
