@@ -8,6 +8,7 @@ import { API_URL } from '../lib/config';
 import { useAuth } from '../context/auth-context';
 import useToast from '../store/toastStore';
 import { COLORS, kidsSizesFor, priceOf } from '../lib/catalog';
+import { loadDraft, saveDraft } from '../lib/draftStore';
 import ShirtViewer3D from '../components/ShirtViewer3D';
 import { WEBGL_AVAILABLE } from '../lib/webgl';
 import {
@@ -2058,6 +2059,40 @@ export default function DesignPage() {
       setSelectedId(null);
     }
   };
+
+  /* ── Work in progress kept in the browser ───────────────── */
+
+  // Restores the last unfinished design (all products) once on opening,
+  // unless a saved design is being opened from the account (?design=).
+  const draftReady = useRef(false);
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const draft = designParam ? null : await loadDraft();
+      if (!live) return;
+      const tabs = draft?.designsByTab && typeof draft.designsByTab === 'object' ? draft.designsByTab : null;
+      if (tabs && Object.keys(tabs).length) {
+        // Anything the customer did meanwhile wins over the stored copy.
+        setDesignsByTab((all) => ({ ...tabs, ...all }));
+        setHistoryByTab((all) => ({
+          ...Object.fromEntries(Object.entries(tabs).map(([tab, d]) => [tab, { entries: [{ designs: d }], step: 0 }])),
+          ...all,
+        }));
+        if (draft.shirtColor) setShirtColor(draft.shirtColor);
+      }
+      draftReady.current = true;
+    })();
+    return () => { live = false; };
+    // Runs once, on opening the constructor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Saves the work in progress shortly after each change.
+  useEffect(() => {
+    if (!draftReady.current) return undefined;
+    const timer = setTimeout(() => saveDraft({ designsByTab, shirtColor }), 600);
+    return () => clearTimeout(timer);
+  }, [designsByTab, shirtColor]);
 
   /* ── Account: saved designs and image library ─────────── */
 
