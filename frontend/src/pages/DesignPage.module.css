@@ -298,6 +298,37 @@
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--navy);
 }
 
+/* "Other colour?" — opens the support chat menu. */
+.otherColor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1.5px dashed #E3DCD3;
+  border-radius: 14px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.otherColor:hover { border-color: #EF5F7A; background: #FFF6F7; }
+.otherColorIcon {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(#EF5F7A, #F5B544, #4CB782, #3E7BEF, #9B5DE5, #EF5F7A);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+}
+.otherColorTitle { display: block; font-size: 13px; font-weight: 700; color: var(--ink, #16233B); }
+.otherColorText { display: block; margin-top: 2px; font-size: 11.5px; line-height: 1.35; color: var(--muted); }
+
 .swatchName {
   max-width: 100%;
   font-size: 10.5px;

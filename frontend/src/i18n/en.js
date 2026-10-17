@@ -1,6 +1,9 @@
 // English translations. Keys are the Georgian source text (see i18n-context.js).
 export default {
   "მოგვწერე": "Message us",
+  "სხვა ფერი?": "Other colour?",
+  "სასურველი ფერი ვერ იპოვე? მოგვწერე": "Can't find your colour? Message us",
+  "სხვა ფერი გინდა? მოგვწერე": "Need another colour? Message us",
   "ანგარიში გათიშულია — დაგვიკავშირდი": "This account is deactivated — please contact us",
   "ძალიან ბევრი მცდელობა — სცადე 10 წუთში": "Too many attempts — try again in 10 minutes",
   "ელფოსტის დადასტურება": "Confirm your e-mail",

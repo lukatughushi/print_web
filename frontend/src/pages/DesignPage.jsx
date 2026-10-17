@@ -9,6 +9,7 @@ import { useAuth } from '../context/auth-context';
 import useToast from '../store/toastStore';
 import { COLORS, kidsSizesFor, priceOf } from '../lib/catalog';
 import { loadDraft, saveDraft } from '../lib/draftStore';
+import { chatChannels, openChat } from '../lib/chat';
 import ShirtViewer3D from '../components/ShirtViewer3D';
 import { WEBGL_AVAILABLE } from '../lib/webgl';
 import {
@@ -2121,6 +2122,14 @@ export default function DesignPage() {
     return () => clearTimeout(timer);
   }, [designsByTab, shirtColor, activeTab, side, size, quantity]);
 
+  // Support contacts, for the "other colour?" button in the colour panel.
+  const [hasChat, setHasChat] = useState(false);
+  useEffect(() => {
+    api.get('/api/settings')
+      .then((r) => setHasChat(chatChannels(r.data).length > 0))
+      .catch(() => {});
+  }, []);
+
   /* ── Account: saved designs and image library ─────────── */
 
   const tabLabel = (id) => CATEGORIES.find((c) => c.id === id)?.label ?? t('დიზაინი');
@@ -2681,6 +2690,20 @@ export default function DesignPage() {
                   </button>
                 ))}
               </div>
+
+              {hasChat && (
+                <button
+                  type="button"
+                  className={s.otherColor}
+                  onClick={(e) => { e.stopPropagation(); openChat(t('სხვა ფერი გინდა? მოგვწერე')); }}
+                >
+                  <span className={s.otherColorIcon} aria-hidden="true">+</span>
+                  <span>
+                    <span className={s.otherColorTitle}>{t('სხვა ფერი?')}</span>
+                    <span className={s.otherColorText}>{t('სასურველი ფერი ვერ იპოვე? მოგვწერე')}</span>
+                  </span>
+                </button>
+              )}
             </>
           )}
 

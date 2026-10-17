@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../lib/api';
-import { messengerLink } from '../lib/messenger';
+import { chatChannels, onOpenChat } from '../lib/chat';
 import { useI18n } from '../i18n/i18n-context';
 import s from './ChatButton.module.css';
-
-const digits = (v) => String(v || '').replace(/\D/g, '');
 
 const ICONS = {
   whatsapp: 'M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.7-.1l.9-1.1c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3z',
@@ -25,11 +23,15 @@ export default function ChatButton() {
   const { pathname } = useLocation();
   const [settings, setSettings] = useState(null);
   const [open, setOpen] = useState(false);
+  // Heading when opened from elsewhere (e.g. the constructor's colour panel).
+  const [title, setTitle] = useState('');
   const ref = useRef(null);
 
   useEffect(() => {
     api.get('/api/settings').then((r) => setSettings(r.data || {})).catch(() => {});
   }, []);
+
+  useEffect(() => onOpenChat((d) => { setTitle(d.title || ''); setOpen(true); }), []);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -45,18 +47,14 @@ export default function ChatButton() {
 
   if (!settings || pathname.startsWith('/admin')) return null;
 
-  const channels = [
-    digits(settings.chatWhatsapp) && { key: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/${digits(settings.chatWhatsapp)}` },
-    digits(settings.chatViber) && { key: 'viber', label: 'Viber', href: `viber://chat?number=%2B${digits(settings.chatViber)}` },
-    messengerLink(settings.chatMessenger) && { key: 'messenger', label: 'Messenger', href: messengerLink(settings.chatMessenger) },
-  ].filter(Boolean);
+  const channels = chatChannels(settings);
   if (!channels.length) return null;
 
   return (
     <div className={`${s.wrap} ${pathname.startsWith('/design') ? s.onDesign : ''}`} ref={ref}>
       {open && (
         <div className={s.menu} role="menu">
-          <div className={s.menuTitle}>{t('მოგვწერე')}</div>
+          <div className={s.menuTitle}>{title || t('მოგვწერე')}</div>
           {channels.map((c) => (
             <a key={c.key} role="menuitem" className={s.item} href={c.href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
               <span className={`${s.icon} ${s[c.key]}`}>
@@ -70,7 +68,7 @@ export default function ChatButton() {
       <button
         type="button"
         className={s.fab}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setTitle(''); setOpen((v) => !v); }}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={t('მოგვწერე')}
