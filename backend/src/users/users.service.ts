@@ -39,6 +39,11 @@ export class UsersService {
     return this.userModel.updateOne({ _id: id }, update).exec();
   }
 
+  /** Current role and status, checked on every signed-in request. */
+  findAuthInfo(id: string) {
+    return this.userModel.findById(id).select('email role disabled').lean().exec();
+  }
+
   findByIdWith(id: string, fields: string) {
     return this.userModel.findById(id).select(fields).exec();
   }

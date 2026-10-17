@@ -11,7 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { InjectModel, MongooseModule } from '@nestjs/mongoose';
-import { IsEnum } from 'class-validator';
+import { IsBoolean, IsEnum } from 'class-validator';
 import { isValidObjectId, Model } from 'mongoose';
 import type { AuthUser } from '../auth/strategies/jwt.strategy';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -24,6 +24,10 @@ import { Role, User, UserSchema } from '../users/schemas/user.schema';
 
 export class UpdateRoleDto {
   @IsEnum(Role) role: Role;
+}
+
+export class UpdateStatusDto {
+  @IsBoolean() disabled: boolean;
 }
 
 /** Orders that count towards revenue. */
@@ -177,6 +181,14 @@ export class AdminService {
     });
   }
 
+  /** Deactivates (or re-activates) an account; admins can't lock themselves out. */
+  async setStatus(id: string, disabled: boolean, actor: AuthUser) {
+    if (id === actor.id && disabled) throw new BadRequestException('საკუთარ ანგარიშს ვერ გათიშავ');
+    const user = isValidObjectId(id) ? await this.userModel.findByIdAndUpdate(id, { disabled }, { new: true }).exec() : null;
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
   async setRole(id: string, role: Role, actor: AuthUser) {
     if (id === actor.id && role !== Role.Admin) {
       throw new BadRequestException('საკუთარ თავს ადმინის როლს ვერ ჩამოართმევ');
@@ -216,6 +228,11 @@ export class AdminController {
     @Query('pageSize') pageSize?: string,
   ) {
     return this.admin.users({ q, role, page, pageSize });
+  }
+
+  @Patch('users/:id/status')
+  setStatus(@Param('id') id: string, @Body() dto: UpdateStatusDto, @CurrentUser() actor: AuthUser) {
+    return this.admin.setStatus(id, dto.disabled, actor);
   }
 
   @Patch('users/:id/role')

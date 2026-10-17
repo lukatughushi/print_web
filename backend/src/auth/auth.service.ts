@@ -54,6 +54,9 @@ export class AuthService {
     const user = await this.usersService.findByEmailWithPassword(dto.email);
     const valid = user && (await this.usersService.comparePassword(dto.password, user.password));
     if (!user || !valid) throw new UnauthorizedException('Invalid email or password');
+    if (user.disabled) {
+      throw new ForbiddenException({ message: 'ანგარიში გათიშულია — დაგვიკავშირდი', code: 'ACCOUNT_DISABLED' });
+    }
     if (user.emailVerified === false) {
       throw new ForbiddenException({
         message: 'ელფოსტა ჯერ არ არის დადასტურებული — გახსენი მეილზე გამოგზავნილი ბმული',
@@ -68,7 +71,11 @@ export class AuthService {
     const user = await this.usersService.findByToken('verifyTokenHash', 'verifyTokenExpires', hashToken(token));
     if (!user) throw new BadRequestException({ message: 'ბმული არასწორია ან ვადაგასულია', code: 'BAD_TOKEN' });
     await this.usersService.update(user.id, { emailVerified: true }, ['verifyTokenHash', 'verifyTokenExpires', 'verifySentAt']);
-    return this.buildAuthResponse(await this.usersService.findById(user.id));
+    const fresh = await this.usersService.findById(user.id);
+    if (fresh.disabled) {
+      throw new ForbiddenException({ message: 'ანგარიში გათიშულია — დაგვიკავშირდი', code: 'ACCOUNT_DISABLED' });
+    }
+    return this.buildAuthResponse(fresh);
   }
 
   /** Sends the confirmation link again (at most once a minute). */

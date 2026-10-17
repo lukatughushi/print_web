@@ -75,6 +75,9 @@ const MODEL_URLS = {
 //               print zone, for models whose print mesh has triangles
 //               missing. The print surface takes that mesh's shape and the
 //               artwork may fill all of it (no clean-rectangle clipping).
+//  fullPrint:  the print surface is used as shaped (no clean-rectangle
+//               clipping), e.g. the polo, whose zone has a notch for the
+//               button placket and is printable on both sides of it.
 //  fabricMaterial: name prefix (or list of prefixes) of the garment's fabric
 //               materials. When set,
 //               every other non-print part (e.g. a zipper) is hardware: it
@@ -96,10 +99,10 @@ const MODEL_OPTIONS = {
   // polo-print-zones.glb: front ~29x44 cm, back ~32x46 cm (close to the
   // editor's proportions). Collar (rib) and body (jersey) take the colour;
   // the buttons keep HARDWARE_COLOR.
-  polo: { rotationY: 0, printFit: 'stretch', flipV: true, fabricMaterial: ['rib', 'jersey'] },
+  polo: { rotationY: 0, printFit: 'stretch', flipV: true, fabricMaterial: ['rib', 'jersey'], fullPrint: true },
   // long-sleeve-polo-print.glb: same layout as the polo (flipped UVs);
   // pique body/sleeves and rib collar/cuffs take the colour, buttons don't.
-  polo_ls: { rotationY: 0, printFit: 'stretch', flipV: true, fabricMaterial: ['pique', 'rib'] },
+  polo_ls: { rotationY: 0, printFit: 'stretch', flipV: true, fabricMaterial: ['pique', 'rib'], fullPrint: true },
   // long-sleeve-tshirt-print.glb: same layout as polo_ls, without buttons.
   longsleeve: { rotationY: 0, printFit: 'stretch', flipV: true },
   // pillow-print.glb: ~33x49 cm front/back panels, flipped UVs.
@@ -403,6 +406,86 @@ function mergeSplitPrintPanels(root, baseName) {
   parent.add(mesh);
   a.removeFromParent();
   b.removeFromParent();
+}
+
+/**
+ * Drops print triangles that reuse texture already used elsewhere on the
+ * surface. Some models fold the cloth (e.g. the T-shirt's waist wrinkle) so
+ * two separate places share the same UV area; artwork there would show up
+ * twice, a stray piece on the side. Of each overlapping pair the triangle
+ * that faces the viewer less (the hidden fold) is removed.
+ */
+const FOLD_GRID = 128;
+function dropUvOverlaps(geometry, matrixWorld) {
+  const uv = geometry.attributes.uv;
+  const pos = geometry.attributes.position;
+  const index = geometry.index;
+  if (!uv || !pos || !index) return geometry;
+  const bounds = computeUvBounds(geometry);
+  if (!bounds) return geometry;
+  const spanU = bounds.maxU - bounds.minU || 1;
+  const spanV = bounds.maxV - bounds.minV || 1;
+
+  const triCount = index.count / 3;
+  const N = FOLD_GRID;
+  const cells = new Map();
+  const center = [];
+  const facing = [];
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  const n = new THREE.Vector3();
+  const size = new THREE.Box3().setFromBufferAttribute(pos).applyMatrix4(matrixWorld).getSize(new THREE.Vector3()).length();
+  const near = size * 0.06;
+
+  for (let t = 0; t < triCount; t++) {
+    const ids = [index.getX(t * 3), index.getX(t * 3 + 1), index.getX(t * 3 + 2)];
+    a.fromBufferAttribute(pos, ids[0]).applyMatrix4(matrixWorld);
+    b.fromBufferAttribute(pos, ids[1]).applyMatrix4(matrixWorld);
+    c.fromBufferAttribute(pos, ids[2]).applyMatrix4(matrixWorld);
+    center.push(a.clone().add(b).add(c).divideScalar(3));
+    n.subVectors(b, a).cross(c.clone().sub(a)).normalize();
+    facing.push(n.z);
+
+    const P = ids.map((i) => [((uv.getX(i) - bounds.minU) / spanU) * N, ((uv.getY(i) - bounds.minV) / spanV) * N]);
+    const area = (P[1][0] - P[0][0]) * (P[2][1] - P[0][1]) - (P[1][1] - P[0][1]) * (P[2][0] - P[0][0]);
+    if (Math.abs(area) < 1e-12) continue;
+    const x0 = Math.max(0, Math.floor(Math.min(P[0][0], P[1][0], P[2][0])));
+    const x1 = Math.min(N - 1, Math.ceil(Math.max(P[0][0], P[1][0], P[2][0])));
+    const y0 = Math.max(0, Math.floor(Math.min(P[0][1], P[1][1], P[2][1])));
+    const y1 = Math.min(N - 1, Math.ceil(Math.max(P[0][1], P[1][1], P[2][1])));
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const px = x + 0.5, py = y + 0.5;
+        const w0 = ((P[1][0] - px) * (P[2][1] - py) - (P[1][1] - py) * (P[2][0] - px)) / area;
+        const w1 = ((P[2][0] - px) * (P[0][1] - py) - (P[2][1] - py) * (P[0][0] - px)) / area;
+        if (w0 >= 0 && w1 >= 0 && 1 - w0 - w1 >= 0) {
+          const key = y * N + x;
+          if (!cells.has(key)) cells.set(key, []);
+          cells.get(key).push(t);
+        }
+      }
+    }
+  }
+
+  const drop = new Set();
+  cells.forEach((list) => {
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const ti = list[i], tj = list[j];
+        if (center[ti].distanceTo(center[tj]) > near) drop.add(facing[ti] < facing[tj] ? ti : tj);
+      }
+    }
+  });
+  if (!drop.size) return geometry;
+
+  const kept = [];
+  for (let t = 0; t < triCount; t++) {
+    if (!drop.has(t)) kept.push(index.getX(t * 3), index.getX(t * 3 + 1), index.getX(t * 3 + 2));
+  }
+  const out = geometry.clone();
+  out.setIndex(kept);
+  return out;
 }
 
 /** How the editor canvas maps onto one print surface (see MODEL_OPTIONS). */
@@ -800,7 +883,7 @@ function GarmentMesh({
   const { scene } = useGLTF(modelUrl);
 
   const options = MODEL_OPTIONS[productType] ?? {};
-  const { rotationY = 0, fabricMaterial, flipV = false, scale = 1, wrapPrint, wrapCenterU, wrapGapU, printZone = NO_ZONES } = options;
+  const { rotationY = 0, fabricMaterial, flipV = false, scale = 1, wrapPrint, wrapCenterU, wrapGapU, printZone = NO_ZONES, fullPrint = false } = options;
 
   const {
     model,
@@ -870,6 +953,13 @@ function GarmentMesh({
       });
     });
 
+    // Models printed as shaped skip the clean-rectangle clipping.
+    if (fullPrint) {
+      ['front', 'back'].forEach((side) => {
+        if (found[side].mesh) found[side].mesh.userData.fullPrint = true;
+      });
+    }
+
     // Incomplete print meshes take the shape of the model's whole print zone.
     ['front', 'back'].forEach((side) => {
       const mesh = found[side].mesh;
@@ -880,6 +970,7 @@ function GarmentMesh({
       mesh.geometry = zone.geometry.clone();
       // Usually both sit on the same node transform (nothing to convert).
       if (!toMesh.equals(new THREE.Matrix4())) mesh.geometry.applyMatrix4(toMesh);
+      mesh.geometry = dropUvOverlaps(mesh.geometry, mesh.matrixWorld);
       mesh.userData.fullPrint = true;
       found[side].uvBounds = computeUvBounds(mesh.geometry) || found[side].uvBounds;
     });
@@ -915,7 +1006,7 @@ function GarmentMesh({
       modelSize: size,
       wrapDiameter,
     };
-  }, [scene, flipV, wrapPrint, wrapCenterU, wrapGapU, printZone]);
+  }, [scene, flipV, wrapPrint, wrapCenterU, wrapGapU, printZone, fullPrint]);
 
   // Scale that fits the model (as turned by rotationY) into the viewer.
   const viewSize = useThree((state) => state.size);

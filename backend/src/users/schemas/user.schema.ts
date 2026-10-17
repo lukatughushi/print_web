@@ -59,6 +59,11 @@ export class User {
   @Prop()
   emailVerified?: boolean;
 
+  // Switched on in admin to block the account: no sign-in, and any open
+  // session stops working on its next request.
+  @Prop({ default: false })
+  disabled: boolean;
+
   @Prop({ select: false }) verifyTokenHash?: string;
   @Prop({ select: false }) verifyTokenExpires?: Date;
   @Prop({ select: false }) verifySentAt?: Date;
