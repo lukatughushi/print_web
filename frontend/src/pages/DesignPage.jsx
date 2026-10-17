@@ -1590,7 +1590,7 @@ export default function DesignPage() {
   const colorOptions = productColors.length
     ? productColors
     : NO_COLORS;
-  if (!colorOptions.some((c) => c.key === shirtColor)) {
+  if (!loading && orderProduct && !colorOptions.some((c) => c.key === shirtColor)) {
     setShirtColor(colorOptions[0].key);
   }
 
@@ -2064,7 +2064,10 @@ export default function DesignPage() {
 
   // Restores the last unfinished design (all products) once on opening,
   // unless a saved design is being opened from the account (?design=).
+  // Product tab, side, size and quantity follow once products are loaded.
   const draftReady = useRef(false);
+  const pendingDraft = useRef(null);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   useEffect(() => {
     let live = true;
     (async () => {
@@ -2079,20 +2082,44 @@ export default function DesignPage() {
           ...all,
         }));
         if (draft.shirtColor) setShirtColor(draft.shirtColor);
+        pendingDraft.current = draft;
       }
       draftReady.current = true;
+      setDraftLoaded(true);
     })();
     return () => { live = false; };
     // Runs once, on opening the constructor.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const draft = pendingDraft.current;
+    if (!draftLoaded || loading || !draft) return;
+    pendingDraft.current = null;
+    // A plain "open the constructor" link (/design/start) resumes the
+    // product the customer was on; a specific product link keeps its own.
+    const tab = CATEGORIES.some((c) => c.id === draft.activeTab) ? draft.activeTab : null;
+    const resumeTab = productId === 'start' && tab;
+    if (resumeTab && tab !== activeTab) switchTab(tab);
+    if (resumeTab || tab === activeTab) {
+      const cat = CATEGORIES.find((c) => c.id === tab);
+      if (draft.side === 'back' && cat?.hasBack) setSide('back');
+      if (draft.size) setSize(draft.size);
+      if (draft.quantity > 0) setQuantity(draft.quantity);
+    }
+    // Runs once the draft and the products are both loaded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftLoaded, loading]);
+
   // Saves the work in progress shortly after each change.
   useEffect(() => {
     if (!draftReady.current) return undefined;
-    const timer = setTimeout(() => saveDraft({ designsByTab, shirtColor }), 600);
+    const timer = setTimeout(
+      () => saveDraft({ designsByTab, shirtColor, activeTab, side, size, quantity }),
+      600,
+    );
     return () => clearTimeout(timer);
-  }, [designsByTab, shirtColor]);
+  }, [designsByTab, shirtColor, activeTab, side, size, quantity]);
 
   /* ── Account: saved designs and image library ─────────── */
 

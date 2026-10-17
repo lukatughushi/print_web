@@ -1,11 +1,8 @@
-import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
 import useFavStore from '../store/favStore';
 import { useAuth } from '../context/auth-context';
 import UserMenu from './UserMenu';
-import api from '../lib/api';
-import { starterProduct } from '../lib/catalog';
 import logo from '../assets/prenta/logo_prenta.webp';
 import s from './Navbar.module.css';
 import { useI18n } from '../i18n/i18n-context';
@@ -18,14 +15,8 @@ export default function Navbar() {
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuth();
 
-  // "კონსტრუქტორი" opens a t-shirt (or the first product) in the constructor.
-  const [firstProductId, setFirstProductId] = useState(null);
-  useEffect(() => {
-    api.get('/api/products')
-      .then((r) => setFirstProductId(starterProduct(r.data)?.id ?? null))
-      .catch(() => {});
-  }, []);
-  const studioPath = firstProductId ? `/design/${firstProductId}` : '/design/start';
+  // "კონსტრუქტორი" resumes the customer's unfinished design (see DesignPage).
+  const studioPath = '/design/start';
   const studioActive = pathname.startsWith('/design');
   const shopActive = pathname.startsWith('/shop') || pathname.startsWith('/product');
 

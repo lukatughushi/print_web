@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import useCartStore from '../store/cartStore';
-import { COLORS, money, shippingFor, starterProduct } from '../lib/catalog';
+import { COLORS, money, shippingFor } from '../lib/catalog';
 import { ProductImage } from '../components/ProductCard';
 import s from './storefront.module.css';
 import { useI18n } from '../i18n/i18n-context';
@@ -28,7 +28,7 @@ export default function CartPage() {
   const navigate = useNavigate();
   const { items, removeItem, setQty } = useCartStore();
   const [settings, setSettings] = useState({ currency: '₾', freeShipThreshold: 150 });
-  const [studioPath, setStudioPath] = useState('/design/start');
+  const studioPath = '/design/start';
   const [productsById, setProductsById] = useState({});
 
   useEffect(() => {
@@ -36,8 +36,6 @@ export default function CartPage() {
     api.get('/api/products')
       .then((r) => {
         if (!Array.isArray(r.data)) return;
-        const starter = starterProduct(r.data);
-        if (starter) setStudioPath(`/design/${starter.id}`);
         setProductsById(Object.fromEntries(r.data.map((p) => [p.id, p])));
       })
       .catch(() => {});

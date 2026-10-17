@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import { isOnSale, priceOf, starterProduct } from '../lib/catalog';
+import { isOnSale, priceOf } from '../lib/catalog';
 import ProductCard from '../components/ProductCard';
 import SiteFooter from '../components/SiteFooter';
 import s from './HomePage.module.css';
@@ -89,8 +89,7 @@ export default function HomePage() {
     api.get('/api/products').then((r) => setProducts(Array.isArray(r.data) ? r.data : [])).catch(() => {});
   }, []);
 
-  const firstProductId = starterProduct(products)?.id;
-  const designLink = settings.heroCtaLink || (firstProductId ? `/design/${firstProductId}` : '/design/start');
+  const designLink = settings.heroCtaLink || '/design/start';
   const goDesign = () => navigate(designLink.startsWith('/') ? designLink : '/shop');
 
   // Lowest price per category, for the category cards.

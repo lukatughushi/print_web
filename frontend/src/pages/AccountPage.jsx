@@ -238,7 +238,7 @@ function DesignsTab({ designs, setDesigns, products }) {
     <div className={s.stack}>
       <div className={s.tabHead}>
         <p className={s.muted}>{t('კონსტრუქტორში „შენახვა“ დააჭირე — დიზაინი აქ გამოჩნდება და შემდეგ შეკვეთაში შაბლონად გამოიყენებ.')}</p>
-        {<Link to={`/design/${firstProductId ?? 'start'}`} className={s.btnPrimary}>{t('ახალი დიზაინი +')}</Link>}
+        {<Link to="/design/start" className={s.btnPrimary}>{t('ახალი დიზაინი +')}</Link>}
       </div>
       {error && <div className={s.error}>{error}</div>}
       {!designs.length ? (
