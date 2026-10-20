@@ -3057,7 +3057,7 @@ export default function DesignPage() {
 
           {layerList.length === 0 ? (
             <div className={s.layersEmpty}>
-              {t('ჯერ ობიექტები არ არის — დაამატეთ ტექსტი ან სურათი')}
+              {t('ჯერ ობიექტები არ არის, დაამატეთ ტექსტი ან სურათი')}
             </div>
           ) : (
             <div className={s.layerList}>

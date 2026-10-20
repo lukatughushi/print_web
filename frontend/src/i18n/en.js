@@ -479,7 +479,7 @@ export default {
   "ხშირად დასმული კითხვები": "FAQ",
   "ჯამი": "Total",
   "ჯერ დაამატე სურათი ან ტექსტი": "Add an image or text first",
-  "ჯერ ობიექტები არ არის — დაამატეთ ტექსტი ან სურათი": "No objects yet — add text or an image",
+  "ჯერ ობიექტები არ არის, დაამატეთ ტექსტი ან სურათი": "No objects yet, add text or an image",
   "ჰუდები და ბომბერები": "Hoodies and bombers",
   "ჰუდები ელვით": "Zip hoodies",
   "ჰუდები ჯიბით": "Pocket hoodies",
