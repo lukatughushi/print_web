@@ -554,6 +554,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chip,
-  .tickerTrack { animation: none; }
+  .chip { animation: none; }
 }
