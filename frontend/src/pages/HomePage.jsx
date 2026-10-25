@@ -6,7 +6,7 @@ import ProductCard from '../components/ProductCard';
 import SiteFooter from '../components/SiteFooter';
 import s from './HomePage.module.css';
 
-import HeroParticles from '../components/HeroParticles';
+import HeroRack from '../components/HeroRack';
 import teeImg from '../assets/home/tee.webp';
 import hoodieImg from '../assets/home/hoodie.webp';
 import longsleeveImg from '../assets/home/longsleeve.webp';
@@ -135,6 +135,9 @@ export default function HomePage() {
             <p className={s.heroText}>
               {t('ატვირთე სურათი, ლოგო ან ტექსტი — მიიღე უმაღლესი ხარისხის ბეჭდვითი მომსახურება „პრენტასგან“.')}
             </p>
+          </div>
+          <HeroRack className={s.heroRack} label={t('მაისურები')} />
+          <div className={s.heroFoot}>
             <div className={s.heroCtas}>
               <button type="button" className={`${s.btn} ${s.btnPink} ${s.btnLg}`} onClick={goDesign}>
                 {settings.heroCtaText ? st('heroCtaText') : t('შექმენი დიზაინი')}
@@ -155,11 +158,8 @@ export default function HomePage() {
                 <span className={s.stars}>★★★★★</span> {t('4.9 შეფასება')}
               </div>
             </div>
-          </div>
-          <div className={s.heroArt}>
-            <div className={s.heroArtBox}>
-              <HeroParticles className={s.heroParticles} label={t('მაისურები')} />
-              <div className={`${s.chip} ${s.chipA}`}>
+            <div className={s.heroChips}>
+              <div className={s.chip}>
                 <span className={s.chipIcon}>✓</span>
                 <div><div className={s.chipTitle}>{t('მზადდება 2 სამუშაო დღეში')}</div><div className={s.chipSub}>{t('მიწოდება მესამე დღეს')}</div></div>
               </div>

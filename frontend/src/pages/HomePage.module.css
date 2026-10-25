@@ -60,29 +60,30 @@
     radial-gradient(55% 75% at 92% 10%, rgba(239, 95, 122, .30), transparent 60%),
     radial-gradient(40% 60% at 0% 100%, rgba(60, 170, 170, .16), transparent 60%);
 }
+/* One centred column: heading and text, the rack across the full width,
+   then the buttons. */
 .heroInner {
   position: relative;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 28px 20px 56px;
-  display: grid;
-  grid-template-columns: 1.05fr .95fr;
-  gap: 32px;
-  align-items: center;
-}
-.heroCopy {
-  position: relative;
-  z-index: 2;
+  padding: 40px 20px 48px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  align-items: center;
+  text-align: center;
+}
+.heroCopy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
   min-width: 0;
 }
 .heroTitle {
   margin: 0;
   font-family: var(--serif);
   font-weight: 800;
-  font-size: clamp(36px, 5.6vw, 72px);
+  font-size: clamp(34px, 4.6vw, 60px);
   line-height: 1.04;
   letter-spacing: -.01em;
   text-wrap: balance;
@@ -93,19 +94,20 @@
   font-size: clamp(15px, 1.3vw, 17px);
   line-height: 1.65;
   color: #D6DBE6;
-  max-width: 500px;
+  max-width: 620px;
   text-wrap: pretty;
 }
 .heroCtas {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
 }
 .proof {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-top: 6px;
+  text-align: left;
 }
 .avatars { display: flex; }
 .avatars img {
@@ -124,39 +126,32 @@
 .proofText b { color: #fff; }
 .stars { color: #F3C36B; }
 
-.heroArt {
+/* Clothing rack (HeroRack) across the full width. */
+.heroRack {
+  width: 100%;
+  aspect-ratio: 4 / 1;
+  margin: 12px 0 20px;
+}
+.heroFoot {
   position: relative;
+  width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
 }
-.heroArtBox {
-  position: relative;
-  width: 100%;
-  max-width: 560px;
-}
-.heroImg {
-  display: block;
-  width: 100%;
-  aspect-ratio: 780 / 660;
-  object-fit: cover;
-  -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
-  mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
-}
-/* Particle product models (HeroParticles): larger than the art box,
-   spilling evenly to both sides; the hero copy stays above it (see .heroCopy). */
-.heroParticles {
-  position: relative;
-  /* Wider than the art box so the wide products (long sleeve) fit as they turn. */
-  width: 140%;
-  /* Pulled up into the space above the model. */
-  margin: -6% -20% -2%;
-  aspect-ratio: 7 / 5;
-  cursor: crosshair;
-  touch-action: pan-y;
+/* Chips at the far left and right of the button row. */
+.heroChips {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
 }
 .chip {
-  position: absolute;
   display: flex;
+  text-align: left;
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
@@ -166,8 +161,7 @@
   box-shadow: 0 14px 30px -12px rgba(0, 0, 0, .4);
   animation: floaty 5s ease-in-out infinite;
 }
-.chipA { left: -4%; top: 16%; }
-.chipB { right: -2%; bottom: 14%; animation-delay: 1.6s; }
+.chipB { animation-delay: 1.6s; }
 .chipIcon {
   width: 34px;
   height: 34px;
@@ -509,30 +503,22 @@
 .final .btnNavy:hover { background: #0F1A2E; }
 
 /* ── Responsive ──────────────────────────────────────────── */
-/* Hero: roomier on wide screens; chips pulled in on narrower desktops;
-   one column (copy, then the animation) below 960px. */
+/* Hero: the rack gets taller as the screen narrows; below 1100px the chips
+   leave the button row and sit in a row under it. */
 @media (min-width: 1280px) {
-  .heroInner { padding: 32px 32px 64px; gap: 48px; }
+  .heroInner { padding: 44px 32px 56px; }
 }
-@media (max-width: 1100px) {
-  .heroInner { gap: 16px; }
-  .chipA { left: 0; }
-  .chipB { right: 0; }
-}
-@media (max-width: 959px) {
-  .heroInner { grid-template-columns: 1fr; padding: 36px 24px 24px; gap: 0; }
-  .heroText { max-width: 560px; }
-  .heroArtBox { max-width: 460px; }
+@media (max-width: 1099px) {
+  .heroRack { aspect-ratio: 5 / 2; }
+  .heroChips { position: static; justify-content: center; flex-wrap: wrap; gap: 10px; }
 }
 @media (max-width: 599px) {
-  .heroInner { padding: 32px 16px 12px; }
-  .heroCopy { gap: 16px; }
+  .heroInner { padding: 28px 16px 32px; }
   .heroTitle { font-size: clamp(30px, 9.4vw, 42px); }
+  .heroRack { aspect-ratio: 4 / 3; margin: 0; }
+  .heroFoot { gap: 14px; }
+  .heroCtas { width: 100%; }
   .heroCtas .btn { flex: 1 1 150px; justify-content: center; padding: 0 18px; }
-  .proof { margin-top: 0; }
-  .heroArtBox { max-width: 380px; }
-  /* Small spill on phones; the hero clips it at the screen edge. */
-  .heroParticles { width: 124%; margin: 0 -12%; }
 }
 
 @media (max-width: 899px) {
