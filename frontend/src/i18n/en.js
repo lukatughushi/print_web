@@ -491,4 +491,5 @@ export default {
   "← მაღაზიაში დაბრუნება": "← Back to the shop",
   "★ 2 400+ დაბეჭდილი შეკვეთა · ბეჭდვა 3 დღეში · მიწოდება მთელ საქართველოში": "★ 2,400+ orders printed · printed in 3 days · delivery across Georgia",
   "✓ დამატებულია": "✓ Added",
+  "უკვე მოდის": "It's coming",
 };
