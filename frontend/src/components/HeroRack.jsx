@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useI18n } from '../i18n/i18n-context';
 import s from './HeroRack.module.css';
 
 // Garments on the rack, left to right (from the design).
@@ -7,13 +8,16 @@ const RACK = [
   ['hoodie-zip', '#2f5d43'], ['tshirt', '#f2f0ec'], ['polo-ls', '#26272b'], ['hoodie', '#b4b6ba'],
   ['longsleeve', '#2f5d43'], ['polo', '#26344f'],
 ];
-const WORD = "It's coming";
 
 /**
  * Home hero art: the clothing rack (lib/rackHero), with an "It's coming…"
  * loader until the garments slide in. three.js loads after the page paints.
  */
 export default function HeroRack({ className, label }) {
+  const { t } = useI18n();
+  // Loader text: the first word white, the rest pink.
+  const word = t('უკვე მოდის');
+  const accentFrom = word.indexOf(' ') + 1;
   const ref = useRef(null);
   const [progress, setProgress] = useState(0);
   const [entering, setEntering] = useState(false);
@@ -57,10 +61,10 @@ export default function HeroRack({ className, label }) {
       {!loaded && (
         <div className={`${s.loader} ${entering ? s.loaderOut : ''}`} aria-hidden="true">
           <div className={s.word}>
-            {[...WORD].map((ch, i) => (
+            {[...word].map((ch, i) => (
               <span
                 key={i}
-                className={`${s.ch} ${i >= 5 ? s.pink : ''}`}
+                className={`${s.ch} ${accentFrom && i >= accentFrom ? s.pink : ''}`}
                 style={{ animationDelay: `${i * 0.05}s, ${0.8 + i * 0.08}s` }}
               >
                 {ch}

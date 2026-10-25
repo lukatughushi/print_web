@@ -262,9 +262,17 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
     const h = ray.intersectObjects(slots.filter((s) => s.model).map((s) => s.hit))[0];
     return h ? h.object.userData.i : -1;
   };
+  // Touch has no "leave": a tap turns a garment, a second tap (or 3 s) turns it back.
+  let touchTimer = 0;
   const pm = (e) => { if (e.pointerType !== 'touch') hover = pick(e); };
-  const pl = () => { hover = -1; };
-  const pd = (e) => { if (e.pointerType === 'touch') hover = pick(e); };
+  const pl = (e) => { if (e.pointerType !== 'touch') hover = -1; };
+  const pd = (e) => {
+    if (e.pointerType !== 'touch') return;
+    const i = pick(e);
+    hover = i === hover ? -1 : i;
+    clearTimeout(touchTimer);
+    if (hover >= 0) touchTimer = setTimeout(() => { hover = -1; }, 3000);
+  };
   r.domElement.addEventListener('pointermove', pm);
   r.domElement.addEventListener('pointerleave', pl);
   r.domElement.addEventListener('pointerdown', pd);
@@ -369,6 +377,7 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
 
   return () => {
     dead = true;
+    clearTimeout(touchTimer);
     cancelAnimationFrame(raf);
     ro.disconnect();
     io.disconnect();
