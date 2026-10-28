@@ -12,6 +12,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
 import CorporatePage from './pages/CorporatePage';
+import AboutPage from './pages/AboutPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -84,6 +85,7 @@ function AppContent() {
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/corporate" element={<CorporatePage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         {/* Design editor — existing Fabric.js page, do not replace */}
         <Route path="/design/:productId" element={<DesignPage />} />

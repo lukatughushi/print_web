@@ -45,7 +45,12 @@ export default function Navbar() {
           <Link to={studioPath} className={`${s.link} ${studioActive ? s.linkActive : ''}`}>
             {t('კონსტრუქტორი')}
           </Link>
-          <NavLink to="/corporate" className={({ isActive }) => `${s.link} ${isActive ? s.linkActive : ''}`}>B2B</NavLink>
+          <NavLink to="/corporate" className={({ isActive }) => `${s.link} ${isActive ? s.linkActive : ''}`}>
+            {t('ბიზნესისთვის')}
+          </NavLink>
+          <NavLink to="/about" className={({ isActive }) => `${s.link} ${s.linkAbout} ${isActive ? s.linkActive : ''}`}>
+            {t('ჩვენს შესახებ')}
+          </NavLink>
         </nav>
 
         {/* ── Cart ──────────────────────────────────────────── */}

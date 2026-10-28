@@ -33,6 +33,7 @@ export default function SiteFooter({ settings = {} }) {
         </div>
         <div className={s.col}>
           <span className={s.colTitle}>{t('სერვისი')}</span>
+          <Link to="/about">{t('ჩვენს შესახებ')}</Link>
           <Link to="/shop">{t('მაღაზია')}</Link>
           <Link to="/corporate">{t('კორპორატიული შეკვეთები')}</Link>
           <span>{t('DTF ბეჭდვა')}</span>
@@ -40,7 +41,8 @@ export default function SiteFooter({ settings = {} }) {
         <div className={s.col}>
           <span className={s.colTitle}>{t('დახმარება')}</span>
           <span>{t('მიწოდება და ვადები')}</span>
-          <span>{t('დაბრუნება')}</span>
+          <Link to="/about#returns">{t('დაბრუნება')}</Link>
+          <Link to="/about#privacy">{t('კონფიდენციალურობა')}</Link>
           <span>{t('ხშირად დასმული კითხვები')}</span>
         </div>
       </div>
