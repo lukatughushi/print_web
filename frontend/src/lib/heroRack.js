@@ -52,7 +52,7 @@ function shuffled(list) {
 }
 
 /**
- * The rack for this visit. Garments with a design (admin Hero_spatial page)
+ * The rack for this visit. Garments with a design (admin Hero_Special page)
  * keep their chosen colour; the others share out the remaining colours.
  */
 export function rackItems(designs = []) {

@@ -76,7 +76,7 @@ export class Settings {
   customColors: { key: string; name: string; hex: string }[];
 
   /**
-   * Designs on the home hero's rack garments (admin Hero_spatial page).
+   * Designs on the home hero's rack garments (admin Hero_Special page).
    * x, y: the design's centre in the print zone (0–1 from its top left);
    * scale: its width as a share of the zone's; hex: the garment's colour.
    */

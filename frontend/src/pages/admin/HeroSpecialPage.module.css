@@ -1,4 +1,4 @@
-/* Admin Hero_spatial page: one card per rack garment. */
+/* Admin Hero_Special page: one card per rack garment. */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
 .slot { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
 .slotHead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }

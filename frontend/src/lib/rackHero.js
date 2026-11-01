@@ -224,14 +224,13 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
   // model (some are flipped), so the zone is mapped from its shape, seen from
   // the front. The canvas holds the garment colour and the image.
   const applyDesign = (s, wrap) => {
-    const zones = [];
-    wrap.traverse((o) => {
-      if (!o.isMesh || !/print/i.test(o.name) || !/front/i.test(o.name)) return;
-      // The T-shirt has a fabric patch at its zone: eased back so it backs the
-      // print (and its small gaps) without poking through.
-      if (/fabric/i.test(o.name)) o.position.z -= 0.006;
-      else zones.push(o);
-    });
+    const all = [];
+    wrap.traverse((o) => { if (o.isMesh && /print/i.test(o.name) && /front/i.test(o.name)) all.push(o); });
+    // The T-shirt's front_print has ragged edges and holes; front_print_fabric is
+    // the same zone, complete, so that one carries the design (as in the constructor).
+    const whole = all.filter((o) => /fabric/i.test(o.name));
+    const zones = whole.length ? whole : all;
+    if (whole.length) all.filter((o) => !whole.includes(o)).forEach((o) => { o.visible = false; });
     if (!zones.length || !s.img) return;
     wrap.updateMatrixWorld(true);
     const box = new T.Box3();

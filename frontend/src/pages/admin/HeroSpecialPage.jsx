@@ -4,7 +4,7 @@ import { assetUrl } from '../../lib/catalog';
 import { COLOURS, RACK } from '../../lib/heroRack';
 import { getErrorMessage, uploadImage } from './adminShared';
 import s from './Admin.module.css';
-import h from './HeroSpatialPage.module.css';
+import h from './HeroSpecialPage.module.css';
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const NEW_DESIGN = { x: 0.5, y: 0.3, scale: 0.6 };
@@ -122,7 +122,7 @@ function SlotCard({ index, garment, design, onChange, onError }) {
 }
 
 /** Designs on the home hero's rack garments: image, place, size and colour. */
-export default function HeroSpatialPage() {
+export default function HeroSpecialPage() {
   const [designs, setDesigns] = useState(null);
   const [saved, setSaved] = useState('');
   const [busy, setBusy] = useState(false);
@@ -177,7 +177,7 @@ export default function HeroSpatialPage() {
     <div className={s.page}>
       <div className={s.head}>
         <div>
-          <h1 className={s.title}>Hero_spatial</h1>
+          <h1 className={s.title}>Hero_Special</h1>
           <p className={s.sub}>მთავარი გვერდის საკიდის დიზაინები. ატვირთე სურათი და ჩაავლე მას, რომ სასურველ ადგილას დასვა. ფრონტზე დიზაინი ჩანს, როცა ნივთი მაუსით ან შეხებით შემობრუნდება.</p>
         </div>
       </div>
