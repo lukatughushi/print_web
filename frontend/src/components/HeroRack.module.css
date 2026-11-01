@@ -13,6 +13,8 @@
   justify-content: center;
   gap: 18px;
   pointer-events: none;
+  /* Own compositor layers: these keep moving while the 3D work blocks the page. */
+  will-change: opacity, transform;
   transition: opacity .6s ease, transform .6s ease;
 }
 .loaderOut { opacity: 0; transform: translateY(-14px) scale(.98); }
@@ -31,6 +33,7 @@
 .ch {
   display: inline-block;
   white-space: pre;
+  will-change: transform;
   animation: chUp .7s cubic-bezier(.2, .8, .2, 1) both, chWave 2.4s ease-in-out infinite;
 }
 .pink { color: #EF5F7A; }

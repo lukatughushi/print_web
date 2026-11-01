@@ -292,6 +292,18 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
   r.domElement.addEventListener('pointerleave', pl);
   r.domElement.addEventListener('pointerdown', pd);
 
+  // The first draw of a garment compiles shaders and uploads its mesh, which
+  // stalls the page. Doing it here, drawn into a single pixel, keeps that stall
+  // before the loader leaves, so its exit and the slide-in both stay smooth.
+  const warmUp = () => {
+    slots.forEach((s) => { s.g.position.x = 0; s.g.visible = !!s.model; });
+    r.setScissorTest(true);
+    r.setScissor(0, 0, 1, 1);
+    r.render(scene, cam);
+    r.setScissorTest(false);
+    slots.forEach((s) => { s.g.visible = false; });
+  };
+
   let raf = 0, visible = true, clock = 0, prev = performance.now(), enterT = -1, started = false, errored = false;
   let camX = 0, panPhase = 0;
   const step = () => {
@@ -326,7 +338,7 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
 
     if (!started) { slots.forEach((s) => { s.x = -visW / 2 - 1.2; }); started = true; }
     const allIn = slots.every((s) => s.model);
-    if (enterT < 0 && ((allIn && t > minWait) || t > 9)) { enterT = t + 0.5; onEnter(); }
+    if (enterT < 0 && ((allIn && t > minWait) || t > 9)) { warmUp(); enterT = t + 0.5; onEnter(); }
 
     // Slow pan along a rack wider than the view; holds while a garment is hovered.
     if (pan > 0 && enterT >= 0 && t > enterT + STAGGER * n + 2 && hover < 0) panPhase += dt * Math.max(0.05, 0.3 / pan);
