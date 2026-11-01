@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { PRINT_PAGES } from '../lib/printPages';
 
 const SITE = 'https://www.prenta.ge';
 
@@ -40,7 +41,9 @@ export default function PageMeta() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    const meta = PAGES[pathname] ?? (pathname.startsWith('/design') ? DESIGN : HOME);
+    const meta = PAGES[pathname]
+      ?? PRINT_PAGES.find((p) => p.path === pathname)
+      ?? (pathname.startsWith('/design') ? DESIGN : HOME);
     const url = SITE + (pathname.startsWith('/design') ? '/design/start' : pathname);
     document.title = meta.title;
     setTag('meta[name="description"]', 'content', meta.description);

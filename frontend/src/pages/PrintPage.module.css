@@ -1,0 +1,87 @@
+/* Search landing pages. Colours and type follow AboutPage. */
+.page { background: #F9F6F3; color: #16233B; }
+
+.btnPink,
+.btnLine {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14.5px;
+  text-decoration: none;
+  transition: background .18s, color .18s;
+}
+.btnPink { background: #EF5F7A; color: #fff; }
+.btnPink:hover { background: #E24D69; color: #fff; }
+.btnLine { border: 1px solid rgba(255, 255, 255, .35); color: #fff; }
+.btnLine:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+
+.hero { position: relative; overflow: hidden; background: #16233B; color: #fff; }
+.heroGlow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(50% 70% at 100% 0%, rgba(239, 95, 122, .22), transparent 60%);
+}
+.heroInner {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 56px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+  gap: 48px;
+  align-items: center;
+}
+.heroText { display: flex; flex-direction: column; gap: 18px; }
+.heroTitle {
+  margin: 0;
+  font-family: var(--serif), Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(32px, 4.4vw, 56px);
+  line-height: 1.08;
+}
+.heroLead { margin: 0; max-width: 560px; font-size: 16px; line-height: 1.65; color: #D6DBE6; }
+.heroCtas { display: flex; flex-wrap: wrap; gap: 10px; }
+.heroImg {
+  width: 100%;
+  max-height: 340px;
+  border-radius: 20px;
+  object-fit: cover;
+  background: #F3EBE3;
+}
+
+.main { max-width: 1200px; margin: 0 auto; padding: 56px 20px 72px; }
+.points { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.point { padding: 22px; border: 1px solid #ECE6DF; border-radius: 16px; background: #fff; }
+.point h2 { margin: 0 0 8px; font-size: 17px; }
+.point p { margin: 0; font-size: 14.5px; line-height: 1.6; color: #5B6477; }
+
+.section { margin-top: 56px; }
+.h2 {
+  margin: 0 0 20px;
+  font-family: var(--serif), Georgia, serif;
+  font-size: clamp(24px, 3vw, 34px);
+}
+.steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; counter-reset: step; }
+.steps li { counter-increment: step; display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; line-height: 1.55; color: #5B6477; }
+.steps li::before { content: counter(step); font-family: var(--serif), Georgia, serif; font-size: 26px; font-weight: 700; color: #EF5F7A; }
+.steps b { color: #16233B; font-size: 16px; }
+
+.faq { display: flex; flex-direction: column; gap: 20px; max-width: 760px; }
+.faq h3 { margin: 0 0 6px; font-size: 16px; }
+.faq p { margin: 0; font-size: 14.5px; line-height: 1.6; color: #5B6477; }
+
+.others { margin-top: 48px; display: flex; flex-wrap: wrap; gap: 10px 24px; }
+.others a { font-weight: 700; font-size: 14.5px; color: #16233B; }
+.others a:hover { color: #EF5F7A; }
+
+@media (max-width: 859px) {
+  .heroInner { grid-template-columns: 1fr; gap: 28px; padding: 36px 16px; }
+  .main { padding: 36px 16px 56px; }
+  .points, .steps { grid-template-columns: 1fr; }
+  .section { margin-top: 40px; }
+}

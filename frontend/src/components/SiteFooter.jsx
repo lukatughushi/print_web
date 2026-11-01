@@ -3,6 +3,7 @@ import logo from '../assets/prenta/logo_prenta.webp';
 import s from './SiteFooter.module.css';
 import { useI18n } from '../i18n/i18n-context';
 import { settingText } from '../lib/settingText';
+import { PRINT_PAGES } from '../lib/printPages';
 
 
 // Google Maps pin for the office address.
@@ -37,6 +38,7 @@ export default function SiteFooter({ settings = {} }) {
           <Link to="/shop">{t('მაღაზია')}</Link>
           <Link to="/corporate">{t('კორპორატიული შეკვეთები')}</Link>
           <span>{t('DTF ბეჭდვა')}</span>
+          {PRINT_PAGES.map((p) => <Link key={p.path} to={p.path}>{t(p.label)}</Link>)}
         </div>
         <div className={s.col}>
           <span className={s.colTitle}>{t('დახმარება')}</span>

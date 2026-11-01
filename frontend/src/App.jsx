@@ -21,6 +21,8 @@ import RegisterPage from './pages/RegisterPage';
 import AccountPage from './pages/AccountPage';
 import { ConfirmPasswordPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from './pages/AuthLinkPages';
 import PageMeta from './components/PageMeta';
+import PrintPage from './pages/PrintPage';
+import { PRINT_PAGES } from './lib/printPages';
 import api from './lib/api';
 import { registerColors } from './lib/catalog';
 
@@ -88,6 +90,7 @@ function AppContent() {
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/corporate" element={<CorporatePage />} />
         <Route path="/about" element={<AboutPage />} />
+        {PRINT_PAGES.map((p) => <Route key={p.path} path={p.path} element={<PrintPage page={p} />} />)}
         <Route path="/product/:id" element={<ProductDetailPage />} />
         {/* Design editor — existing Fabric.js page, do not replace */}
         <Route path="/design/:productId" element={<DesignPage />} />
