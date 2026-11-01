@@ -22,6 +22,17 @@ const MODEL_URL = {
 };
 
 const ROD_Y = 1.12;
+
+// Physics of the rack (scene units: a garment is 1.7 tall, about 0.7 m).
+const FRICTION = 5; // hook sliding on the rod: constant deceleration
+const G_OVER_L = 26; // pendulum stiffness: gravity over arm length (a ~1.2 s swing)
+const ARM = 0.9; // hook to the garment's centre of mass
+const DAMPING = 2.6; // air and hook friction on the swing
+const MAX_SWING = 0.5;
+const CLEARANCE = 0.25; // how far hems swing before touching the next garment
+const BUMP = 60; // stiffness of that soft cloth contact
+const HEM = 1.7;
+const STAGGER = 0.2;
 const L = (a, b, k) => a + (b - a) * k;
 
 export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, minWait = 0 }) {
@@ -36,9 +47,10 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
   el.appendChild(r.domElement);
 
   const scene = new T.Scene();
-  const cam = new T.PerspectiveCamera(28, 1, 0.1, 100);
-  // Framed close on the rack (the design showed it full screen).
-  cam.position.set(0, 0.2, 4.6);
+  // Straight-on view with no perspective: every garment looks the same size
+  // and angle wherever it hangs. layout() sets the framing.
+  const cam = new T.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+  cam.position.set(0, 0.2, 10);
   scene.add(new T.HemisphereLight(0xffffff, 0xe8ddd2, 1.6));
   const key = new T.DirectionalLight(0xffffff, 2.2);
   key.position.set(3, 5, 6);
@@ -90,27 +102,30 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
     g.add(hit);
     g.position.y = ROD_Y - 0.02;
     scene.add(g);
-    return { it, g, pivot, hang, hit, model: null, mats: [], x: 0, ry: Math.PI / 2, drop: 0, seed: Math.random() * 6, fw: 1, sw: 0.5, sway: 0 };
+    return { it, g, pivot, hang, hit, model: null, mats: [], x: 0, ry: Math.PI / 2, drop: 0, seed: Math.random() * 6, fw: 1, sw: 0.5, sway: 0, av: 0, ax: 0, vx: 0 };
   });
 
-  // Hangers keep a fixed distance. The camera backs off to show the whole
-  // rack, but only so far (garments stay readable); where it still doesn't
-  // fit (narrow screens) the camera pans slowly along the rack instead.
-  const SPACING = 1.05, MIN_Z = 4.6, MAX_Z = 6;
+  // Hangers keep a fixed distance. The view widens to show the whole rack,
+  // but only so far (garments stay readable); where it still doesn't fit
+  // (narrow screens) the camera pans slowly along the rack instead.
+  const SPACING = 1.05, MIN_H = 2.29, MAX_H = 3;
   const spacing = SPACING;
   let visW = 8, pan = 0;
   const layout = () => {
     const w = el.clientWidth, h = el.clientHeight;
     if (!w || !h) return;
     r.setSize(w, h, false);
-    cam.aspect = w / h;
+    const aspect = w / h;
     const n = slots.length;
     rod.scale.y = SPACING * (n - 1) + 1.1;
     const needW = rod.scale.y + 1.3;
-    const tanH = Math.tan((cam.fov * Math.PI) / 360);
-    cam.position.z = Math.max(MIN_Z, Math.min(MAX_Z, needW / (2 * tanH * cam.aspect)));
-    visW = 2 * tanH * cam.position.z * cam.aspect;
+    const visH = Math.max(MIN_H, Math.min(MAX_H, needW / aspect));
+    visW = visH * aspect;
     pan = Math.max(0, (needW - visW) / 2);
+    cam.left = -visW / 2;
+    cam.right = visW / 2;
+    cam.top = visH / 2;
+    cam.bottom = -visH / 2;
     caps[0].position.x = -rod.scale.y / 2;
     caps[1].position.x = rod.scale.y / 2;
     cam.updateProjectionMatrix();
@@ -288,6 +303,9 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
     const kh = 1 - Math.pow(0.025, dt);
     const n = slots.length;
 
+    // Hover only begins once every garment has come to rest on the rod.
+    if (!slots.every((s) => s.inDone)) hover = -1;
+
     // Resting positions; around a hovered garment the others shift to make room.
     const base = slots.map((s, i) => (i - (n - 1) / 2) * spacing), TX = base.slice();
     if (hover >= 0) {
@@ -306,36 +324,60 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
       }
     }
 
-    if (!started) { slots.forEach((s) => { s.x = -visW / 2 - 1.2; s.lx = s.x; }); started = true; }
+    if (!started) { slots.forEach((s) => { s.x = -visW / 2 - 1.2; }); started = true; }
     const allIn = slots.every((s) => s.model);
     if (enterT < 0 && ((allIn && t > minWait) || t > 9)) { enterT = t + 0.5; onEnter(); }
 
     // Slow pan along a rack wider than the view; holds while a garment is hovered.
-    if (pan > 0 && enterT >= 0 && t > enterT + 2 && hover < 0) panPhase += dt * Math.max(0.05, 0.3 / pan);
+    if (pan > 0 && enterT >= 0 && t > enterT + STAGGER * n + 2 && hover < 0) panPhase += dt * Math.max(0.05, 0.3 / pan);
     camX = L(camX, pan * Math.sin(panPhase), kh);
     cam.position.x = camX;
     cam.lookAt(camX, 0.2, 0);
 
     slots.forEach((s, i) => {
-      const entered = enterT >= 0 && t > enterT + (n - 1 - i) * 0.11;
-      const tx = entered ? TX[i] : -visW / 2 - 1.2;
+      const entered = enterT >= 0 && t > enterT + (n - 1 - i) * STAGGER;
       const front = i === hover;
-      const ov = s.vx || 0;
-      s.x = entered && !s.inDone ? L(s.x, tx, 1 - Math.pow(0.06, dt)) : L(s.x, tx, kh);
-      if (entered && Math.abs(s.x - tx) < 0.01) s.inDone = true;
-      s.vx = (s.x - (s.lx ?? s.x)) / Math.max(dt, 1e-3);
-      s.lx = s.x;
-      // Swing from the slide's acceleration.
-      const acc = (s.vx - ov) / Math.max(dt, 1e-3);
-      s.av = (s.av || 0) + (-acc * 0.006 - s.sway * 26 - (s.av || 0) * 4.2) * dt;
-      s.sway = Math.max(-0.09, Math.min(0.09, s.sway + s.av * dt));
+      s.ax = 0;
+      if (entered && !s.inDone) {
+        // Pushed in off screen, with just the speed that friction uses up
+        // exactly at its place on the rod.
+        s.v ??= Math.sqrt(2 * FRICTION * Math.max(0, base[i] - s.x));
+        const v = Math.max(0, s.v - FRICTION * dt);
+        s.x += ((s.v + v) / 2) * dt;
+        s.v = v;
+        s.ax = -FRICTION;
+        if (v === 0) { s.x = base[i]; s.inDone = true; s.ax = 0; s.vx = 0; }
+      } else if (s.inDone) {
+        const px = s.x;
+        s.x = L(s.x, TX[i], kh);
+        const v = (s.x - px) / Math.max(dt, 1e-3);
+        // Once on the rod, hover moves it gently: only a slight sway.
+        s.ax = Math.max(-1.5, Math.min(1.5, ((v - s.vx) / Math.max(dt, 1e-3)) * 0.0054));
+        s.vx = v;
+      }
       s.g.position.x = s.x;
       s.g.position.z = L(s.g.position.z, front ? 0.05 : 0, kh);
       s.ry = L(s.ry, front ? 0 : Math.PI / 2, kh * 0.85);
       s.pivot.rotation.y = s.ry;
-      s.pivot.rotation.z = Math.sin(t * 1.1 + s.seed) * 0.018 + s.sway;
       s.g.visible = !!s.model && entered;
     });
+
+    // Each garment is a damped pendulum driven by its hook's acceleration;
+    // hems that swing into a neighbour push it, so a stop ripples down the rack.
+    const sub = dt / 3;
+    for (let k = 0; k < 3; k++) {
+      const force = slots.map((s) => -G_OVER_L * Math.sin(s.sway) - (s.ax / ARM) * Math.cos(s.sway) - DAMPING * s.av);
+      for (let i = 0; i < n - 1; i++) {
+        if (!slots[i].g.visible || !slots[i + 1].g.visible) continue;
+        const overlap = HEM * (slots[i].sway - slots[i + 1].sway) - CLEARANCE;
+        if (overlap > 0) { force[i] -= BUMP * overlap; force[i + 1] += BUMP * overlap; }
+      }
+      slots.forEach((s, i) => {
+        s.av += force[i] * sub;
+        s.sway = Math.max(-MAX_SWING, Math.min(MAX_SWING, s.sway + s.av * sub));
+      });
+    }
+    slots.forEach((s) => { s.pivot.rotation.z = s.sway + Math.sin(t * 1.1 + s.seed) * 0.012; });
     r.render(scene, cam);
   };
   const loop = () => {

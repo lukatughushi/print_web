@@ -20,6 +20,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AccountPage from './pages/AccountPage';
 import { ConfirmPasswordPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from './pages/AuthLinkPages';
+import PageMeta from './components/PageMeta';
 import api from './lib/api';
 import { registerColors } from './lib/catalog';
 
@@ -75,6 +76,7 @@ function AppContent() {
 
   return (
     <>
+      <PageMeta />
       {!isAdmin && <Navbar />}
       <Toast />
       <ChatButton />
