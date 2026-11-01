@@ -1404,14 +1404,20 @@ export default function DesignPage() {
       manGreen,
     ];
 
-    imagesToPreload.forEach(
-      (src) => {
-        const img =
-          new Image();
+    // Colour photos only speed up later colour changes: fetched once the
+    // constructor has settled, so they don't compete with the 3D model.
+    const timer = setTimeout(() => {
+      imagesToPreload.forEach(
+        (src) => {
+          const img =
+            new Image();
 
-        img.src = src;
-      }
-    );
+          img.src = src;
+        }
+      );
+    }, 5000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const activeCat =

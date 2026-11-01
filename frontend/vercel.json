@@ -7,7 +7,7 @@
   "ignoreCommand": "[ -n \"$VERCEL_GIT_PREVIOUS_SHA\" ] && git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- .",
   "rewrites": [
     {
-      "source": "/((?!assets/|models/).*)",
+      "source": "/((?!assets/|models/|models-lite/).*)",
       "destination": "/index.html"
     }
   ],
@@ -18,6 +18,15 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/models-lite/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
         }
       ]
     },

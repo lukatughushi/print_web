@@ -34,7 +34,7 @@ export default function HeroRack({ className, label }) {
         if (dead) return;
         cleanup = mountRack(el, {
           items: RACK.map(([model, hex]) => ({ model, hex })),
-          minWait: 2.2,
+          minWait: 1,
           onReady: (done, total) => setProgress(done / total),
           onEnter: () => {
             setEntering(true);

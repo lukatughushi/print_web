@@ -18,7 +18,7 @@ const MODEL_URL = {
   polo: '/models-lite/polo.glb',
   longsleeve: '/models-lite/longsleeve.glb',
   'polo-ls': '/models-lite/polo-ls.glb',
-  'hoodie-zip': '/models/hoodie_zip.glb',
+  'hoodie-zip': '/models-lite/hoodie-zip.glb',
 };
 
 const ROD_Y = 1.12;
