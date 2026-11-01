@@ -30,11 +30,20 @@
   letter-spacing: -.01em;
   color: #fff;
 }
+/* One transform animation per element: Chrome keeps these running while the 3D
+   work blocks the page only if they don't share an element. Hence the nested
+   .wave, and a bar that scales instead of changing width. */
 .ch {
   display: inline-block;
   white-space: pre;
+  will-change: transform, opacity;
+  animation: chUp .7s cubic-bezier(.2, .8, .2, 1) both;
+}
+.wave {
+  display: inline-block;
+  white-space: pre;
   will-change: transform;
-  animation: chUp .7s cubic-bezier(.2, .8, .2, 1) both, chWave 2.4s ease-in-out infinite;
+  animation: chWave 2.4s ease-in-out infinite;
 }
 .pink { color: #EF5F7A; }
 .dots { display: inline-flex; gap: 2px; margin-left: 4px; color: #EF5F7A; }
@@ -47,12 +56,21 @@
   background: rgba(255, 255, 255, .16);
   overflow: hidden;
 }
-.barFill { height: 100%; background: #fff; transition: width .4s ease; }
+.barFill {
+  height: 100%;
+  background: #fff;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .4s ease;
+}
 
-@keyframes chUp { 0% { transform: translateY(110%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-@keyframes chWave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10%); } }
+@keyframes chUp {
+  0% { transform: translateY(1.1em); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes chWave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-.1em); } }
 @keyframes dot { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .ch, .dots span { animation: none; }
+  .ch, .wave, .dots span { animation: none; }
 }

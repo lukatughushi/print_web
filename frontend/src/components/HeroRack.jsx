@@ -90,16 +90,16 @@ export default function HeroRack({ className, label }) {
               <span
                 key={i}
                 className={`${s.ch} ${accentFrom && i >= accentFrom ? s.pink : ''}`}
-                style={{ animationDelay: `${i * 0.05}s, ${0.8 + i * 0.08}s` }}
+                style={{ animationDelay: `${i * 0.05}s` }}
               >
-                {ch}
+                <span className={s.wave} style={{ animationDelay: `${0.8 + i * 0.08}s` }}>{ch}</span>
               </span>
             ))}
             <span className={s.dots}>
               {[0, 1, 2].map((j) => <span key={j} style={{ animationDelay: `${j * 0.18}s` }}>.</span>)}
             </span>
           </div>
-          <div className={s.bar}><div className={s.barFill} style={{ width: `${Math.round(progress * 100)}%` }} /></div>
+          <div className={s.bar}><div className={s.barFill} style={{ transform: `scaleX(${progress})` }} /></div>
         </div>
       )}
     </div>
