@@ -5,7 +5,7 @@
  * the project's three.js, without the product panel.
  *
  * mountRack(el, { items, onReady, onEnter, minWait }) -> destroy()
- *   items: [{ model, hex }]; onReady(done, total) as models load;
+ *   items: [{ model, hex, design? }]; onReady(done, total) as models load;
  *   onEnter() when the garments start sliding in (at least minWait s).
  */
 import * as T from 'three';
@@ -49,7 +49,7 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
   const scene = new T.Scene();
   // Straight-on view with no perspective: every garment looks the same size
   // and angle wherever it hangs. layout() sets the framing.
-  const cam = new T.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+  const cam = new T.OrthographicCamera(-1, 1, 1, -1, 7, 13);
   cam.position.set(0, 0.2, 10);
   scene.add(new T.HemisphereLight(0xffffff, 0xe8ddd2, 1.6));
   const key = new T.DirectionalLight(0xffffff, 2.2);
@@ -220,6 +220,62 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
     Object.assign(FC[id], { bar: bar.geometry, stem: sg });
   };
 
+  // Paints a design on the garment's front print zone. UVs differ from model to
+  // model (some are flipped), so the zone is mapped from its shape, seen from
+  // the front. The canvas holds the garment colour and the image.
+  const applyDesign = (s, wrap) => {
+    const zones = [];
+    wrap.traverse((o) => {
+      if (!o.isMesh || !/print/i.test(o.name) || !/front/i.test(o.name)) return;
+      // The T-shirt has a fabric patch at its zone: eased back so it backs the
+      // print (and its small gaps) without poking through.
+      if (/fabric/i.test(o.name)) o.position.z -= 0.006;
+      else zones.push(o);
+    });
+    if (!zones.length || !s.img) return;
+    wrap.updateMatrixWorld(true);
+    const box = new T.Box3();
+    zones.forEach((o) => box.expandByObject(o));
+    const size = box.getSize(new T.Vector3());
+
+    const W = 1024, H = Math.round(W * (size.y / size.x));
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = s.it.hex;
+    ctx.fillRect(0, 0, W, H);
+    const { x, y, scale } = s.it.design;
+    const dw = scale * W, dh = dw * (s.img.naturalHeight / s.img.naturalWidth);
+    ctx.drawImage(s.img, x * W - dw / 2, y * H - dh / 2, dw, dh);
+    const tex = new T.CanvasTexture(canvas);
+    tex.colorSpace = T.SRGBColorSpace;
+    tex.anisotropy = 4;
+
+    const v = new T.Vector3();
+    zones.forEach((o) => {
+      // Own geometry: another garment of this model may have no design.
+      o.geometry = o.geometry.clone();
+      const p = o.geometry.attributes.position, uv = new Float32Array(p.count * 2);
+      for (let i = 0; i < p.count; i++) {
+        v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld);
+        uv[i * 2] = (v.x - box.min.x) / size.x;
+        uv[i * 2 + 1] = (v.y - box.min.y) / size.y;
+      }
+      o.geometry.setAttribute('uv', new T.BufferAttribute(uv, 2));
+      o.material.map = tex;
+      o.material.normalMap = null;
+      // The zone shares its surface with the fabric: keep it drawn on top.
+      o.material.polygonOffset = true;
+      o.material.polygonOffsetFactor = -2;
+      o.material.polygonOffsetUnits = -4;
+      o.material.color.set(0xffffff);
+      o.material.needsUpdate = true;
+      const entry = s.mats.find(({ m }) => m === o.material);
+      if (entry) entry.kind = 'print';
+    });
+  };
+
   // Puts one copy of a loaded model on its hanger: own materials, upright,
   // 1.7 units tall, hanging from the top centre.
   const build = (src, s) => {
@@ -262,6 +318,8 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
     wrap.position.y = -0.035;
     wrap.updateMatrixWorld(true);
     fitHanger(s, wrap);
+    // Before it joins the hanger: the zone is measured facing front, unrotated.
+    if (s.it.design) applyDesign(s, wrap);
     s.hang.add(wrap);
     s.model = wrap;
     tint(s, s.it.hex);
@@ -405,6 +463,17 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
   });
   io.observe(el);
 
+  // Designs load first, so garments are built complete. A failed image just
+  // leaves its garment plain.
+  const imagesReady = Promise.all(slots.map((s) => new Promise((done) => {
+    if (!s.it.design) { done(); return; }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { s.img = img; done(); };
+    img.onerror = () => done();
+    img.src = s.it.design.url;
+  })));
+
   (async () => {
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);
@@ -412,7 +481,7 @@ export function mountRack(el, { items, onReady = () => {}, onEnter = () => {}, m
     let done = 0;
     await Promise.all(ids.map(async (id) => {
       try {
-        const g = await loader.loadAsync(MODEL_URL[id]);
+        const [g] = await Promise.all([loader.loadAsync(MODEL_URL[id]), imagesReady]);
         const list = slots.filter((s) => s.it.model === id);
         for (let i = 0; i < list.length; i++) {
           if (dead) return;

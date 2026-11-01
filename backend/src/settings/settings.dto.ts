@@ -3,11 +3,13 @@ import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsInt,
   IsObject,
   IsNumber,
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
   ValidateNested,
@@ -17,6 +19,16 @@ import {
 export class CustomColorDto {
   @IsString() @Matches(/^[a-z0-9_-]{1,40}$/) key: string;
   @IsString() @MaxLength(40) name: string;
+  @IsString() @Matches(/^#[0-9a-fA-F]{6}$/) hex: string;
+}
+
+/** A design on one of the home hero's rack garments. */
+export class HeroRackItemDto {
+  @IsInt() @Min(0) @Max(9) slot: number;
+  @IsString() @Matches(/^[a-f0-9]{24}$/i) image: string;
+  @IsNumber() @Min(0) @Max(1) x: number;
+  @IsNumber() @Min(0) @Max(1) y: number;
+  @IsNumber() @Min(0.05) @Max(1) scale: number;
   @IsString() @Matches(/^#[0-9a-fA-F]{6}$/) hex: string;
 }
 
@@ -41,4 +53,6 @@ export class UpdateSettingsDto {
   @IsOptional() @IsObject() i18n?: Record<string, Record<string, string>>;
   @IsOptional() @IsArray() @ArrayMaxSize(60) @ValidateNested({ each: true }) @Type(() => CustomColorDto)
   customColors?: CustomColorDto[];
+  @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true }) @Type(() => HeroRackItemDto)
+  heroRack?: HeroRackItemDto[];
 }

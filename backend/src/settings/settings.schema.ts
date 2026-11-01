@@ -74,6 +74,17 @@ export class Settings {
   /** Garment colours added in admin, on top of the built-in palette. */
   @Prop({ type: [{ _id: false, key: String, name: String, hex: String }], default: [] })
   customColors: { key: string; name: string; hex: string }[];
+
+  /**
+   * Designs on the home hero's rack garments (admin Hero_spatial page).
+   * x, y: the design's centre in the print zone (0–1 from its top left);
+   * scale: its width as a share of the zone's; hex: the garment's colour.
+   */
+  @Prop({
+    type: [{ _id: false, slot: Number, image: String, x: Number, y: Number, scale: Number, hex: String }],
+    default: [],
+  })
+  heroRack: { slot: number; image: string; x: number; y: number; scale: number; hex: string }[];
 }
 
 export type SettingsDocument = HydratedDocument<Settings>;

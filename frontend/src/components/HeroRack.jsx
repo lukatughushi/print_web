@@ -1,35 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../i18n/i18n-context';
+import api from '../lib/api';
+import { assetUrl } from '../lib/catalog';
+import { rackItems } from '../lib/heroRack';
 import s from './HeroRack.module.css';
-
-// Garments on the rack, left to right (from the design).
-const RACK = ['tshirt', 'hoodie', 'polo', 'longsleeve', 'hoodie-zip', 'tshirt', 'polo-ls', 'hoodie', 'longsleeve', 'polo'];
-
-// The 12 best-known garment colours; every visit deals a different set.
-// Black and navy are lifted a little so they read on the dark hero.
-const COLOURS = [
-  '#3a3b40', // black
-  '#f2f0ec', // white
-  '#b4b6ba', // grey
-  '#2e3f6b', // navy
-  '#c8323c', // red
-  '#2b4c9b', // blue
-  '#2f7a4d', // green
-  '#e4d3b0', // beige
-  '#8c2a3e', // burgundy
-  '#f2c230', // yellow
-  '#ef7f9a', // pink
-  '#e9772b', // orange
-];
-
-function shuffled(list) {
-  const out = [...list];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
 
 /**
  * Home hero art: the clothing rack (lib/rackHero), with an "It's coming…"
@@ -52,13 +26,13 @@ export default function HeroRack({ className, label }) {
     let dead = false;
     let fadeTimer = 0;
     const start = () => {
-      import('../lib/rackHero').then(({ mountRack }) => {
+      Promise.all([
+        import('../lib/rackHero'),
+        api.get('/api/settings').then((r) => r.data?.heroRack ?? []).catch(() => []),
+      ]).then(([{ mountRack }, designs]) => {
         if (dead) return;
         cleanup = mountRack(el, {
-          items: (() => {
-            const colours = shuffled(COLOURS);
-            return RACK.map((model, i) => ({ model, hex: colours[i] }));
-          })(),
+          items: rackItems(designs.map((d) => ({ ...d, url: assetUrl(`/api/files/${d.image}`) }))),
           minWait: 1,
           onReady: (done, total) => setProgress(done / total),
           onEnter: () => {

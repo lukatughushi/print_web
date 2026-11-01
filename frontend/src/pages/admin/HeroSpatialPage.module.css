@@ -1,0 +1,64 @@
+/* Admin Hero_spatial page: one card per rack garment. */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.slot { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+.slotHead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.remove { padding: 0; border: 0; background: none; font: inherit; font-size: 12.5px; color: #C8323C; cursor: pointer; }
+
+.stage {
+  height: 240px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #F3EEE8;
+}
+.zone { position: relative; height: 200px; }
+.zoneWide { height: 150px; }
+.garment,
+.print,
+.edge {
+  position: absolute;
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+.print,
+.edge { inset: 0; }
+.edge { background: #EF5F7A; pointer-events: none; }
+.art {
+  position: absolute;
+  height: auto;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.art:active { cursor: grabbing; }
+
+.pick {
+  height: 38px;
+  border: 1px solid #16233B;
+  border-radius: 999px;
+  background: #fff;
+  color: #16233B;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pick:disabled { opacity: .55; cursor: default; }
+
+.colours { display: flex; flex-wrap: wrap; gap: 6px; }
+.colour {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #D9D3CB;
+  cursor: pointer;
+}
+.colourOn { box-shadow: 0 0 0 2px #EF5F7A; }
+
+.foot { position: sticky; bottom: 0; padding: 14px 0; display: flex; justify-content: flex-end; }

@@ -23,6 +23,7 @@ const NAV = [
   { to: '/admin/quotes', label: 'კორპორატიული', icon: 'quotes' },
   { to: '/admin/products', label: 'პროდუქტები', icon: 'products' },
   { to: '/admin/constructor', label: 'კონსტრუქტორი', icon: 'constructor' },
+  { to: '/admin/hero-spatial', label: 'Hero_spatial', icon: 'products' },
   { to: '/admin/users', label: 'მომხმარებლები', icon: 'users' },
   { to: '/admin/roles', label: 'როლები', icon: 'roles' },
   { to: '/admin/settings', label: 'პარამეტრები', icon: 'settings' },
