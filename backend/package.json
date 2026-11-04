@@ -15,6 +15,7 @@
     "demo:delete": "ts-node src/database/delete-demo.ts",
     "demo:delete:prod": "node dist/database/delete-demo.js",
     "constructor:setup": "ts-node src/database/setup-constructor.ts",
+    "images:compress": "ts-node src/database/compress-images.ts",
     "db:memory": "node scripts/memory-db.js",
     "typecheck": "tsc --noEmit"
   },
@@ -48,6 +49,7 @@
     "@types/node": "^22.0.0",
     "@types/passport-jwt": "^4.0.1",
     "mongodb-memory-server": "^11.3.0",
+    "sharp": "^0.33.5",
     "ts-node": "^10.9.2",
     "typescript": "~6.0.2"
   }

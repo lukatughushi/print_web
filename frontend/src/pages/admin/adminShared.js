@@ -38,10 +38,36 @@ export function shortDate(value, withTime = false) {
   return `${date}, ${time}`;
 }
 
-/** Uploads an image to GridFS and returns its file id. */
+// Shop photos and hero designs are shown at most ~800 px wide.
+const MAX_SIDE = 1600;
+
+/**
+ * Shrinks a photo to at most 1600 px and re-encodes it as WebP (keeping
+ * transparency), so the shop doesn't ship 10 MB PNGs. Falls back to the
+ * original when the browser can't, or when it is already smaller.
+ */
+async function compressImage(file) {
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type) || typeof createImageBitmap !== 'function') return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const k = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * k);
+    canvas.height = Math.round(bitmap.height * k);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const blob = await new Promise((done) => canvas.toBlob(done, 'image/webp', 0.85));
+    if (!blob || blob.type !== 'image/webp' || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[a-z0-9]+$/i, '') + '.webp', { type: 'image/webp' });
+  } catch {
+    return file;
+  }
+}
+
+/** Uploads an admin image (product photo, hero design) to GridFS and returns its file id. */
 export async function uploadImage(file) {
   const form = new FormData();
-  form.append('file', file);
+  form.append('file', await compressImage(file));
   const { data } = await api.post('/api/files', form);
   return data.id;
 }
