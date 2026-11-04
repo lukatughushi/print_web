@@ -5,6 +5,22 @@ import { assetUrl } from '../lib/catalog';
 import { rackItems } from '../lib/heroRack';
 import s from './HeroRack.module.css';
 
+// The designs from the last visit, so the rack never waits on a sleeping backend
+// (Render's free plan takes about a minute to wake). The browser may refuse storage.
+const CACHE_KEY = 'heroRack';
+function cachedDesigns() {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY)) ?? []; } catch { return []; }
+}
+function freshDesigns(waitMs) {
+  const request = api.get('/api/settings').then((r) => {
+    const list = r.data?.heroRack ?? [];
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(list)); } catch { /* storage off */ }
+    return list;
+  });
+  const timeout = new Promise((done) => setTimeout(() => done(null), waitMs));
+  return Promise.race([request, timeout]).then((list) => list ?? cachedDesigns()).catch(() => cachedDesigns());
+}
+
 /**
  * Home hero art: the clothing rack (lib/rackHero), with an "It's coming…"
  * loader until the garments slide in. three.js loads after the page paints.
@@ -28,7 +44,7 @@ export default function HeroRack({ className, label }) {
     const start = () => {
       Promise.all([
         import('../lib/rackHero'),
-        api.get('/api/settings').then((r) => r.data?.heroRack ?? []).catch(() => []),
+        freshDesigns(2500),
       ]).then(([{ mountRack }, designs]) => {
         if (dead) return;
         cleanup = mountRack(el, {
