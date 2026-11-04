@@ -1,0 +1,58 @@
+# Nightly backup of the production database (orders, users, products and the
+# uploaded files kept in it). The dump is encrypted before it leaves the
+# runner: this repository is public, so the artifact can only ever be stored
+# encrypted. Kept for 30 days under Actions → this workflow → a run → Artifacts.
+#
+# Needs two repository secrets (Settings → Secrets and variables → Actions):
+#   MONGODB_URI        the database address (ideally a read-only Atlas user)
+#   BACKUP_PASSPHRASE  a long random password; without it a backup can't be opened
+#
+# Restore (on your own computer, with the passphrase and MongoDB Database Tools):
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in prenta-db.archive.gz.enc -out prenta-db.archive.gz
+#   mongorestore --uri "<database address>" --archive=prenta-db.archive.gz --gzip --drop
+name: Database backup
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # every night, 05:00 in Tbilisi
+  workflow_dispatch: # "Run workflow" button for a backup on demand
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check secrets
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          test -n "$MONGODB_URI" || { echo "::error::MONGODB_URI secret is not set"; exit 1; }
+          test ${#BACKUP_PASSPHRASE} -ge 20 || { echo "::error::BACKUP_PASSPHRASE must be at least 20 characters"; exit 1; }
+
+      - name: Dump and encrypt
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          # The dump only ever exists inside this pipe, never as a plain file.
+          docker run --rm -e MONGODB_URI mongo:8 \
+            sh -c 'mongodump --uri "$MONGODB_URI" --archive --gzip --quiet' \
+            | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:BACKUP_PASSPHRASE \
+            > out/prenta-db.archive.gz.enc
+          size=$(stat -c %s out/prenta-db.archive.gz.enc)
+          echo "Encrypted backup: $size bytes"
+          test "$size" -gt 1024 || { echo "::error::Backup is suspiciously small"; exit 1; }
+
+      - name: Store for 30 days
+        uses: actions/upload-artifact@v4
+        with:
+          name: prenta-db-${{ github.run_number }}
+          path: out/prenta-db.archive.gz.enc
+          retention-days: 30
+          if-no-files-found: error
