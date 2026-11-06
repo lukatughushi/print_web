@@ -1,6 +1,7 @@
 // English translations. Keys are the Georgian source text (see i18n-context.js).
 export default {
   "მოგვწერე": "Message us",
+  "3D მოდელი იტვირთება…": "Loading the 3D model…",
   "მაისურზე ბეჭდვა": "T-shirt printing",
   "ჰუდზე ბეჭდვა": "Hoodie printing",
   "პოლოზე ბეჭდვა": "Polo printing",
@@ -236,6 +237,7 @@ export default {
   "ერთეულის ფასი": "Unit price",
   "ერთი ზომა": "One size",
   "ეს პროდუქტი ჯერ არ იყიდება": "This product is not on sale yet",
+  "ფასები იტვირთება…": "Loading prices…",
   "ვაზის კოლექცია": "Vine collection",
   "ვამზადებთ ციფრულ მაკეტს — ზომა, განთავსება, ფერი. უფასოდ.": "We prepare a digital mock-up — size, placement, colour. Free of charge.",
   "ვერაფერი მოიძებნა": "Nothing found",

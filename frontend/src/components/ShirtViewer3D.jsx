@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 
 import {
@@ -29,6 +30,13 @@ import {
   EDITOR_H,
 } from '../lib/shirtTexture';
 import { useI18n } from '../i18n/i18n-context';
+import l from './ShirtViewer3D.module.css';
+
+// Renders once the model above it in the same Suspense has loaded.
+function ModelReady({ url, onReady }) {
+  useEffect(() => { onReady(url); }, [url, onReady]);
+  return null;
+}
 
 /* =========================================================
    MODELS
@@ -1936,6 +1944,10 @@ export default function ShirtViewer3D({
     MODEL_URLS[productType] ||
     MODEL_URLS.male;
 
+  // The model that finished loading; any other (first load, a new product) shows the loader.
+  const [readyUrl, setReadyUrl] = useState(null);
+  const modelLoading = readyUrl !== resolvedModelUrl;
+
   return (
     <GLErrorBoundary
       onError={onUnavailable}
@@ -1956,6 +1968,7 @@ export default function ShirtViewer3D({
         </div>
       }
     >
+      <div className={l.frame}>
       <Canvas
         camera={{
           position: [
@@ -2041,6 +2054,7 @@ export default function ShirtViewer3D({
               productType
             }
           />
+          <ModelReady url={resolvedModelUrl} onReady={setReadyUrl} />
         </Suspense>
 
         {onPrintAreaChange && (
@@ -2067,6 +2081,13 @@ export default function ShirtViewer3D({
           }
         />
       </Canvas>
+      {modelLoading && (
+        <div className={l.loader} role="status">
+          <span className={l.spinner} aria-hidden="true" />
+          {t('3D მოდელი იტვირთება…')}
+        </div>
+      )}
+      </div>
     </GLErrorBoundary>
   );
 }

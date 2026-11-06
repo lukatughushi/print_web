@@ -1538,18 +1538,36 @@ export default function DesignPage() {
       clearTimeout(t1);
   }
 
+  // Products from the last visit open the editor at once: the backend (Render's
+  // free plan) can take a minute to wake. The fresh list replaces them when it
+  // arrives. With nothing stored, the editor opens after a few seconds anyway
+  // (ordering waits for the products). The browser may refuse storage.
   useEffect(() => {
+    const CACHE_KEY = 'designProducts';
     const list = (r) => (Array.isArray(r?.data) ? r.data : []);
+    const apply = (ctorList, shopList) => {
+      const ctorIds = new Set(ctorList.map((p) => p.id));
+      setCtorProducts(ctorList);
+      setProducts([...ctorList, ...shopList.filter((p) => !ctorIds.has(p.id))]);
+      setLoading(false);
+    };
+    let cached = null;
+    try { cached = JSON.parse(localStorage.getItem(CACHE_KEY)); } catch { /* storage off */ }
+    if (cached?.ctor && cached?.shop) apply(cached.ctor, cached.shop);
+    const giveUp = setTimeout(() => setLoading(false), 4000);
+
     Promise.all([
       api.get('/api/products').catch(() => null),
       api.get('/api/products/constructor').catch(() => null),
     ]).then(([shop, ctor]) => {
-      const ctorList = list(ctor);
-      const ctorIds = new Set(ctorList.map((p) => p.id));
-      setCtorProducts(ctorList);
-      setProducts([...ctorList, ...list(shop).filter((p) => !ctorIds.has(p.id))]);
-      setLoading(false);
+      clearTimeout(giveUp);
+      // A failed request keeps what is already on screen.
+      if (!shop && !ctor) { setLoading(false); return; }
+      const fresh = { ctor: list(ctor), shop: list(shop) };
+      apply(fresh.ctor, fresh.shop);
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(fresh)); } catch { /* storage off */ }
     });
+    return () => clearTimeout(giveUp);
   }, []);
 
   // When the URL's product changes (first load, a tab switch, or arriving
@@ -3749,7 +3767,8 @@ export default function DesignPage() {
             <div className={s.notForSale}>{t('ეს პროდუქტი დროებით მარაგში არ არის')}</div>
           )}
           {!orderProduct && (
-            <div className={s.notForSale}>{t('ეს პროდუქტი ჯერ არ იყიდება')}</div>
+            // products === null: the list hasn't arrived yet (backend waking up).
+            <div className={s.notForSale}>{t(products === null ? 'ფასები იტვირთება…' : 'ეს პროდუქტი ჯერ არ იყიდება')}</div>
           )}
         </div>
       </aside>

@@ -1,0 +1,32 @@
+/* 3D viewer: the frame around the canvas and the loader while a model loads. */
+.frame { position: relative; width: 100%; height: 100%; }
+
+.loader {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  pointer-events: none;
+  color: #8A98A6;
+  font-size: 13.5px;
+  /* Shown only if loading takes a moment, so a fast load doesn't flash it. */
+  opacity: 0;
+  animation: show .3s ease .35s forwards;
+}
+.spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(22, 35, 59, .12);
+  border-top-color: #EF5F7A;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes show { to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+}
