@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsIn, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -12,6 +12,7 @@ export class CreateProductDto {
 
   @IsNumber()
   @Min(0)
+  @Max(1000000)
   price: number;
 
   @IsOptional()
@@ -45,6 +46,7 @@ export class CreateProductDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(1000000)
   oldPrice?: number;
 
   @IsOptional()

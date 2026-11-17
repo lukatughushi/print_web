@@ -61,7 +61,8 @@ function ProfileTab({ user, counts, onSaved }) {
     setBusy(true);
     setError('');
     try {
-      await api.patch('/api/me/profile', form);
+      // Numbers saved before dashes were refused keep only digits, spaces and +.
+      await api.patch('/api/me/profile', { ...form, phone: (form.phone || '').replace(/[^0-9+ ]/g, '') });
       await onSaved();
       toast(t('პროფილი შენახულია'));
     } catch (err) {
@@ -95,7 +96,7 @@ function ProfileTab({ user, counts, onSaved }) {
           </label>
           <label className={s.field}>
             <span className={s.label}>{t('ტელეფონი')}</span>
-            <input className={s.input} value={form.phone} onChange={set('phone')} placeholder="+995 5xx xx xx xx" autoComplete="tel" />
+            <input className={s.input} type="tel" value={form.phone} onChange={set('phone')} placeholder="+995 5xx xx xx xx" autoComplete="tel" />
           </label>
           <label className={s.field}>
             <span className={s.label}>{t('ქალაქი')}</span>

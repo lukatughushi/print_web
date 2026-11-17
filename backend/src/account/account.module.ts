@@ -23,6 +23,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
   ValidateNested,
@@ -90,7 +91,7 @@ SavedDesignSchema.virtual('previewUrl').get(function (this: SavedDesign) {
 
 class ProfileDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(80) name?: string;
-  @IsOptional() @IsString() @MaxLength(40) phone?: string;
+  @IsOptional() @IsString() @MaxLength(40) @Matches(/^[+0-9 ]*$/, { message: 'ტელეფონის ნომერი არასწორია' }) phone?: string;
   @IsOptional() @IsString() @MaxLength(80) city?: string;
   @IsOptional() @IsString() @MaxLength(200) address?: string;
   @IsOptional() @IsString() @MaxLength(80) profession?: string;

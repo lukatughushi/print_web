@@ -11,6 +11,7 @@ import {
   IsNumber,
   IsObject,
   IsOptional,
+  Matches,
   IsString,
   Max,
   MaxLength,
@@ -49,12 +50,13 @@ export class CreateOrderDto {
 
   @IsString() @MinLength(2) @MaxLength(120) customerName: string;
   @IsOptional() @IsEmail() customerEmail?: string;
-  @IsString() @MinLength(5) @MaxLength(40) phone: string;
+  // Digits and spaces, optionally a leading + (no dashes or letters).
+  @IsString() @Matches(/^\+?[0-9 ]{9,20}$/, { message: 'ტელეფონის ნომერი არასწორია' }) phone: string;
   @IsString() @MinLength(3) @MaxLength(300) address: string;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
   @IsOptional() @IsIn(CHECKOUT_PAYMENT_METHODS) payment?: string;
   /** Total the customer saw; the order is refused if the server's differs. */
-  @IsOptional() @IsNumber() expectedTotal?: number;
+  @IsOptional() @IsNumber() @Min(0) expectedTotal?: number;
 }
 
 export class UpdateOrderDto {

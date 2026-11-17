@@ -56,14 +56,14 @@ export class UpdateSettingsDto {
   @IsOptional() @IsString() @MaxLength(300) heroCtaLink?: string;
   @IsOptional() @IsString() @MaxLength(20) proofNumber?: string;
   @IsOptional() @IsString() @MaxLength(80) proofText?: string;
-  @IsOptional() @IsNumber() @Min(0) freeShipThreshold?: number;
-  @IsOptional() @IsNumber() @Min(0) shippingFee?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(1000000) freeShipThreshold?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(100000) shippingFee?: number;
   @IsOptional() @IsString() @MaxLength(8) currency?: string;
-  @IsOptional() @IsString() @MaxLength(60) contactPhone?: string;
+  @IsOptional() @IsString() @MaxLength(60) @Matches(/^[+0-9 ]*$/, { message: 'ტელეფონის ნომერი არასწორია' }) contactPhone?: string;
   @IsOptional() @IsString() @MaxLength(120) contactEmail?: string;
   @IsOptional() @IsString() @MaxLength(200) contactAddress?: string;
-  @IsOptional() @IsString() @MaxLength(30) chatWhatsapp?: string;
-  @IsOptional() @IsString() @MaxLength(30) chatViber?: string;
+  @IsOptional() @IsString() @MaxLength(30) @Matches(/^[+0-9 ]*$/, { message: 'ნომერი არასწორია' }) chatWhatsapp?: string;
+  @IsOptional() @IsString() @MaxLength(30) @Matches(/^[+0-9 ]*$/, { message: 'ნომერი არასწორია' }) chatViber?: string;
   @IsOptional() @IsString() @MaxLength(200) chatMessenger?: string;
   @IsOptional() @IsObject() i18n?: Record<string, Record<string, string>>;
   @IsOptional() @IsArray() @ArrayMaxSize(60) @ValidateNested({ each: true }) @Type(() => CustomColorDto)

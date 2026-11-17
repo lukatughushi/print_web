@@ -156,7 +156,7 @@ export default function SettingsPage() {
         <div className={s.formGrid3}>
           <div className={s.field}>
             <label className={s.label} htmlFor="s-ph">ტელეფონი</label>
-            <input id="s-ph" className={s.input} value={form.contactPhone || ''} onChange={set('contactPhone')} />
+            <input id="s-ph" className={s.input} type="tel" value={form.contactPhone || ''} onChange={set('contactPhone')} />
           </div>
           <div className={s.field}>
             <label className={s.label} htmlFor="s-em">ელფოსტა</label>
@@ -181,11 +181,11 @@ export default function SettingsPage() {
         <div className={s.formGrid3}>
           <div className={s.field}>
             <label className={s.label} htmlFor="s-wa">WhatsApp ნომერი</label>
-            <input id="s-wa" className={s.input} value={form.chatWhatsapp || ''} onChange={set('chatWhatsapp')} placeholder="+995 5XX XX XX XX" />
+            <input id="s-wa" className={s.input} type="tel" value={form.chatWhatsapp || ''} onChange={set('chatWhatsapp')} placeholder="+995 5XX XX XX XX" />
           </div>
           <div className={s.field}>
             <label className={s.label} htmlFor="s-vb">Viber ნომერი</label>
-            <input id="s-vb" className={s.input} value={form.chatViber || ''} onChange={set('chatViber')} placeholder="+995 5XX XX XX XX" />
+            <input id="s-vb" className={s.input} type="tel" value={form.chatViber || ''} onChange={set('chatViber')} placeholder="+995 5XX XX XX XX" />
           </div>
           <div className={s.field}>
             <label className={s.label} htmlFor="s-ms">Messenger (Facebook გვერდი)</label>

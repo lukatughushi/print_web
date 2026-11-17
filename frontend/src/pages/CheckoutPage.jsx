@@ -26,8 +26,8 @@ const STEPS = [
   ['pay', 'გადახდა'],
 ];
 
-// A phone number: 9–15 digits, optionally starting with +; spaces, dashes and brackets allowed.
-const cleanPhone = (v) => v.replace(/[\s\-()]/g, '');
+// A phone number: 9–15 digits, optionally starting with + (spaces allowed while typing).
+const cleanPhone = (v) => v.replace(/\s/g, '');
 const PHONE_RE = /^\+?\d{9,15}$/;
 
 // What the customer typed, kept for this tab while they sign in on another page.
@@ -241,7 +241,7 @@ export default function CheckoutPage() {
         const { data } = await api.post('/api/orders', payload);
         order = { id: data.id, number: data.number || `PR-${data.id.slice(-6).toUpperCase()}`, total };
         const profile = {
-          ...(detailsChanged && remember ? { phone: form.phone.trim(), city: form.city.trim(), address: form.addr.trim() } : {}),
+          ...(detailsChanged && remember ? { phone: cleanPhone(form.phone), city: form.city.trim(), address: form.addr.trim() } : {}),
           ...(professionChanged ? { profession: form.profession.trim() } : {}),
         };
         if (Object.keys(profile).length) {
