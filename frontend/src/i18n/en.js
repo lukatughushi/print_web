@@ -1,6 +1,7 @@
 // English translations. Keys are the Georgian source text (see i18n-context.js).
 export default {
   "მოგვწერე": "Message us",
+  "ნახე პროდუქტები": "Show products",
   "რეგისტრაციით ეთანხმები": "By signing up you accept the",
   "ბარათით, Apple Pay ან Google Pay": "Card, Apple Pay or Google Pay",
   "გადახდის გვერდი ვერ გაიხსნა. სცადე ხელახლა.": "Could not open the payment page. Please try again.",

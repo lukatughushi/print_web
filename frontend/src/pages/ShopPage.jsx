@@ -9,7 +9,7 @@ import {
   isOnSale,
   priceOf,
 } from '../lib/catalog';
-import ProductCard, { ProductImage } from '../components/ProductCard';
+import ProductCard from '../components/ProductCard';
 import SiteFooter from '../components/SiteFooter';
 import useFavStore from '../store/favStore';
 import corpImg from '../assets/prenta/main_hoode.webp';
@@ -192,11 +192,6 @@ export default function ShopPage() {
   }, [all]);
   const maxPrice = f.max !== null ? Math.min(f.max, priceMax) : priceMax;
 
-  const catCounts = useMemo(() => {
-    const map = {};
-    all.forEach((p) => { if (matches(p, f, favIds, 'cat', lang)) map[p.category] = (map[p.category] || 0) + 1; });
-    return map;
-  }, [all, f, favIds, lang]);
 
   const availableSizes = useMemo(() => {
     const set = new Set(all.flatMap(sizesOf));
@@ -225,8 +220,12 @@ export default function ShopPage() {
     ...(f.q ? [{ key: 'q', label: `„${f.q}“`, clear: () => update({ q: '' }) }] : []),
   ];
 
-  const singleCat = f.cat.length === 1 ? CATEGORY_BY_CODE[f.cat[0]] : null;
-  const title = f.fav ? 'რჩეულები' : singleCat ? singleCat.label : 'ყველა პროდუქტი';
+  // Picked categories by name ("მაისური, ჰუდი"), or all products.
+  const title = f.fav
+    ? t('რჩეულები')
+    : f.cat.length
+      ? f.cat.map((code) => t(CATEGORY_BY_CODE[code]?.label || code)).join(', ')
+      : t('ყველა პროდუქტი');
 
   return (
     <div className={s.page}>
@@ -238,38 +237,35 @@ export default function ShopPage() {
             <nav className={s.crumbs} aria-label="breadcrumb">
               <Link to="/">{t('მთავარი')}</Link><span>/</span><span className={s.crumbCur}>{t('მაღაზია')}</span>
             </nav>
-            <h2 className={s.h2}>{t(title)}</h2>
+            <h2 className={s.h2}>{title}</h2>
           </div>
-          {products && <span className={s.total}>{t('{count} პროდუქტი', { count: results.length })}</span>}
         </div>
 
+        {/* Categories by name; several can be on at once. */}
         <div className={s.catStrip}>
           <button
             type="button"
-            className={`${s.catTile} ${f.cat.length === 0 ? s.catTileOn : ''}`}
+            className={`${s.catPill} ${f.cat.length === 0 ? s.catPillOn : ''}`}
+            aria-pressed={f.cat.length === 0}
             onClick={() => update({ cat: [] })}
           >
-            <span className={s.catImg}>
-              <svg className={s.catAll} width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-                <rect x="4" y="4" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" />
-                <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" />
-              </svg>
-            </span>
-            <span className={s.catLabel}>{t('ყველა')}</span>
+            {t('ყველა')}
           </button>
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.code}
-              type="button"
-              className={`${s.catTile} ${singleCat?.code === c.code ? s.catTileOn : ''}`}
-              onClick={() => update({ cat: [c.code] })}
-            >
-              <span className={s.catImg}>
-                <ProductImage product={{ category: c.code, name: c.label }} color={c.swatch} className={s.catPic} />
-              </span>
-              <span className={s.catLabel}>{t(c.label)}</span>
-            </button>
-          ))}
+          {CATEGORIES.map((c) => {
+            const on = f.cat.includes(c.code);
+            return (
+              <button
+                key={c.code}
+                type="button"
+                className={`${s.catPill} ${on ? s.catPillOn : ''}`}
+                aria-pressed={on}
+                onClick={() => toggle('cat', c.code)}
+              >
+                {on && <span className={s.catCheck} aria-hidden="true">✓</span>}
+                {t(c.label)}
+              </button>
+            );
+          })}
         </div>
 
         <div className={s.layout}>
@@ -292,7 +288,6 @@ export default function ShopPage() {
                   <button key={c.code} type="button" className={s.checkRow} onClick={() => toggle('cat', c.code)} aria-pressed={on}>
                     <span className={`${s.box} ${on ? s.boxOn : ''}`}>{on ? '✓' : ''}</span>
                     <span className={s.checkLabel}>{t(c.label)}</span>
-                    <span className={s.count}>{catCounts[c.code] || 0}</span>
                   </button>
                 );
               })}
@@ -366,7 +361,7 @@ export default function ShopPage() {
             </div>
 
             <button type="button" className={s.showBtn} onClick={() => setDrawerOpen(false)}>
-              {t('ნახე {count} პროდუქტი', { count: results.length })}
+              {t('ნახე პროდუქტები')}
             </button>
           </aside>
 

@@ -146,19 +146,34 @@ function StatusBadge({ status }) {
 
 /** Card payments through BOG: give money back, in full or in part. */
 function RefundBox({ order, onSaved }) {
-  const left = Math.round((order.total - (order.refundedAmount || 0)) * 100) / 100;
+  const refunds = order.refunds || [];
+  const done = refunds.reduce((sum, r) => sum + r.amount, 0);
+  const left = Math.round((order.total - done) * 100) / 100;
   const [amount, setAmount] = useState(String(left));
+  const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  // Only an amount: digits and one decimal point (a comma counts as one), no sign.
+  const typeAmount = (raw) => {
+    const clean = raw.replace(',', '.').replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
+    const [whole, cents] = clean.split('.');
+    setAmount(cents === undefined ? whole : `${whole}.${cents.slice(0, 2)}`);
+    setError('');
+  };
+
   const refund = async () => {
-    const value = Number(amount.replace(',', '.'));
-    if (!(value > 0) || value > left) { setError(`ჩაწერე თანხა 0-დან ${gel(left)}-მდე`); return; }
-    if (!window.confirm(`${order.customerName}-ს ბარათზე დაუბრუნდება ${gel(value)}. ეს შეუქცევადია. გავაგრძელო?`)) return;
+    const value = Number(amount);
+    if (!(value > 0) || value > left) { setError(`ჩაწერე თანხა 0.01-დან ${gel(left)}-მდე`); return; }
+    if (reason.trim().length < 3) { setError('ჩაწერე დაბრუნების მიზეზი'); return; }
+    const full = Math.abs(value - left) < 0.005;
+    if (!window.confirm(`${order.customerName}-ს ბარათზე დაუბრუნდება ${gel(value)}.${full ? ' შეკვეთა გაუქმდება.' : ''} ეს შეუქცევადია. გავაგრძელო?`)) return;
     setBusy(true);
     setError('');
     try {
-      const { data } = await api.post(`/api/payments/bog/${order.id}/refund`, { amount: value });
+      const { data } = await api.post(`/api/payments/bog/${order.id}/refund`, { amount: value, reason: reason.trim() });
+      setReason('');
+      setAmount(String(Math.round((data.total - (data.refunds || []).reduce((s2, r) => s2 + r.amount, 0)) * 100) / 100));
       onSaved(data);
     } catch (e) {
       setError(getErrorMessage(e, 'თანხის დაბრუნება ვერ მოხერხდა'));
@@ -171,23 +186,44 @@ function RefundBox({ order, onSaved }) {
     <div className={s.card}>
       <h3 className={s.cardTitle}>თანხის დაბრუნება</h3>
       <p className={s.muted} style={{ margin: '0 0 10px', fontSize: 13 }}>
-        გადახდილია {gel(order.total)}{order.refundedAmount ? `, დაბრუნებულია ${gel(order.refundedAmount)}` : ''}. თანხა ბარათზე ბანკის მეშვეობით დაბრუნდება.
+        გადახდილია {gel(order.total)}{done ? `, დაბრუნებულია ${gel(done)}` : ''}. თანხა ბარათზე ბანკის მეშვეობით დაბრუნდება.
+        სრული დაბრუნებისას შეკვეთა გაუქმდება.
       </p>
+      {refunds.length > 0 && (
+        <ul style={{ margin: '0 0 12px', paddingLeft: 18, fontSize: 13 }}>
+          {refunds.map((r, i) => (
+            <li key={i}><b>{gel(r.amount)}</b> · {shortDate(r.at, true)} — {r.reason}</li>
+          ))}
+        </ul>
+      )}
       {error && <div className={s.error}>{error}</div>}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input
-          className={s.input}
-          style={{ maxWidth: 120 }}
-          inputMode="decimal"
-          value={amount}
-          onChange={(e) => { setAmount(e.target.value); setError(''); }}
-          aria-label="დასაბრუნებელი თანხა"
-        />
-        <span>₾</span>
-        <button type="button" className={s.btnDanger} disabled={busy} onClick={refund}>
-          {busy ? 'იგზავნება…' : 'დაბრუნება'}
-        </button>
-      </div>
+      {left > 0 && (
+        <div style={{ display: 'grid', gap: 8 }}>
+          <textarea
+            className={s.input}
+            rows={2}
+            maxLength={500}
+            placeholder="დაბრუნების მიზეზი (სავალდებულო)"
+            value={reason}
+            onChange={(e) => { setReason(e.target.value); setError(''); }}
+            aria-label="დაბრუნების მიზეზი"
+          />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              className={s.input}
+              style={{ maxWidth: 120 }}
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => typeAmount(e.target.value)}
+              aria-label="დასაბრუნებელი თანხა"
+            />
+            <span>₾</span>
+            <button type="button" className={s.btnDanger} disabled={busy} onClick={refund}>
+              {busy ? 'იგზავნება…' : 'დაბრუნება'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -241,6 +277,9 @@ function OrderDrawer({ order, onClose, onSaved }) {
                 </button>
               ))}
             </div>
+            {order.status === 'CANCELLED' && order.cancelReason && (
+              <p className={s.muted} style={{ margin: '10px 0 0', fontSize: 13 }}>გაუქმების მიზეზი: {order.cancelReason}</p>
+            )}
           </div>
 
           <div className={s.card}>
@@ -255,7 +294,7 @@ function OrderDrawer({ order, onClose, onSaved }) {
             </dl>
           </div>
 
-          {order.payment === 'card' && ['paid', 'refunded_partially'].includes(order.paymentStatus) && (
+          {order.payment === 'card' && (['paid', 'refunded_partially'].includes(order.paymentStatus) || order.refunds?.length > 0) && (
             <RefundBox order={order} onSaved={onSaved} />
           )}
 

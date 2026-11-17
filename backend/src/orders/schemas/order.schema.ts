@@ -25,6 +25,16 @@ export const PAYMENT_METHODS = ['cash', 'card', 'bog', 'transfer'] as const;
 /** Methods offered at checkout: card, or a transfer to the bank account. */
 export const CHECKOUT_PAYMENT_METHODS = ['card', 'transfer'] as const;
 
+/** Money returned to the customer through BOG, with the admin's reason. */
+@Schema({ _id: false })
+export class OrderRefund {
+  @Prop({ required: true, min: 0 }) amount: number;
+  @Prop({ required: true, trim: true }) reason: string;
+  @Prop({ required: true }) at: Date;
+  /** Admin who made it (e-mail). */
+  @Prop({ default: '' }) by: string;
+}
+
 /** Customer design attached to a line. Ids are GridFS files (see FilesModule). */
 @Schema({ _id: false })
 export class OrderDesign {
@@ -86,6 +96,10 @@ export class Order {
   @Prop() paidWith?: string;
   /** Lari returned to the customer so far (as BOG reports it). */
   @Prop({ default: 0 }) refundedAmount: number;
+  /** Refunds made from the admin panel, oldest first. */
+  @Prop({ type: [OrderRefund], default: [] }) refunds: OrderRefund[];
+  /** Why the order was cancelled (set by a full refund). */
+  @Prop({ default: '' }) cancelReason: string;
 
   /** Internal note visible only in the admin panel. */
   @Prop({ default: '' }) adminNote: string;

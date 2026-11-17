@@ -17,31 +17,36 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel, MongooseModule } from '@nestjs/mongoose';
 import type { Request } from 'express';
-import { IsNumber, IsOptional, Max, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { isValidObjectId, Model } from 'mongoose';
 import type { AuthUser } from '../auth/strategies/jwt.strategy';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { Order, OrderDocument, OrderSchema, PaymentStatus } from '../orders/schemas/order.schema';
+import { Order, OrderDocument, OrderSchema, OrderStatus, PaymentStatus } from '../orders/schemas/order.schema';
 import { Role } from '../users/schemas/user.schema';
 import { BogReceipt, BogService } from './bog.service';
 
-// BOG order_status.key → our payment status.
+// BOG order_status.key → our payment status (refund_requested keeps ours).
 const STATUS: Record<string, PaymentStatus> = {
   created: PaymentStatus.Pending,
   processing: PaymentStatus.Pending,
   auth_requested: PaymentStatus.Pending,
   completed: PaymentStatus.Paid,
   rejected: PaymentStatus.Failed,
-  refund_requested: PaymentStatus.Paid,
   refunded: PaymentStatus.Refunded,
   refunded_partially: PaymentStatus.PartlyRefunded,
 };
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
+/** Lari already returned from the admin panel. */
+const refundedSoFar = (order: OrderDocument) => round2((order.refunds ?? []).reduce((sum, r) => sum + r.amount, 0));
+
 class RefundDto {
   /** Lari to return; without it, everything not yet returned. */
   @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0.01) @Max(100000) amount?: number;
+  /** Why the money goes back; stored on the order. */
+  @IsString() @MinLength(3) @MaxLength(500) reason: string;
 }
 
 /**
@@ -103,16 +108,28 @@ export class PaymentsController {
     if (!order.bogOrderId || ![PaymentStatus.Paid, PaymentStatus.PartlyRefunded].includes(order.paymentStatus)) {
       throw new BadRequestException({ message: 'ამ შეკვეთაზე ონლაინ გადახდა არ არის', code: 'NOT_PAID' });
     }
-    const left = Math.round((order.total - (order.refundedAmount || 0)) * 100) / 100;
-    const amount = dto.amount ?? left;
+    const done = refundedSoFar(order);
+    const left = round2(order.total - done);
+    const amount = round2(dto.amount ?? left);
+    if (left <= 0) throw new BadRequestException({ message: 'თანხა უკვე სრულად დაბრუნებულია', code: 'NOTHING_LEFT' });
     if (amount > left + 0.005) {
       throw new BadRequestException({ message: `დასაბრუნებელი თანხა მაქსიმუმ ${left} ₾-ია`, code: 'TOO_MUCH' });
     }
-    // The whole remainder goes without an amount, as BOG expects for a full refund.
-    await this.bog.refund(order.bogOrderId, amount < left - 0.005 || order.refundedAmount ? amount : undefined);
-    this.logger.log(`Refund of ${amount} GEL requested for order ${order.id} by ${user.email}`);
-    // BOG settles refunds asynchronously; read the state it reports now.
-    await this.refresh(order).catch(() => undefined);
+    const full = Math.abs(amount - left) < 0.005;
+    // The first refund of everything goes without an amount, as BOG expects for a full refund.
+    await this.bog.refund(order.bogOrderId, full && done === 0 ? undefined : amount);
+    this.logger.log(`Refund of ${amount} GEL for order ${order.id} by ${user.email}`);
+
+    // BOG accepted the request (it settles it shortly); record it now.
+    const reason = dto.reason.trim();
+    order.refunds.push({ amount, reason, at: new Date(), by: user.email });
+    order.paymentStatus = full ? PaymentStatus.Refunded : PaymentStatus.PartlyRefunded;
+    if (full) {
+      // Everything went back: the order is off.
+      order.status = OrderStatus.Cancelled;
+      order.cancelReason = reason;
+    }
+    await order.save();
     return order;
   }
 
@@ -134,20 +151,26 @@ export class PaymentsController {
   /** Reads the payment from BOG and stores the result on the order. */
   private async refresh(order: OrderDocument) {
     const receipt = await this.bog.receipt(order.bogOrderId!);
-    const next = this.statusOf(order, receipt);
+    let next = this.statusOf(order, receipt);
+    // Refunds recorded here stand while BOG is still settling them.
+    if (order.refunds?.length && (next === PaymentStatus.Paid || next === null)) next = order.paymentStatus;
+    if (next === null) return;
     const refunded = Number(receipt.purchase_units?.refund_amount) || 0;
     if (next === order.paymentStatus && refunded === (order.refundedAmount || 0)) return;
     order.paymentStatus = next;
     order.refundedAmount = refunded;
-    if (next === PaymentStatus.Paid) {
+    if (next === PaymentStatus.Paid && !order.paidAt) {
       order.paidAt = new Date();
       order.paidWith = receipt.payment_detail?.transfer_method?.key ?? '';
     }
     await order.save();
   }
 
-  private statusOf(order: OrderDocument, receipt: BogReceipt) {
-    const status = STATUS[receipt.order_status?.key ?? ''] ?? PaymentStatus.Pending;
+  /** Our payment status for BOG's receipt; null = leave it as it is. */
+  private statusOf(order: OrderDocument, receipt: BogReceipt): PaymentStatus | null {
+    const key = receipt.order_status?.key ?? '';
+    if (key === 'refund_requested') return null;
+    const status = STATUS[key] ?? PaymentStatus.Pending;
     if (status !== PaymentStatus.Paid) return status;
     // Paid only if BOG took the full amount, in lari.
     const units = receipt.purchase_units ?? {};
