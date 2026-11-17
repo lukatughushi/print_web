@@ -14,6 +14,11 @@ class TokenDto {
   @IsString() @MinLength(20) @MaxLength(200) token: string;
 }
 
+class GoogleDto {
+  /** The ID token (JWT) Google's sign-in button hands the page. */
+  @IsString() @MinLength(20) @MaxLength(4096) credential: string;
+}
+
 class ResetDto extends TokenDto {
   @IsString() @MinLength(8) @MaxLength(128) password: string;
 }
@@ -33,6 +38,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  google(@Body() dto: GoogleDto) {
+    return this.authService.google(dto.credential);
   }
 
   @Post('verify-email')

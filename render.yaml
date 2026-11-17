@@ -33,6 +33,14 @@ services:
         value: Prenta <info@prenta.ge>
       - key: APP_URL
         value: https://www.prenta.ge
+      # Google sign-in: the OAuth client id (same as VITE_GOOGLE_CLIENT_ID on Vercel)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      # Bank of Georgia online payments (businessmanager.bog.ge); keep secret
+      - key: BOG_CLIENT_ID
+        sync: false
+      - key: BOG_CLIENT_SECRET
+        sync: false
       - key: SEED_ADMIN_EMAIL
         sync: false
       - key: SEED_ADMIN_PASSWORD

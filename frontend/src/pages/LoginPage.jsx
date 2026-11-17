@@ -5,6 +5,7 @@ import { useAuth } from '../context/auth-context';
 import { getErrorMessage } from '../lib/api';
 import { useI18n } from '../i18n/i18n-context';
 import { CheckEmail } from './AuthLinkPages';
+import GoogleSignIn from '../components/GoogleSignIn';
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -64,6 +65,8 @@ export default function LoginPage() {
         <SubmitButton loading={loading}>{t('შესვლა')}</SubmitButton>
       </form>
       )}
+      {/* Signing in with Google re-renders this page signed in, which redirects back. */}
+      {!unverified && <div className="mt-4"><GoogleSignIn /></div>}
     </AuthCard>
   );
 }

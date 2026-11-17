@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import { Model } from 'mongoose';
 import { Role, User, UserDocument } from './schemas/user.schema';
@@ -10,11 +11,21 @@ const SALT_ROUNDS = 12;
 export class UsersService {
   constructor(@InjectModel(User.name) private readonly userModel: Model<User>) {}
 
-  async create(data: { name: string; email: string; password: string; role?: Role; emailVerified?: boolean }) {
+  /**
+   * Without a password (an account made by signing in with Google) a random
+   * one is stored that nobody knows; "forgot password" can set a real one.
+   */
+  async create(data: {
+    name: string; email: string; password?: string; role?: Role; emailVerified?: boolean; googleId?: string;
+  }) {
     const exists = await this.userModel.exists({ email: data.email.toLowerCase() });
     if (exists) throw new ConflictException('Email is already registered');
-    const password = await bcrypt.hash(data.password, SALT_ROUNDS);
+    const password = await bcrypt.hash(data.password ?? randomBytes(32).toString('hex'), SALT_ROUNDS);
     return this.userModel.create({ ...data, password });
+  }
+
+  findByGoogleId(googleId: string) {
+    return this.userModel.findOne({ googleId }).exec();
   }
 
   hashPassword(plain: string) {

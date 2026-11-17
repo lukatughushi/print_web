@@ -6,6 +6,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from '../mail/mail.service';
 import { UserDocument } from '../users/schemas/user.schema';
@@ -33,7 +34,49 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mail: MailService,
+    private readonly config: ConfigService,
   ) {}
+
+  /**
+   * Signs in with Google: checks the ID token with Google, then finds the
+   * account by its Google id or e-mail, or creates one. Google has already
+   * confirmed the address, so no confirmation e-mail is needed.
+   */
+  async google(credential: string) {
+    const clientId = this.config.get<string>('GOOGLE_CLIENT_ID');
+    if (!clientId) throw new ServiceUnavailableException('Google-ით შესვლა დროებით მიუწვდომელია');
+
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`)
+      .catch(() => null);
+    if (!res) throw new ServiceUnavailableException('Google-თან კავშირი ვერ დამყარდა, სცადე ხელახლა');
+    const claims = res.ok ? ((await res.json()) as Record<string, string>) : null;
+    const valid =
+      claims &&
+      claims.aud === clientId &&
+      ['accounts.google.com', 'https://accounts.google.com'].includes(claims.iss) &&
+      claims.email_verified === 'true' &&
+      Number(claims.exp) * 1000 > Date.now() &&
+      claims.sub && claims.email;
+    if (!valid) throw new UnauthorizedException('Google-ით შესვლა ვერ დადასტურდა');
+
+    let user =
+      (await this.usersService.findByGoogleId(claims.sub)) ??
+      (await this.usersService.findByEmail(claims.email));
+    if (user) {
+      if (user.disabled) {
+        throw new ForbiddenException({ message: 'ანგარიში გათიშულია — დაგვიკავშირდი', code: 'ACCOUNT_DISABLED' });
+      }
+      await this.usersService.update(user.id, { googleId: claims.sub, emailVerified: true });
+    } else {
+      user = await this.usersService.create({
+        name: (claims.name || claims.given_name || claims.email.split('@')[0]).slice(0, 80),
+        email: claims.email,
+        emailVerified: true,
+        googleId: claims.sub,
+      });
+    }
+    return this.buildAuthResponse(user);
+  }
 
   /**
    * With e-mail set up, a new account must confirm its address before it

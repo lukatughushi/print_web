@@ -5,21 +5,14 @@ import { assetUrl } from '../lib/catalog';
 import { rackItems } from '../lib/heroRack';
 import s from './HeroRack.module.css';
 
-// The designs from the last visit, so the rack never waits on a sleeping backend
-// (Render's free plan takes about a minute to wake). The browser may refuse storage.
-const CACHE_KEY = 'heroRack';
-function cachedDesigns() {
-  try { return JSON.parse(localStorage.getItem(CACHE_KEY)) ?? []; } catch { return []; }
+// The rack always shows the server's current designs: the loader stays up until
+// they arrive, however long the backend takes to wake. If the request fails the
+// garments hang without designs rather than showing anything out of date.
+function currentDesigns() {
+  return api.get('/api/settings').then((r) => r.data?.heroRack ?? []).catch(() => []);
 }
-function freshDesigns(waitMs) {
-  const request = api.get('/api/settings').then((r) => {
-    const list = r.data?.heroRack ?? [];
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(list)); } catch { /* storage off */ }
-    return list;
-  });
-  const timeout = new Promise((done) => setTimeout(() => done(null), waitMs));
-  return Promise.race([request, timeout]).then((list) => list ?? cachedDesigns()).catch(() => cachedDesigns());
-}
+// Designs cached by an earlier version of the site.
+try { localStorage.removeItem('heroRack'); } catch { /* storage off */ }
 
 /**
  * Home hero art: the clothing rack (lib/rackHero), with an "It's coming…"
@@ -44,7 +37,7 @@ export default function HeroRack({ className, label }) {
     const start = () => {
       Promise.all([
         import('../lib/rackHero'),
-        freshDesigns(2500),
+        currentDesigns(),
       ]).then(([{ mountRack }, designs]) => {
         if (dead) return;
         cleanup = mountRack(el, {

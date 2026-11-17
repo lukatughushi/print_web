@@ -31,6 +31,8 @@ import { registerColors } from './lib/catalog';
 const loadDesignPage = () => import('./pages/DesignPage');
 const DesignPage = lazy(loadDesignPage);
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const LegalPage = lazy(() => import('./pages/LegalPage'));
+const PaymentResultPage = lazy(() => import('./pages/PaymentResultPage'));
 const AdminLayout = lazy(() => import('./components/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage'));
 const AdminOrders = lazy(() => import('./pages/admin/OrdersPage'));
@@ -91,12 +93,15 @@ function AppContent() {
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/corporate" element={<CorporatePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/terms" element={<LegalPage doc="terms" />} />
+        <Route path="/privacy" element={<LegalPage doc="privacy" />} />
         {PRINT_PAGES.map((p) => <Route key={p.path} path={p.path} element={<PrintPage page={p} />} />)}
         <Route path="/product/:id" element={<ProductDetailPage />} />
         {/* Design editor — existing Fabric.js page, do not replace */}
         <Route path="/design/:productId" element={<DesignPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/checkout/paid" element={<PaymentResultPage />} />
 
         {/* Customer auth */}
         <Route path="/login" element={<LoginPage />} />

@@ -13,6 +13,7 @@ import { validateEnv } from './config/env.validation';
 import { FilesModule } from './files/files.module';
 import { HealthModule } from './health/health.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { ProductsModule } from './products/products.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -38,6 +39,7 @@ import { UsersModule } from './users/users.module';
     FilesModule,
     SettingsModule,
     OrdersModule,
+    PaymentsModule,
     QuotesModule,
     AdminModule,
     HealthModule,

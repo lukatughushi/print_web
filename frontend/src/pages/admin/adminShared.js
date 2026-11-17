@@ -19,6 +19,25 @@ export const PAYMENT_LABELS = {
   transfer: 'გადმორიცხვით',
 };
 
+/** Online (BOG) payment state of an order. */
+export const PAYMENT_STATUS_LABELS = {
+  unpaid: 'გადაუხდელი',
+  pending: 'მუშავდება',
+  paid: 'გადახდილი',
+  failed: 'ვერ შედგა',
+  refunded: 'დაბრუნებული',
+  refunded_partially: 'ნაწილობრივ დაბრუნებული',
+};
+export const PAID_WITH_LABELS = { card: 'ბარათი', apple_pay: 'Apple Pay', google_pay: 'Google Pay' };
+
+/** "ბარათით · გადახდილი (Apple Pay)" */
+export function paymentText(order) {
+  const method = PAYMENT_LABELS[order.payment] ?? order.payment;
+  if (order.payment !== 'card' || !order.paymentStatus || order.paymentStatus === 'unpaid') return method;
+  const via = order.paidWith ? ` (${PAID_WITH_LABELS[order.paidWith] ?? order.paidWith})` : '';
+  return `${method} · ${PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus}${via}`;
+}
+
 export function gel(amount) {
   const n = Number(amount) || 0;
   return `${n.toLocaleString('ka-GE', { maximumFractionDigits: 2 })} ₾`;

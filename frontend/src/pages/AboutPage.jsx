@@ -135,6 +135,9 @@ export default function AboutPage() {
             <div id="privacy" className={s.card}>
               <h2 className={s.h3}>{t('კონფიდენციალურობის პოლიტიკა')}</h2>
               <p className={s.text}>{t('პროდუქციის შესყიდვისას მომხმარებლის მიერ გაზიარებული პირადი ინფორმაცია სრულად კონფიდენციალურია და საიტის ადმინისტრაციის მხრიდან მისი გაზიარება დაუშვებელია.')}</p>
+              <p className={s.text}>
+                <Link to="/privacy">{t('კონფიდენციალურობის პოლიტიკა')} →</Link> · <Link to="/terms">{t('წესები და პირობები')} →</Link>
+              </p>
             </div>
           </div>
         </section>

@@ -5,6 +5,7 @@ import { useAuth } from '../context/auth-context';
 import { getErrorMessage } from '../lib/api';
 import { useI18n } from '../i18n/i18n-context';
 import { CheckEmail } from './AuthLinkPages';
+import GoogleSignIn from '../components/GoogleSignIn';
 
 export default function RegisterPage() {
   const { t } = useI18n();
@@ -68,6 +69,16 @@ export default function RegisterPage() {
           value={form.confirm} onChange={update} required />
         <SubmitButton loading={loading}>{t('რეგისტრაცია')}</SubmitButton>
       </form>
+      )}
+      {/* Signing in with Google re-renders this page signed in, which redirects back. */}
+      {!verifyEmail && <div className="mt-4"><GoogleSignIn /></div>}
+      {!verifyEmail && (
+        <p className="mt-4 text-center text-xs text-[#6B7385]">
+          {t('რეგისტრაციით ეთანხმები')}{' '}
+          <Link to="/terms" target="_blank" className="text-coral hover:text-navy!">{t('წესებსა და პირობებს')}</Link>{' '}
+          {t('და')}{' '}
+          <Link to="/privacy" target="_blank" className="text-coral hover:text-navy!">{t('კონფიდენციალურობის პოლიტიკას')}</Link>.
+        </p>
       )}
     </AuthCard>
   );

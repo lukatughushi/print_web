@@ -10,6 +10,16 @@ export enum OrderStatus {
   Cancelled = 'CANCELLED',
 }
 
+/** Online payment state (card / Apple Pay / Google Pay through Bank of Georgia). */
+export enum PaymentStatus {
+  Unpaid = 'unpaid',
+  Pending = 'pending',
+  Paid = 'paid',
+  Failed = 'failed',
+  Refunded = 'refunded',
+  PartlyRefunded = 'refunded_partially',
+}
+
 /** Every method an order may carry; 'cash' and 'bog' remain for older orders. */
 export const PAYMENT_METHODS = ['cash', 'card', 'bog', 'transfer'] as const;
 /** Methods offered at checkout: card, or a transfer to the bank account. */
@@ -65,6 +75,17 @@ export class Order {
 
   @Prop({ type: String, enum: OrderStatus, default: OrderStatus.Pending, index: true })
   status: OrderStatus;
+
+  @Prop({ type: String, enum: PaymentStatus, default: PaymentStatus.Unpaid, index: true })
+  paymentStatus: PaymentStatus;
+
+  /** Bank of Georgia's id for the payment. */
+  @Prop({ index: true, sparse: true }) bogOrderId?: string;
+  @Prop() paidAt?: Date;
+  /** How it was paid on BOG's page: card, apple_pay, google_pay… */
+  @Prop() paidWith?: string;
+  /** Lari returned to the customer so far (as BOG reports it). */
+  @Prop({ default: 0 }) refundedAmount: number;
 
   /** Internal note visible only in the admin panel. */
   @Prop({ default: '' }) adminNote: string;

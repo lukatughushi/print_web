@@ -2,7 +2,6 @@ import { Body, Controller, Get, Module, Param, Patch, Post, Query } from '@nestj
 import { MongooseModule } from '@nestjs/mongoose';
 import type { AuthUser } from '../auth/strategies/jwt.strategy';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { FilesModule } from '../files/files.module';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
@@ -16,11 +15,10 @@ import { Order, OrderSchema } from './schemas/order.schema';
 export class OrdersController {
   constructor(private readonly orders: OrdersService) {}
 
-  /** Guest checkout. */
-  @Public()
+  /** Checkout needs an account; the order is filed under its e-mail. */
   @Post()
-  create(@Body() dto: CreateOrderDto) {
-    return this.orders.create(dto);
+  create(@CurrentUser() user: AuthUser, @Body() dto: CreateOrderDto) {
+    return this.orders.create({ ...dto, customerEmail: user.email });
   }
 
   /** The signed-in customer's orders (matched by e-mail). */

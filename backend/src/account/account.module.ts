@@ -93,6 +93,7 @@ class ProfileDto {
   @IsOptional() @IsString() @MaxLength(40) phone?: string;
   @IsOptional() @IsString() @MaxLength(80) city?: string;
   @IsOptional() @IsString() @MaxLength(200) address?: string;
+  @IsOptional() @IsString() @MaxLength(80) profession?: string;
 }
 
 class PasswordDto {
@@ -168,7 +169,9 @@ export class AccountService {
 
   async updateProfile(userId: string, dto: ProfileDto) {
     const set = Object.fromEntries(
-      Object.entries(dto).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v).trim()]),
+      Object.entries(dto)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, String(v).trim()]),
     );
     const user = await this.userModel.findByIdAndUpdate(userId, { $set: set }, { returnDocument: 'after' }).exec();
     if (!user) throw new NotFoundException('User not found');

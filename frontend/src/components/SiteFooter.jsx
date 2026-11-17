@@ -43,8 +43,9 @@ export default function SiteFooter({ settings = {} }) {
         <div className={s.col}>
           <span className={s.colTitle}>{t('დახმარება')}</span>
           <span>{t('მიწოდება და ვადები')}</span>
+          <Link to="/terms">{t('წესები და პირობები')}</Link>
           <Link to="/about#returns">{t('დაბრუნება')}</Link>
-          <Link to="/about#privacy">{t('კონფიდენციალურობა')}</Link>
+          <Link to="/privacy">{t('კონფიდენციალურობა')}</Link>
           <span>{t('ხშირად დასმული კითხვები')}</span>
         </div>
       </div>

@@ -6,7 +6,8 @@ import { buildCorsOptions } from './config/cors';
 import { SocketIoAdapter } from './realtime/socket-io.adapter';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // rawBody: BOG's payment callback is signed over the exact request bytes.
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
   // Orders carry the design's print-ready PNG and layers (several MB).
   app.useBodyParser('json', { limit: '30mb' });
 

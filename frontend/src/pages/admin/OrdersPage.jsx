@@ -4,7 +4,7 @@ import api from '../../lib/api';
 import { API_BASE, CATEGORY_LABELS, COLORS } from '../../lib/catalog';
 import {
   ORDER_STATUSES,
-  PAYMENT_LABELS,
+  paymentText,
   STATUS_BY_KEY,
   gel,
   getErrorMessage,
@@ -144,6 +144,54 @@ function StatusBadge({ status }) {
   return <span className={`${s.badge} ${s[`tone-${st?.tone}`]}`}>{st?.label ?? status}</span>;
 }
 
+/** Card payments through BOG: give money back, in full or in part. */
+function RefundBox({ order, onSaved }) {
+  const left = Math.round((order.total - (order.refundedAmount || 0)) * 100) / 100;
+  const [amount, setAmount] = useState(String(left));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const refund = async () => {
+    const value = Number(amount.replace(',', '.'));
+    if (!(value > 0) || value > left) { setError(`ჩაწერე თანხა 0-დან ${gel(left)}-მდე`); return; }
+    if (!window.confirm(`${order.customerName}-ს ბარათზე დაუბრუნდება ${gel(value)}. ეს შეუქცევადია. გავაგრძელო?`)) return;
+    setBusy(true);
+    setError('');
+    try {
+      const { data } = await api.post(`/api/payments/bog/${order.id}/refund`, { amount: value });
+      onSaved(data);
+    } catch (e) {
+      setError(getErrorMessage(e, 'თანხის დაბრუნება ვერ მოხერხდა'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={s.card}>
+      <h3 className={s.cardTitle}>თანხის დაბრუნება</h3>
+      <p className={s.muted} style={{ margin: '0 0 10px', fontSize: 13 }}>
+        გადახდილია {gel(order.total)}{order.refundedAmount ? `, დაბრუნებულია ${gel(order.refundedAmount)}` : ''}. თანხა ბარათზე ბანკის მეშვეობით დაბრუნდება.
+      </p>
+      {error && <div className={s.error}>{error}</div>}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          className={s.input}
+          style={{ maxWidth: 120 }}
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) => { setAmount(e.target.value); setError(''); }}
+          aria-label="დასაბრუნებელი თანხა"
+        />
+        <span>₾</span>
+        <button type="button" className={s.btnDanger} disabled={busy} onClick={refund}>
+          {busy ? 'იგზავნება…' : 'დაბრუნება'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function OrderDrawer({ order, onClose, onSaved }) {
   const [note, setNote] = useState(order.adminNote || '');
   const [zoom, setZoom] = useState(null); // image shown full size
@@ -202,10 +250,14 @@ function OrderDrawer({ order, onClose, onSaved }) {
               <dt>ტელეფონი</dt><dd><a className={s.link} href={`tel:${order.phone}`}>{order.phone}</a></dd>
               {order.customerEmail && <><dt>ელფოსტა</dt><dd><a className={s.link} href={`mailto:${order.customerEmail}`}>{order.customerEmail}</a></dd></>}
               <dt>მისამართი</dt><dd>{order.address}</dd>
-              <dt>გადახდა</dt><dd>{PAYMENT_LABELS[order.payment] ?? order.payment}</dd>
+              <dt>გადახდა</dt><dd>{paymentText(order)}</dd>
               {order.notes && <><dt>შენიშვნა</dt><dd>{order.notes}</dd></>}
             </dl>
           </div>
+
+          {order.payment === 'card' && ['paid', 'refunded_partially'].includes(order.paymentStatus) && (
+            <RefundBox order={order} onSaved={onSaved} />
+          )}
 
           <div className={s.card}>
             <h3 className={s.cardTitle}>პროდუქტები</h3>
@@ -377,7 +429,7 @@ export default function OrdersPage() {
                     {o.items.reduce((n, it) => n + it.quantity, 0)} ცალი
                     {o.items.some((it) => it.design) && <span className={s.muted} style={{ fontSize: 12 }}> · დიზაინით</span>}
                   </td>
-                  <td className={s.nowrap}>{PAYMENT_LABELS[o.payment] ?? o.payment}</td>
+                  <td className={s.nowrap}>{paymentText(o)}</td>
                   <td className={`${s.num} ${s.right} ${s.strong}`}>{gel(o.total)}</td>
                   <td><StatusBadge status={o.status} /></td>
                 </tr>

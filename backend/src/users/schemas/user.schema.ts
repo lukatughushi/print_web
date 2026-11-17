@@ -50,6 +50,14 @@ export class User {
   @Prop({ default: '', trim: true })
   address: string;
 
+  // "What field are you in?", typed at checkout (optional).
+  @Prop({ default: '', trim: true })
+  profession: string;
+
+  // Set when the account signs in with Google (Google's stable user id).
+  @Prop({ select: false, index: { unique: true, sparse: true } })
+  googleId?: string;
+
   // Favourite product ids, synced from the browser when signed in.
   @Prop({ type: [String], default: [] })
   favorites: string[];
