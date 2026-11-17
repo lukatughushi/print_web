@@ -11,6 +11,7 @@ import {
   Matches,
   Max,
   MaxLength,
+  MinLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -23,6 +24,20 @@ export class CustomColorDto {
 }
 
 /** A design on one of the home hero's rack garments. */
+export class CustomCategoryDto {
+  /** Stored on products; upper-case letters, digits and _. */
+  @IsString() @Matches(/^[A-Z][A-Z0-9_]{1,29}$/) code: string;
+  @IsString() @MinLength(1) @MaxLength(40) label: string;
+  @IsOptional() @IsString() @MaxLength(40) en?: string;
+  @IsOptional() @IsString() @MaxLength(40) ru?: string;
+}
+
+export class CategoriesDto {
+  @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) hidden: string[];
+  @IsArray() @ArrayMaxSize(60) @ValidateNested({ each: true }) @Type(() => CustomCategoryDto)
+  custom: CustomCategoryDto[];
+}
+
 export class HeroRackItemDto {
   @IsInt() @Min(0) @Max(9) slot: number;
   @IsString() @Matches(/^[a-f0-9]{24}$/i) image: string;
@@ -53,6 +68,8 @@ export class UpdateSettingsDto {
   @IsOptional() @IsObject() i18n?: Record<string, Record<string, string>>;
   @IsOptional() @IsArray() @ArrayMaxSize(60) @ValidateNested({ each: true }) @Type(() => CustomColorDto)
   customColors?: CustomColorDto[];
+  @IsOptional() @ValidateNested() @Type(() => CategoriesDto)
+  categories?: CategoriesDto;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true }) @Type(() => HeroRackItemDto)
   heroRack?: HeroRackItemDto[];
 }

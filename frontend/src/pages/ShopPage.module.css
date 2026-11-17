@@ -4,33 +4,6 @@
 
 .page { background: #F9F6F3; color: #16233B; min-height: calc(100vh - 64px); }
 
-/* ── Corporate block text + button ───────────────────────── */
-.eyebrow {
-  font-size: 12px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: #F3EBE3;
-  opacity: .8;
-}
-.ctaPrimary {
-  align-self: flex-start;
-  height: 48px;
-  padding: 0 24px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  font: inherit;
-  font-weight: 600;
-  font-size: 14.5px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background .15s;
-  background: #EF5F7A;
-  color: #fff;
-  border: none;
-}
-.ctaPrimary:hover { background: #E24D69; color: #fff; }
-
 /* ── Shop header ─────────────────────────────────────────── */
 .shop {
   max-width: 1320px;
@@ -410,31 +383,6 @@
 .pageBtn:hover { border-color: #16233B; }
 .pageBtnOn { background: #16233B; border-color: #16233B; color: #fff; }
 .pageGap { color: #A0A5B1; padding: 0 2px; }
-
-/* ── Corporate ───────────────────────────────────────────── */
-.corpWrap { max-width: 1320px; margin: 0 auto; padding: 0 20px 56px; scroll-margin-top: 80px; }
-.corp {
-  background: #16233B;
-  color: #fff;
-  border-radius: 20px;
-  padding: clamp(24px, 4vw, 44px);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-  gap: 24px;
-  align-items: center;
-  overflow: hidden;
-}
-.corpBody { display: flex; flex-direction: column; gap: 14px; }
-.corpTitle {
-  margin: 0;
-  font-family: var(--serif), Georgia, serif;
-  font-size: clamp(22px, 2.6vw, 32px);
-  line-height: 1.2;
-  text-wrap: balance;
-}
-.corpText { margin: 0; color: #C9CFDB; font-size: 14.5px; line-height: 1.65; max-width: 520px; }
-.corpArt { display: flex; justify-content: center; }
-.corpArt img { width: 100%; max-width: 260px; border-radius: 14px; }
 
 /* ── Tablet / mobile: filters become a drawer ────────────── */
 @media (max-width: 1023px) {

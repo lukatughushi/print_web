@@ -141,7 +141,8 @@
 .btnDanger:hover { background: #FDF0F1; }
 .btn:disabled,
 .btnPrimary:disabled,
-.btnGhost:disabled { opacity: .5; cursor: default; }
+.btnGhost:disabled,
+.btnDanger:disabled { opacity: .5; cursor: default; }
 .btnSm { height: 32px; padding: 0 12px; font-size: 12.5px; }
 .iconBtn {
   width: 32px;

@@ -4,6 +4,7 @@ import api from '../lib/api';
 import {
   CATEGORIES,
   CATEGORY_BY_CODE,
+  visibleCategories,
   COLORS,
   SIZE_ORDER,
   isOnSale,
@@ -12,14 +13,14 @@ import {
 import ProductCard from '../components/ProductCard';
 import SiteFooter from '../components/SiteFooter';
 import useFavStore from '../store/favStore';
-import corpImg from '../assets/prenta/main_hoode.webp';
 import s from './ShopPage.module.css';
 import { useI18n } from '../i18n/i18n-context';
 import { productName } from '../i18n/products';
 
 // Layout follows src/acrhi/Prenta Shop.dc.html.
 
-const PAGE_SIZE = 20;
+// Six rows of five on a wide screen.
+const PAGE_SIZE = 30;
 
 // Accessories have no sizes, so a size filter leaves them out.
 const sizesOf = (p) => p.sizes || [];
@@ -143,7 +144,7 @@ export default function ShopPage() {
     api.get('/api/settings').then((r) => r.data && setSettings((v) => ({ ...v, ...r.data }))).catch(() => {});
   }, []);
 
-  // /shop#corporate (header link) scrolls to the corporate block.
+  // A #section in the address scrolls to it.
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' });
   }, [hash, products]);
@@ -157,7 +158,12 @@ export default function ShopPage() {
   }, [drawerOpen]);
 
   const f = useMemo(() => readFilters(params), [params]);
-  const all = useMemo(() => products || [], [products]);
+  // Products of categories hidden in admin stay out of the shop.
+  const all = useMemo(
+    () => (products || []).filter((p) => !CATEGORY_BY_CODE[p.category]?.hidden),
+    [products],
+  );
+  const cats = visibleCategories();
 
   // Any filter change goes back to page 1.
   const update = (changes, keepPage = false) => {
@@ -251,7 +257,7 @@ export default function ShopPage() {
           >
             {t('ყველა')}
           </button>
-          {CATEGORIES.map((c) => {
+          {cats.map((c) => {
             const on = f.cat.includes(c.code);
             return (
               <button
@@ -282,7 +288,7 @@ export default function ShopPage() {
 
             <div className={s.group}>
               <div className={s.groupTitle}>{t('კატეგორია')}</div>
-              {CATEGORIES.map((c) => {
+              {cats.map((c) => {
                 const on = f.cat.includes(c.code);
                 return (
                   <button key={c.code} type="button" className={s.checkRow} onClick={() => toggle('cat', c.code)} aria-pressed={on}>
@@ -450,19 +456,6 @@ export default function ShopPage() {
           </div>
         </div>
       </main>
-
-      {/* ── Corporate ────────────────────────────────────── */}
-      <section id="corporate" className={s.corpWrap}>
-        <div className={s.corp}>
-          <div className={s.corpBody}>
-            <span className={s.eyebrow}>{t('კორპორატიული შეკვეთები')}</span>
-            <h3 className={s.corpTitle}>{t('შენი ბიზნესისთვის, თანამშრომლებისთვის, ღონისძიებისთვის, სკოლებისა და უნივერსიტეტებისთვის')}</h3>
-            <p className={s.corpText}>{t('10 ცალიდან — მიიღე სპეციალური, შენზე მორგებული საბითუმო ფასი.')}</p>
-            <Link to="/corporate" className={s.ctaPrimary}>{t('გამოთვალე ფასი')}</Link>
-          </div>
-          <div className={s.corpArt}><img src={corpImg} alt="" /></div>
-        </div>
-      </section>
 
       <SiteFooter settings={settings} />
     </div>

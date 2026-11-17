@@ -123,6 +123,12 @@ export class AdminService {
   }
 
   /** One page of products, hidden ones included. */
+  /** Products per category code, hidden ones included (admin Categories page). */
+  async categoryCounts() {
+    const rows = await this.productModel.aggregate<{ _id: string; n: number }>([{ $group: { _id: '$category', n: { $sum: 1 } } }]);
+    return Object.fromEntries(rows.filter((r) => r._id).map((r) => [r._id, r.n]));
+  }
+
   async allProducts(query: { q?: string; category?: string; visibility?: string } & PageQuery) {
     const filter: Record<string, unknown> = {};
     const rx = searchRegex(query.q);
@@ -207,6 +213,11 @@ export class AdminController {
   @Get('stats')
   stats() {
     return this.admin.stats();
+  }
+
+  @Get('category-counts')
+  categoryCounts() {
+    return this.admin.categoryCounts();
   }
 
   @Get('products')

@@ -24,7 +24,9 @@ import PageMeta from './components/PageMeta';
 import PrintPage from './pages/PrintPage';
 import { PRINT_PAGES } from './lib/printPages';
 import api from './lib/api';
-import { registerColors } from './lib/catalog';
+import { registerCategories, registerColors } from './lib/catalog';
+import en from './i18n/en';
+import ru from './i18n/ru';
 
 // Heavy or rarely used pages load on demand, so the storefront doesn't
 // download the 3D/editor libraries (three.js, Konva) or the admin panel.
@@ -44,6 +46,7 @@ const AdminLogs = lazy(() => import('./pages/admin/LogsPage'));
 const SettingsPage = lazy(() => import('./pages/admin/SettingsPage'));
 const AdminConstructor = lazy(() => import('./pages/admin/ConstructorPage'));
 const AdminHeroSpecial = lazy(() => import('./pages/admin/HeroSpecialPage'));
+const AdminCategories = lazy(() => import('./pages/admin/CategoriesPage'));
 
 // Fetch the constructor code once the current page is idle, so opening it
 // later is instant without slowing down the first page load.
@@ -56,13 +59,17 @@ function usePrefetchDesignPage() {
   }, []);
 }
 
-// Colours added in admin live in the settings; load them once so every page
-// (swatches, constructor, admin) knows their names and shades.
+// Colours and categories set in admin live in the settings; load them once
+// so every page (swatches, shop, constructor, admin) knows them.
 function useCustomColors() {
   const [, setLoaded] = useState(false);
   useEffect(() => {
     api.get('/api/settings')
-      .then((r) => { registerColors(r.data?.customColors); setLoaded(true); })
+      .then((r) => {
+        registerColors(r.data?.customColors);
+        registerCategories(r.data?.categories, { en, ru });
+        setLoaded(true);
+      })
       .catch(() => {});
   }, []);
 }
@@ -125,6 +132,7 @@ function AppContent() {
             <Route path="products" element={<AdminProducts />} />
             <Route path="constructor" element={<AdminConstructor />} />
             <Route path="hero-special" element={<AdminHeroSpecial />} />
+            <Route path="categories" element={<AdminCategories />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="roles" element={<AdminRoles />} />
             <Route path="quotes" element={<AdminQuotes />} />

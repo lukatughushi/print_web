@@ -36,6 +36,42 @@ export const CATEGORY_LABELS = Object.fromEntries(CATEGORIES.map((c) => [c.code,
 
 export const CATEGORY_EN = Object.fromEntries(CATEGORIES.map((c) => [c.code, c.en]));
 
+const BUILTIN_CATEGORY_CODES = CATEGORIES.map((c) => c.code);
+export const isBuiltinCategory = (code) => BUILTIN_CATEGORY_CODES.includes(code);
+
+/**
+ * Applies the admin's category settings (settings.categories): hides the
+ * listed built-in ones and adds the custom ones (by name only; products in
+ * them use their own photos). Updates CATEGORIES and the lookups in place.
+ */
+export function registerCategories(config, dicts = {}) {
+  const hidden = Array.isArray(config?.hidden) ? config.hidden : [];
+  const custom = (Array.isArray(config?.custom) ? config.custom : []).filter((c) => c?.code && c.label);
+  // Drop custom ones from an earlier call, keep the built-ins.
+  for (let i = CATEGORIES.length - 1; i >= 0; i--) {
+    if (!isBuiltinCategory(CATEGORIES[i].code)) {
+      const { code } = CATEGORIES[i];
+      delete CATEGORY_BY_CODE[code]; delete CATEGORY_LABELS[code]; delete CATEGORY_EN[code];
+      CATEGORIES.splice(i, 1);
+    }
+  }
+  custom.forEach((c) => {
+    if (isBuiltinCategory(c.code)) return;
+    const cat = { code: c.code, label: c.label, plural: c.label, en: c.en || c.label, ru: c.ru || '', img: null, tint: false, swatch: 'white', group: 'acc', custom: true };
+    CATEGORIES.push(cat);
+    CATEGORY_BY_CODE[c.code] = cat;
+    CATEGORY_LABELS[c.code] = c.label;
+    CATEGORY_EN[c.code] = cat.en;
+    // The site translates by the Georgian text; teach it the new names.
+    if (dicts.en && c.en) dicts.en[c.label] = c.en;
+    if (dicts.ru && c.ru) dicts.ru[c.label] = c.ru;
+  });
+  CATEGORIES.forEach((c) => { c.hidden = hidden.includes(c.code); });
+}
+
+/** Categories shown in the shop. */
+export const visibleCategories = () => CATEGORIES.filter((c) => !c.hidden);
+
 // Product colour keys → swatch + Georgian name. `tint` (optional) is a lighter
 // value used to colour garment photos so dark fabrics keep visible folds.
 export const COLORS = {

@@ -71,6 +71,20 @@ export class Settings {
   @Prop({ type: Object, default: {} })
   i18n: Record<string, Record<string, string>>;
 
+  /**
+   * Shop categories set in admin (Categories page): built-in codes that are
+   * hidden, and categories added on top of the built-in ones.
+   */
+  @Prop({
+    type: {
+      _id: false,
+      hidden: { type: [String], default: [] },
+      custom: { type: [{ _id: false, code: String, label: String, en: String, ru: String }], default: [] },
+    },
+    default: () => ({ hidden: [], custom: [] }),
+  })
+  categories: { hidden: string[]; custom: { code: string; label: string; en: string; ru: string }[] };
+
   /** Garment colours added in admin, on top of the built-in palette. */
   @Prop({ type: [{ _id: false, key: String, name: String, hex: String }], default: [] })
   customColors: { key: string; name: string; hex: string }[];

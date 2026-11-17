@@ -22,6 +22,7 @@ const NAV = [
   { to: '/admin/orders', label: 'შეკვეთები', icon: 'orders' },
   { to: '/admin/quotes', label: 'კორპორატიული', icon: 'quotes' },
   { to: '/admin/products', label: 'პროდუქტები', icon: 'products' },
+  { to: '/admin/categories', label: 'კატეგორიები', icon: 'products' },
   { to: '/admin/constructor', label: 'კონსტრუქტორი', icon: 'constructor' },
   { to: '/admin/hero-special', label: 'Hero_Special', icon: 'products' },
   { to: '/admin/users', label: 'მომხმარებლები', icon: 'users' },

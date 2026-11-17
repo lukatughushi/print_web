@@ -158,7 +158,7 @@ function ProductForm({ product, onClose, onSaved }) {
               <div className={s.field}>
                 <label className={s.label} htmlFor="p-cat">კატეგორია</label>
                 <select id="p-cat" className={s.input} value={form.category} onChange={(e) => set('category', e.target.value)}>
-                  {CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+                  {CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}{c.hidden ? ' (დამალული)' : ''}</option>)}
                 </select>
               </div>
               <div className={s.field}>
@@ -318,7 +318,7 @@ export default function ProductsPage() {
         <input className={s.search} type="search" value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="ძებნა სახელით…" />
         <select className={s.select} value={category} onChange={(e) => filterBy(setCategory)(e.target.value)}>
           <option value="">ყველა კატეგორია</option>
-          {CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+          {CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}{c.hidden ? ' (დამალული)' : ''}</option>)}
         </select>
         <select className={s.select} value={visibility} onChange={(e) => filterBy(setVisibility)(e.target.value)}>
           <option value="">ყველა</option>

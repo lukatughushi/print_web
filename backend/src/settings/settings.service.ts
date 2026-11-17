@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UpdateSettingsDto } from './settings.dto';
@@ -61,6 +61,7 @@ export class SettingsService {
   }
 
   async update(dto: UpdateSettingsDto) {
+    if (dto.categories) await this.checkRemovedCategories(dto.categories.custom.map((c) => c.code));
     await this.get();
     const patch: UpdateSettingsDto = dto.i18n ? { ...dto, i18n: cleanI18n(dto.i18n) } : { ...dto };
     if (patch.chatMessenger) patch.chatMessenger = await resolveFacebookShare(patch.chatMessenger);
@@ -70,5 +71,20 @@ export class SettingsService {
   /** Delivery fee for a subtotal, using the current settings. */
   shippingFor(subtotal: number, settings: Pick<Settings, 'freeShipThreshold' | 'shippingFee'>) {
     return subtotal === 0 || subtotal >= settings.freeShipThreshold ? 0 : settings.shippingFee;
+  }
+
+  /** A custom category may only go once no product uses it. */
+  private async checkRemovedCategories(keptCodes: string[]) {
+    const current = await this.settingsModel.findOne({ key: 'site' }).lean().exec();
+    const removed = (current?.categories?.custom ?? []).map((c) => c.code).filter((c) => !keptCodes.includes(c));
+    if (!removed.length) return;
+    const products = this.settingsModel.db.models.Product;
+    const used = products ? await products.distinct('category', { category: { $in: removed } }) : [];
+    if (used.length) {
+      throw new ConflictException({
+        message: `კატეგორიას პროდუქტები აქვს — ჯერ ისინი გადაიტანე ან წაშალე (${used.join(', ')})`,
+        code: 'CATEGORY_IN_USE',
+      });
+    }
   }
 }
