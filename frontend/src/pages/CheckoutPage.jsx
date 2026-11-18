@@ -7,6 +7,7 @@ import { kidsSizesFor, money, priceOf, shippingFor } from '../lib/catalog';
 import s from './storefront.module.css';
 import BackLink from '../components/BackLink';
 import PaymentMarks from '../components/PaymentMarks';
+import { settingText } from '../lib/settingText';
 import c from './Checkout.module.css';
 import { useI18n } from '../i18n/i18n-context';
 import { productName } from '../i18n/products';
@@ -199,7 +200,10 @@ export default function CheckoutPage() {
     const fee = shippingFor(subtotal, settings, zone);
     return fee ? money(fee, cur) : t('უფასო');
   };
-  const studioAddress = settings.contactAddress || t(STUDIO_ADDRESS);
+  // Admin's pickup text (address, hours…), else the contact address.
+  const studioAddress = settingText(settings, 'pickupText', lang, t)
+    || settingText(settings, 'contactAddress', lang, t)
+    || t(STUDIO_ADDRESS);
   const city = form.zone === 'tbilisi' ? t('თბილისი') : form.city.trim();
 
   const set = (key) => (e) => { setForm((f) => ({ ...f, [key]: e.target.value })); setError(''); };
@@ -389,7 +393,7 @@ export default function CheckoutPage() {
                 <span className={c.grow}>{t('ადგილიდან გატანა')}</span><span className={c.fee}>{t('უფასო')}</span>
               </Choice>
               {form.method === 'pickup' && (
-                <div className={c.sub}><div className={c.signedIn}>{studioAddress}</div></div>
+                <div className={c.sub}><div className={c.signedIn} style={{ whiteSpace: 'pre-line' }}>{studioAddress}</div></div>
               )}
             </div>
 

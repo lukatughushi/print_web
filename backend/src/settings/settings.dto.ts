@@ -63,6 +63,7 @@ export class UpdateSettingsDto {
   @IsOptional() @IsString() @MaxLength(60) @Matches(/^[+0-9 ]*$/, { message: 'ტელეფონის ნომერი არასწორია' }) contactPhone?: string;
   @IsOptional() @IsString() @MaxLength(120) contactEmail?: string;
   @IsOptional() @IsString() @MaxLength(200) contactAddress?: string;
+  @IsOptional() @IsString() @MaxLength(500) pickupText?: string;
   @IsOptional() @IsString() @MaxLength(30) @Matches(/^[+0-9 ]*$/, { message: 'ნომერი არასწორია' }) chatWhatsapp?: string;
   @IsOptional() @IsString() @MaxLength(30) @Matches(/^[+0-9 ]*$/, { message: 'ნომერი არასწორია' }) chatViber?: string;
   @IsOptional() @IsString() @MaxLength(200) chatMessenger?: string;

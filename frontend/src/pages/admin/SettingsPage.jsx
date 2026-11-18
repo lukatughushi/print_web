@@ -7,7 +7,7 @@ import s from './Admin.module.css';
 const TEXT_FIELDS = [
   'announcementText', 'heroTitle', 'heroSubtitle', 'heroCtaText', 'heroCtaLink',
   'proofNumber', 'proofText',
-  'currency', 'contactPhone', 'contactEmail', 'contactAddress',
+  'currency', 'contactPhone', 'contactEmail', 'contactAddress', 'pickupText',
   'chatWhatsapp', 'chatViber', 'chatMessenger',
 ];
 
@@ -153,7 +153,15 @@ export default function SettingsPage() {
             <input id="s-cur" className={s.input} value={form.currency || ''} onChange={set('currency')} />
           </div>
         </div>
-        <span className={s.hint}>ადგილიდან გატანა ყოველთვის უფასოა. გატანის მისამართად ჩანს „კონტაქტების“ მისამართი. შეკვეთის ჯამს სერვერი ამ მნიშვნელობებით ითვლის.</span>
+        <div className={s.field} style={{ marginTop: 14 }}>
+          <label className={s.label} htmlFor="s-pickup">ადგილიდან გატანა — ტექსტი, რომელსაც მყიდველი ხედავს</label>
+          <textarea id="s-pickup" className={s.input} rows={3} maxLength={500} value={form.pickupText || ''} onChange={set('pickupText')} placeholder="მაგ. თბილისი, ოდესის 14 · ორშ–პარ 11:00–19:00" />
+          <div className={s.formGrid}>
+            <textarea className={s.input} rows={2} maxLength={500} value={form.i18n?.en?.pickupText || ''} onChange={setLang('en', 'pickupText')} placeholder="English" aria-label="English" />
+            <textarea className={s.input} rows={2} maxLength={500} value={form.i18n?.ru?.pickupText || ''} onChange={setLang('ru', 'pickupText')} placeholder="Русский" aria-label="Русский" />
+          </div>
+        </div>
+        <span className={s.hint}>ადგილიდან გატანა ყოველთვის უფასოა. თუ ტექსტი ცარიელია, ჩანს „კონტაქტების“ მისამართი. შეკვეთის ჯამს სერვერი ამ მნიშვნელობებით ითვლის.</span>
       </div>
 
       <div className={`${s.card} ${s.section}`}>

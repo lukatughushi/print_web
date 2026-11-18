@@ -5,7 +5,7 @@ import { UpdateSettingsDto } from './settings.dto';
 import { Settings } from './settings.schema';
 
 // Texts admin may translate, and the languages besides Georgian.
-const I18N_FIELDS = ['announcementText', 'heroCtaText', 'proofText', 'contactAddress'];
+const I18N_FIELDS = ['announcementText', 'heroCtaText', 'proofText', 'contactAddress', 'pickupText'];
 const I18N_LANGS = ['en', 'ru'];
 
 /** Keeps only known languages and fields, as trimmed strings. */

@@ -57,6 +57,10 @@ export class Settings {
   @Prop({ default: '' })
   contactAddress: string;
 
+  /** Shown at checkout when the customer picks up the order (address, hours…). Empty = contactAddress. */
+  @Prop({ default: '' })
+  pickupText: string;
+
   /** Floating chat button: WhatsApp / Viber numbers and a Messenger page. Empty = hidden. */
   @Prop({ default: '' })
   chatWhatsapp: string;
