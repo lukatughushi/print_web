@@ -19,7 +19,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { OrderStatus, CHECKOUT_PAYMENT_METHODS } from '../schemas/order.schema';
+import { OrderStatus, CHECKOUT_PAYMENT_METHODS, DELIVERY_METHODS } from '../schemas/order.schema';
 
 export class OrderDesignDto {
   /** Editor layers; stored as a JSON file. */
@@ -52,7 +52,9 @@ export class CreateOrderDto {
   @IsOptional() @IsEmail() customerEmail?: string;
   // Digits and spaces, optionally a leading + (no dashes or letters).
   @IsString() @Matches(/^\+?[0-9 ]{9,20}$/, { message: 'ტელეფონის ნომერი არასწორია' }) phone: string;
-  @IsString() @MinLength(3) @MaxLength(300) address: string;
+  @IsOptional() @IsIn(DELIVERY_METHODS) delivery?: string;
+  /** Required for a courier (checked in the service); ignored for a pickup. */
+  @IsOptional() @IsString() @MaxLength(300) address?: string;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
   @IsOptional() @IsIn(CHECKOUT_PAYMENT_METHODS) payment?: string;
   /** Total the customer saw; the order is refused if the server's differs. */

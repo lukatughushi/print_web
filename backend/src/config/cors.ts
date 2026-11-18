@@ -29,7 +29,7 @@ export function buildCorsOptions(env: NodeJS.ProcessEnv = process.env) {
     origin: buildOriginCheck(env),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Order-Key'],
   };
 }
 

@@ -16,6 +16,19 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       context.getHandler(),
       context.getClass(),
     ]);
-    return isPublic ? true : super.canActivate(context);
+    if (!isPublic) return super.canActivate(context);
+    // Public routes still see who is signed in, when a valid token comes along.
+    return this.optional(context);
+  }
+
+  private async optional(context: ExecutionContext) {
+    const { headers } = context.switchToHttp().getRequest();
+    if (!headers?.authorization) return true;
+    try {
+      await super.canActivate(context);
+    } catch {
+      // An expired or bad token on a public route: carry on as a guest.
+    }
+    return true;
   }
 }

@@ -1,60 +1,25 @@
-/* Checkout steps: progress row, step heading, interest chips, step buttons. */
-.steps {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 22px;
-  list-style: none;
-  padding: 0;
-}
-.step {
-  flex: 1;
-  min-width: 0;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #A9B4BF;
-}
-.step::before {
-  content: '';
-  display: block;
-  height: 4px;
-  border-radius: 4px;
-  background: #EDE3DC;
-  margin-bottom: 8px;
-}
-.stepDone { color: #5A6B7E; }
-.stepDone::before { background: #F6A9B7; }
-.stepNow { color: #16283F; }
-.stepNow::before { background: #EF5F79; }
-.stepLabel { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 520px) {
-  .stepLabel { display: none; }
-  .stepNow .stepLabel { display: block; }
-}
-
-.title { font-size: 22px; font-weight: 800; color: #16283F; margin: 0; }
-.hint { font-size: 14px; color: #8A98A6; margin: -6px 0 0; line-height: 1.5; }
-
-.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
-.actions > button:last-child { margin-left: auto; }
-.linkBtn {
-  background: none;
-  border: 0;
-  padding: 0;
-  color: #5A6B7E;
-  font-size: 14px;
-  cursor: pointer;
-  text-decoration: underline;
-}
-.linkBtn:hover { color: #EF5F79; }
-
-.or {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #A9B4BF;
+/* Checkout form: section labels, nested delivery choices, small notes. */
+.group {
   font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #5A6B7E;
+  margin: 6px 0 -4px;
 }
-.or::before, .or::after { content: ''; flex: 1; height: 1px; background: #EDE3DC; }
+
+/* Choices under the picked option (courier zones, the address fields). */
+.sub {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 26px;
+  margin-bottom: 4px;
+}
+
+.grow { flex: 1; min-width: 0; }
+.fee { font-weight: 700; color: #16283F; white-space: nowrap; }
+
+.hint { font-size: 14px; color: #8A98A6; margin: -6px 0 0; line-height: 1.5; }
 
 .signedIn {
   font-size: 14px;
@@ -62,4 +27,8 @@
   background: #F7F2EE;
   border-radius: 12px;
   padding: 12px 14px;
+}
+
+@media (max-width: 520px) {
+  .sub { padding-left: 12px; }
 }

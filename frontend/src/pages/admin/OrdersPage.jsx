@@ -5,6 +5,7 @@ import { API_BASE, CATEGORY_LABELS, COLORS } from '../../lib/catalog';
 import {
   ORDER_STATUSES,
   paymentText,
+  DELIVERY_LABELS,
   STATUS_BY_KEY,
   gel,
   getErrorMessage,
@@ -288,7 +289,8 @@ function OrderDrawer({ order, onClose, onSaved }) {
               <dt>სახელი</dt><dd>{order.customerName}</dd>
               <dt>ტელეფონი</dt><dd><a className={s.link} href={`tel:${order.phone}`}>{order.phone}</a></dd>
               {order.customerEmail && <><dt>ელფოსტა</dt><dd><a className={s.link} href={`mailto:${order.customerEmail}`}>{order.customerEmail}</a></dd></>}
-              <dt>მისამართი</dt><dd>{order.address}</dd>
+              <dt>მიწოდება</dt><dd>{DELIVERY_LABELS[order.delivery] || DELIVERY_LABELS.tbilisi}</dd>
+              {order.address && <><dt>მისამართი</dt><dd>{order.address}</dd></>}
               <dt>გადახდა</dt><dd>{paymentText(order)}</dd>
               {order.notes && <><dt>შენიშვნა</dt><dd>{order.notes}</dd></>}
             </dl>
@@ -462,7 +464,7 @@ export default function OrdersPage() {
                   <td className={s.nowrap}>{shortDate(o.createdAt, true)}</td>
                   <td>
                     <div>{o.customerName}</div>
-                    <div className={s.muted} style={{ fontSize: 12 }}>{o.phone}</div>
+                    <div className={s.muted} style={{ fontSize: 12 }}>{o.phone}{o.delivery === 'pickup' ? ' · გატანა' : ''}</div>
                   </td>
                   <td>
                     {o.items.reduce((n, it) => n + it.quantity, 0)} ცალი

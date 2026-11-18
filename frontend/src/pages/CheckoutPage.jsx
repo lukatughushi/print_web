@@ -1,38 +1,30 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '../lib/api';
 import useCartStore from '../store/cartStore';
 import { useAuth } from '../context/auth-context';
 import { kidsSizesFor, money, priceOf, shippingFor } from '../lib/catalog';
 import s from './storefront.module.css';
 import c from './Checkout.module.css';
-import GoogleSignIn from '../components/GoogleSignIn';
-import ProfessionInput from '../components/ProfessionInput';
-
-const googleSignInAvailable = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 import { useI18n } from '../i18n/i18n-context';
 import { productName } from '../i18n/products';
 
+// Online only, through Bank of Georgia.
 const PAY_OPTS = [
   ['card', 'ბარათით, Apple Pay ან Google Pay'],
-  ['transfer', 'გადახდა საბანკო ანგარიშზე გადმორიცხვით'],
 ];
 
-// Checkout steps, one screen each. "account" is skipped when already signed in.
-const STEPS = [
-  ['name', 'სახელი'],
-  ['account', 'ანგარიში'],
-  ['details', 'მიწოდება'],
-  ['pay', 'გადახდა'],
-];
+// Where the studio is, when settings have no address yet.
+const STUDIO_ADDRESS = 'ქ. თბილისი, ოდესის ქუჩა 14';
 
 // A phone number: 9–15 digits, optionally starting with + (spaces allowed while typing).
 const cleanPhone = (v) => v.replace(/\s/g, '');
 const PHONE_RE = /^\+?\d{9,15}$/;
 
-// What the customer typed, kept for this tab while they sign in on another page.
+// What the customer typed, kept for this tab (e.g. a trip back to the cart).
+// method: 'courier' | 'pickup'; zone (courier only): 'tbilisi' | 'region'.
 const DRAFT_KEY = 'checkoutDraft';
-const EMPTY_FORM = { name: '', phone: '', city: '', addr: '', profession: '' };
+const EMPTY_FORM = { name: '', phone: '', method: 'courier', zone: 'tbilisi', city: '', addr: '' };
 function readDraft() {
   try { return { ...EMPTY_FORM, ...JSON.parse(sessionStorage.getItem(DRAFT_KEY)) }; } catch { return EMPTY_FORM; }
 }
@@ -44,7 +36,8 @@ function clearDraft() {
 }
 
 // An order placed but not yet paid online, so trying the payment again
-// doesn't create a second order (only while the total is unchanged).
+// doesn't create a second order (only while the total is unchanged). For a
+// customer without an account it also holds the order's key.
 const PENDING_KEY = 'checkoutPendingOrder';
 function readPending(total) {
   try {
@@ -93,45 +86,55 @@ async function fetchLiveCatalog() {
   return { products: [...ctor, ...(productsRes.data || []).filter((p) => !ids.has(p.id))], settings: settingsRes.data };
 }
 
+/** A radio-style choice row, as used for payment. */
+function Choice({ on, onPick, children }) {
+  return (
+    <div
+      className={`${s.payOpt} ${on ? s.payOptActive : ''}`}
+      onClick={onPick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(); } }}
+      role="radio"
+      aria-checked={on}
+      tabIndex={0}
+    >
+      <span className={`${s.radio} ${on ? s.radioOn : ''}`} />
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Checkout on one screen: name, phone, delivery (courier in Tbilisi or to the
+ * regions, or pickup at the studio) and payment. No account needed; a
+ * signed-in customer gets the fields filled from the account.
+ */
 export default function CheckoutPage() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const location = useLocation();
   const { items, clear, updateItem, removeItem } = useCartStore();
+  const { user, refreshUser } = useAuth();
 
   const [settings, setSettings] = useState({ currency: '₾', freeShipThreshold: 150 });
   const [form, setForm] = useState(readDraft);
-  const [step, setStep] = useState(() => (readDraft().name ? 1 : 0));
-  const { user, status: authStatus, refreshUser } = useAuth();
-  const [remember, setRemember] = useState(true);
-
-  useEffect(() => { saveDraft(form); }, [form]);
-
-  // Signed in: pre-fill empty fields from the account once it is known.
-  const [filledFor, setFilledFor] = useState(null);
-  if (user && filledFor !== user.id) {
-    setFilledFor(user.id);
-    setForm((f) => ({
-      name: f.name || user.name || '',
-      phone: f.phone || user.phone || '',
-      city: f.city || user.city || '',
-      addr: f.addr || user.address || '',
-      profession: f.profession || user.profession || '',
-    }));
-  }
-
-  // The account step is only for signing in: skip it once signed in, and
-  // return to it if the session ends (an order needs an account).
-  const stepKey = STEPS[step][0];
-  if (stepKey === 'account' && user) setStep(2);
-  if (step > 1 && !user && authStatus === 'ready') setStep(1);
-  const detailsChanged = !!user && (
-    form.phone.trim() !== (user.phone || '') || form.city.trim() !== (user.city || '') || form.addr.trim() !== (user.address || '')
-  );
   const [pay, setPay] = useState('card');
   const [error, setError] = useState('');
   const [placing, setPlacing] = useState(false);
   const [done, setDone] = useState(null); // { orderNo }
+
+  useEffect(() => { saveDraft(form); }, [form]);
+
+  // Signed in: fill empty fields from the account once it is known.
+  const [filledFor, setFilledFor] = useState(null);
+  if (user && filledFor !== user.id) {
+    setFilledFor(user.id);
+    setForm((f) => ({
+      ...f,
+      name: f.name || user.name || '',
+      phone: f.phone || user.phone || '',
+      city: f.city || user.city || '',
+      addr: f.addr || user.address || '',
+    }));
+  }
 
   // Cart prices are snapshots from when each item was added. Re-read the live
   // catalog so the total shown here is what the server will charge.
@@ -184,35 +187,36 @@ export default function CheckoutPage() {
   };
   const needsSize = items.some(hasBadSize);
 
+  // The server's delivery method: 'tbilisi' | 'region' | 'pickup'.
+  const delivery = form.method === 'pickup' ? 'pickup' : form.zone;
   const cur = settings.currency || '₾';
   const subtotal = items.reduce((sum, it) => sum + (it.basePrice || 0) * (it.quantity || 1), 0);
-  const shipping = shippingFor(subtotal, settings);
+  const shipping = shippingFor(subtotal, settings, delivery);
   const total = subtotal + shipping;
+  const feeText = (zone) => {
+    const fee = shippingFor(subtotal, settings, zone);
+    return fee ? money(fee, cur) : t('უფასო');
+  };
+  const studioAddress = settings.contactAddress || t(STUDIO_ADDRESS);
+  const city = form.zone === 'tbilisi' ? t('თბილისი') : form.city.trim();
 
   const set = (key) => (e) => { setForm((f) => ({ ...f, [key]: e.target.value })); setError(''); };
+  const pick = (patch) => { setForm((f) => ({ ...f, ...patch })); setError(''); };
 
-  const goTo = (next) => { setError(''); setStep(next); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const nextFromName = () => {
-    if (form.name.trim().length < 2) { setError(t('ჩაწერე, როგორ მოგმართოთ.')); return; }
-    goTo(user ? 2 : 1);
+  const check = () => {
+    if (form.name.trim().length < 2) return t('ჩაწერე სახელი.');
+    if (!PHONE_RE.test(cleanPhone(form.phone))) return t('ჩაწერე სწორი ტელეფონის ნომერი.');
+    if (delivery === 'region' && form.city.trim().length < 2) return t('ჩაწერე ქალაქი ან სოფელი.');
+    if (delivery !== 'pickup' && form.addr.trim().length < 3) return t('ჩაწერე მიწოდების მისამართი.');
+    if (hasUnavailable) return t('წაშალე კალათიდან პროდუქტები, რომლებიც აღარ იყიდება.');
+    if (needsSize) return t('აირჩიე ზომა მონიშნული პროდუქტებისთვის.');
+    return '';
   };
-  const nextFromDetails = () => {
-    if (!PHONE_RE.test(cleanPhone(form.phone))) { setError(t('ჩაწერე სწორი ტელეფონის ნომერი.')); return; }
-    if (!form.city.trim() || form.addr.trim().length < 3) { setError(t('ჩაწერე ქალაქი და მისამართი.')); return; }
-    goTo(3);
-  };
-  const professionChanged = !!user && form.profession.trim() !== (user.profession || '');
 
-  const placeOrder = async () => {
-    if (!user) { goTo(1); return; }
-    if (hasUnavailable) {
-      setError(t('წაშალე კალათიდან პროდუქტები, რომლებიც აღარ იყიდება.'));
-      return;
-    }
-    if (needsSize) {
-      setError(t('აირჩიე ზომა მონიშნული პროდუქტებისთვის.'));
-      return;
-    }
+  const placeOrder = async (e) => {
+    e.preventDefault();
+    const problem = check();
+    if (problem) { setError(problem); return; }
     setPlacing(true);
     setError('');
     // On success the page either shows the confirmation or leaves for the bank.
@@ -231,21 +235,24 @@ export default function CheckoutPage() {
         const payload = {
           items: orderItems,
           customerName: form.name.trim(),
-          address: `${form.city.trim()}, ${form.addr.trim()}`,
           phone: cleanPhone(form.phone),
+          delivery,
+          ...(delivery === 'pickup' ? {} : { address: `${city}, ${form.addr.trim()}` }),
           payment: pay,
           // The server refuses the order (409) if its own total differs.
           expectedTotal: total,
         };
 
         const { data } = await api.post('/api/orders', payload);
-        order = { id: data.id, number: data.number || `PR-${data.id.slice(-6).toUpperCase()}`, total };
-        const profile = {
-          ...(detailsChanged && remember ? { phone: cleanPhone(form.phone), city: form.city.trim(), address: form.addr.trim() } : {}),
-          ...(professionChanged ? { profession: form.profession.trim() } : {}),
-        };
-        if (Object.keys(profile).length) {
-          api.patch('/api/me/profile', profile).then(() => refreshUser()).catch(() => {});
+        order = { id: data.id, number: data.number || `PR-${data.id.slice(-6).toUpperCase()}`, total, key: data.guestKey || '' };
+
+        // A signed-in customer's first phone / address go on the account for next time.
+        if (user) {
+          const profile = {
+            ...(!user.phone ? { phone: cleanPhone(form.phone) } : {}),
+            ...(delivery !== 'pickup' && !user.address ? { city, address: form.addr.trim() } : {}),
+          };
+          if (Object.keys(profile).length) api.patch('/api/me/profile', profile).then(() => refreshUser()).catch(() => {});
         }
       }
 
@@ -254,7 +261,8 @@ export default function CheckoutPage() {
       if (pay === 'card') {
         try { sessionStorage.setItem(PENDING_KEY, JSON.stringify(order)); } catch { /* storage off */ }
         try {
-          const { data: payment } = await api.post(`/api/payments/bog/${order.id}/start`);
+          const headers = order.key ? { 'X-Order-Key': order.key } : {};
+          const { data: payment } = await api.post(`/api/payments/bog/${order.id}/start`, null, { headers });
           window.location.assign(payment.redirectUrl);
           return; // leaving the page; keep the button disabled
         } catch (err) {
@@ -296,7 +304,9 @@ export default function CheckoutPage() {
             {t('შეკვეთის ნომერი')} <strong>{done.orderNo}</strong>. {t('დაგიკავშირდებით {phone} ნომერზე დადასტურებისთვის.', { phone: form.phone })}
           </p>
           <p className={s.doneText} style={{ color: '#8A98A6', marginBottom: 30 }}>
-            {t('მიწოდება 2–3 სამუშაო დღეში')} · {form.city}
+            {delivery === 'pickup'
+              ? `${t('გატანა სტუდიიდან')} · ${studioAddress}`
+              : `${t('მიწოდება 2–3 სამუშაო დღეში')} · ${city}`}
           </p>
           <button className={s.btnDark} onClick={() => navigate('/shop')}>{t('გაგრძელება')}</button>
         </div>
@@ -324,128 +334,77 @@ export default function CheckoutPage() {
   return (
     <main className={s.page}>
       <div className={s.wrapMid}>
-        <div className={s.back} onClick={() => (step === 0 ? navigate('/cart') : goTo(step === 2 && user ? 0 : step - 1))}>
-          {step === 0 ? t('← კალათა') : t('← უკან')}
-        </div>
+        <div className={s.back} onClick={() => navigate('/cart')}>{t('← კალათა')}</div>
         <h1 className={s.h1} style={{ marginBottom: 20 }}>{t('შეკვეთის გაფორმება')}</h1>
 
-        <ol className={c.steps}>
-          {STEPS.map(([key, label], i) => (
-            <li key={key} className={`${c.step} ${i < step ? c.stepDone : ''} ${i === step ? c.stepNow : ''}`}>
-              <span className={c.stepLabel}>{i + 1}. {t(label)}</span>
-            </li>
-          ))}
-        </ol>
-
         <div className={s.twoCol}>
-          <div className={s.formCard}>
-          {stepKey === 'name' && (
-            <form className={s.formCard} style={{ padding: 0, border: 0 }} onSubmit={(e) => { e.preventDefault(); nextFromName(); }}>
-              <h2 className={c.title}>{t('როგორ მოგმართოთ?')}</h2>
-              <input
-                className={s.input}
-                value={form.name}
-                onChange={set('name')}
-                placeholder={t('მაგ. ნინო')}
-                maxLength={80}
-                autoFocus
-                autoComplete="given-name"
-              />
-              {error && <div className={s.formError}>{error}</div>}
-              <div className={c.actions}>
-                <button type="submit" className={s.btnPrimary}>{t('გაგრძელება')}</button>
-              </div>
-            </form>
-          )}
-
-          {stepKey === 'account' && (
-            <>
-              <h2 className={c.title}>{t('{name}, შედი ანგარიშზე', { name: form.name.trim() })}</h2>
-              <p className={c.hint}>{t('ანგარიშით შეკვეთის სტატუსს ნახავ და შემდეგ ჯერზე ველები თავისით შეივსება.')}</p>
-              {authStatus === 'loading' ? (
-                <div className={c.hint}>{t('იტვირთება…')}</div>
-              ) : (
-                <>
-                  <GoogleSignIn onSignedIn={() => goTo(2)} />
-                  {googleSignInAvailable && <div className={c.or}>{t('ან')}</div>}
-                  <div className={c.actions}>
-                    <button type="button" className={s.btnOutline} onClick={() => navigate('/login', { state: { from: location } })}>
-                      {t('შესვლა ელფოსტით')}
-                    </button>
-                    <button type="button" className={c.linkBtn} onClick={() => navigate('/register', { state: { from: location } })}>
-                      {t('ახალი ანგარიში')}
-                    </button>
-                  </div>
-                </>
-              )}
-              {error && <div className={s.formError}>{error}</div>}
-            </>
-          )}
-
-          {stepKey === 'details' && (
-            <form className={s.formCard} style={{ padding: 0, border: 0 }} onSubmit={(e) => { e.preventDefault(); nextFromDetails(); }}>
-              <h2 className={c.title}>{t('სად მოგიტანოთ?')}</h2>
-              {user && <div className={c.signedIn}>{t('ანგარიში: {email}', { email: user.email })}</div>}
-              <div className={s.formGrid}>
-                <label className={s.field}>{t('ტელეფონი')}
-                  <input className={s.input} type="tel" value={form.phone} onChange={set('phone')} placeholder="+995 5xx xx xx xx" autoComplete="tel" />
-                </label>
-                <label className={s.field}>{t('ქალაქი')}
-                  <input className={s.input} value={form.city} onChange={set('city')} placeholder={t('თბილისი')} autoComplete="address-level2" />
-                </label>
-                <label className={s.field}>{t('მისამართი')}
-                  <input className={s.input} value={form.addr} onChange={set('addr')} placeholder={t('ჭავჭავაძის 12, ბ. 4')} autoComplete="street-address" />
-                </label>
-              </div>
-              {detailsChanged && (
-                <label className={s.rememberRow}>
-                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-                  {t('ტელეფონი და მისამართი ანგარიშზე შევინახო შემდეგი შეკვეთისთვის')}
-                </label>
-              )}
-
-              <label className={s.field}>{t('რა სფეროს წარმომადგენელი ხარ? (არასავალდებულო)')}
-                <ProfessionInput
+          <form className={s.formCard} onSubmit={placeOrder} noValidate>
+            <div className={s.formGrid}>
+              <label className={s.field}>{t('სახელი და გვარი')}
+                <input
                   className={s.input}
-                  value={form.profession}
-                  onChange={(v) => setForm((f) => ({ ...f, profession: v }))}
-                  placeholder={t('დაიწყე აკრეფა, მაგ. დიზაინერი')}
+                  value={form.name}
+                  onChange={set('name')}
+                  placeholder={t('მაგ. ნინო ბერიძე')}
+                  maxLength={80}
+                  autoComplete="name"
                 />
               </label>
-
-              {error && <div className={s.formError}>{error}</div>}
-              <div className={c.actions}>
-                <button type="submit" className={s.btnPrimary}>{t('გაგრძელება')}</button>
-              </div>
-            </form>
-          )}
-
-          {stepKey === 'pay' && (
-          <>
-            <h2 className={c.title}>{t('გადახდა')}</h2>
-            <div className={c.signedIn}>
-              {form.name.trim()} · {form.phone.trim()} · {form.city.trim()}, {form.addr.trim()}
+              <label className={s.field}>{t('ტელეფონი')}
+                <input className={s.input} type="tel" value={form.phone} onChange={set('phone')} placeholder="+995 5xx xx xx xx" autoComplete="tel" />
+              </label>
             </div>
-            <div className={s.payList}>
-              {PAY_OPTS.map(([k, label]) => (
-                <div
-                  key={k}
-                  className={`${s.payOpt} ${pay === k ? s.payOptActive : ''}`}
-                  onClick={() => setPay(k)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <span className={`${s.radio} ${pay === k ? s.radioOn : ''}`} />
-                  <span>{t(label)}</span>
+            <p className={c.hint} style={{ margin: '-6px 0 0', fontSize: 13 }}>{t('საკმარისია მხოლოდ სახელიც.')}</p>
+
+            <div className={c.group}>{t('მიწოდება')}</div>
+            <div className={s.payList} role="radiogroup" aria-label={t('მიწოდება')}>
+              <Choice on={form.method === 'courier'} onPick={() => pick({ method: 'courier' })}>
+                <span>{t('კურიერით მიტანა')}</span>
+              </Choice>
+              {form.method === 'courier' && (
+                <div className={c.sub}>
+                  <div className={s.payList} role="radiogroup" aria-label={t('კურიერით მიტანა')}>
+                    <Choice on={form.zone === 'tbilisi'} onPick={() => pick({ zone: 'tbilisi' })}>
+                      <span className={c.grow}>{t('თბილისში')}</span><span className={c.fee}>{feeText('tbilisi')}</span>
+                    </Choice>
+                    <Choice on={form.zone === 'region'} onPick={() => pick({ zone: 'region' })}>
+                      <span className={c.grow}>{t('რეგიონებში')}</span><span className={c.fee}>{feeText('region')}</span>
+                    </Choice>
+                  </div>
+                  <div className={s.formGrid}>
+                    {form.zone === 'region' && (
+                      <label className={s.field}>{t('ქალაქი / სოფელი')}
+                        <input className={s.input} value={form.city} onChange={set('city')} placeholder={t('მაგ. ქუთაისი')} autoComplete="address-level2" />
+                      </label>
+                    )}
+                    <label className={s.field}>{t('მისამართი')}
+                      <input className={s.input} value={form.addr} onChange={set('addr')} placeholder={t('ჭავჭავაძის 12, ბ. 4')} autoComplete="street-address" />
+                    </label>
+                  </div>
                 </div>
+              )}
+              <Choice on={form.method === 'pickup'} onPick={() => pick({ method: 'pickup' })}>
+                <span className={c.grow}>{t('ადგილიდან გატანა')}</span><span className={c.fee}>{t('უფასო')}</span>
+              </Choice>
+              {form.method === 'pickup' && (
+                <div className={c.sub}><div className={c.signedIn}>{studioAddress}</div></div>
+              )}
+            </div>
+
+            <div className={c.group}>{t('გადახდა')}</div>
+            <div className={s.payList} role="radiogroup" aria-label={t('გადახდა')}>
+              {PAY_OPTS.map(([k, label]) => (
+                <Choice key={k} on={pay === k} onPick={() => setPay(k)}>
+                  <span>{t(label)}</span>
+                </Choice>
               ))}
             </div>
 
             {priceCheck.changed.length > 0 && (
               <div className={s.formNotice}>
                 {t('ზოგიერთი პროდუქტის ფასი განახლდა:')}
-                {priceCheck.changed.map((c, i) => (
-                  <div key={i}>{c.name}: {money(c.from, cur)} → <b>{money(c.to, cur)}</b></div>
+                {priceCheck.changed.map((ch, i) => (
+                  <div key={i}>{ch.name}: {money(ch.from, cur)} → <b>{money(ch.to, cur)}</b></div>
                 ))}
               </div>
             )}
@@ -459,9 +418,9 @@ export default function CheckoutPage() {
             {error && <div className={s.formError}>{error}</div>}
 
             <button
+              type="submit"
               className={s.btnPrimary}
               style={{ justifyContent: 'center' }}
-              onClick={placeOrder}
               disabled={placing || priceCheck.status === 'loading' || hasUnavailable || needsSize}
             >
               {placing
@@ -474,9 +433,7 @@ export default function CheckoutPage() {
               {t('შეკვეთის დადასტურებით ეთანხმები')} <Link to="/terms" target="_blank">{t('წესებსა და პირობებს')}</Link>{' '}
               {t('და')} <Link to="/privacy" target="_blank">{t('კონფიდენციალურობის პოლიტიკას')}</Link>.
             </p>
-          </>
-          )}
-          </div>
+          </form>
 
           <div className={s.summary}>
             <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('შეკვეთა')}</div>
@@ -510,7 +467,10 @@ export default function CheckoutPage() {
                 </div>
               )
             ))}
-            <div className={s.summaryRow} style={{ marginTop: 12 }}><span>{t('მიწოდება')}</span><span>{shipping ? money(shipping, cur) : t('უფასო')}</span></div>
+            <div className={s.summaryRow} style={{ marginTop: 12 }}>
+              <span>{delivery === 'pickup' ? t('ადგილიდან გატანა') : t('მიწოდება')}</span>
+              <span>{shipping ? money(shipping, cur) : t('უფასო')}</span>
+            </div>
             <div className={s.summaryTotal}>
               <b>{t('ჯამი')}</b>
               <span>{money(total, cur)}</span>

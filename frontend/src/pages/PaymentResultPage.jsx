@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api, { getErrorMessage } from '../lib/api';
 import useCartStore from '../store/cartStore';
@@ -27,11 +27,24 @@ export default function PaymentResultPage() {
   const [retrying, setRetrying] = useState(false);
   const [stillPending, setStillPending] = useState(false);
 
-  const load = useCallback(() => api.get(`/api/payments/bog/${orderId}/status`).then((r) => r.data), [orderId]);
+  // A customer without an account proves the order is theirs with its key,
+  // kept in this tab when the order was placed.
+  const [orderKey] = useState(() => {
+    try {
+      const p = JSON.parse(sessionStorage.getItem('checkoutPendingOrder'));
+      return p?.id === orderId ? p.key || '' : '';
+    } catch { return ''; }
+  });
+  const keyHeaders = useMemo(() => (orderKey ? { 'X-Order-Key': orderKey } : {}), [orderKey]);
+
+  const load = useCallback(
+    () => api.get(`/api/payments/bog/${orderId}/status`, { headers: keyHeaders }).then((r) => r.data),
+    [orderId, keyHeaders],
+  );
 
   useEffect(() => {
     if (authStatus !== 'ready') return undefined;
-    if (!isAuthenticated || !orderId) return undefined;
+    if ((!isAuthenticated && !orderKey) || !orderId) return undefined;
     let dead = false;
     let tries = 0;
     let timer = 0;
@@ -49,13 +62,13 @@ export default function PaymentResultPage() {
     }).catch((err) => !dead && setError(getErrorMessage(err, t('გადახდის სტატუსი ვერ შემოწმდა.'))));
     tick();
     return () => { dead = true; window.clearTimeout(timer); };
-  }, [authStatus, isAuthenticated, orderId, load, clearCart, t]);
+  }, [authStatus, isAuthenticated, orderKey, orderId, load, clearCart, t]);
 
   const retry = async () => {
     setRetrying(true);
     setError('');
     try {
-      const { data } = await api.post(`/api/payments/bog/${orderId}/start`);
+      const { data } = await api.post(`/api/payments/bog/${orderId}/start`, null, { headers: keyHeaders });
       window.location.assign(data.redirectUrl);
     } catch (err) {
       setError(getErrorMessage(err, t('გადახდის გვერდი ვერ გაიხსნა. სცადე ხელახლა.')));
@@ -64,7 +77,7 @@ export default function PaymentResultPage() {
   };
 
   const status = order?.paymentStatus;
-  const missing = authStatus === 'ready' && (!isAuthenticated || !orderId);
+  const missing = authStatus === 'ready' && ((!isAuthenticated && !orderKey) || !orderId);
   let body;
   if (error || missing) {
     body = (
@@ -82,7 +95,9 @@ export default function PaymentResultPage() {
         <p className={s.doneText}>
           {t('შეკვეთის ნომერი')} <strong>{order.number}</strong>. {t('დაგიკავშირდებით {phone} ნომერზე დადასტურებისთვის.', { phone: order.phone })}
         </p>
-        <p className={s.doneText} style={{ color: '#8A98A6', marginBottom: 30 }}>{t('მიწოდება 2–3 სამუშაო დღეში')}</p>
+        <p className={s.doneText} style={{ color: '#8A98A6', marginBottom: 30 }}>
+          {order.delivery === 'pickup' ? t('გატანა სტუდიიდან') : t('მიწოდება 2–3 სამუშაო დღეში')}
+        </p>
         <button className={s.btnDark} onClick={() => navigate('/shop')}>{t('გაგრძელება')}</button>
       </>
     );

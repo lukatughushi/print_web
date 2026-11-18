@@ -51,7 +51,7 @@ const FIELD_LABELS = {
   newArrival: '„ახალი“', image: 'ფოტო', title: 'სათაური', subtitle: 'ქვესათაური', ctaText: 'ღილაკი',
   ctaLink: 'ბმული', phone: 'ტელეფონი', city: 'ქალაქი', address: 'მისამართი', tab: 'პროდუქტის ტიპი', productId: 'პროდუქტი', color: 'ფერი', ids: 'სია', currentPassword: 'პაროლი', newPassword: 'ახალი პაროლი', adminNote: 'შენიშვნა', status: 'სტატუსი', role: 'როლი',
   announcementText: 'ანონსი', announcementActive: 'ანონსის ჩვენება', heroTitle: 'ბანერის სათაური',
-  heroSubtitle: 'ბანერის ტექსტი', shippingFee: 'მიწოდების ფასი', freeShipThreshold: 'უფასო მიწოდება',
+  heroSubtitle: 'ბანერის ტექსტი', shippingFee: 'კურიერი თბილისში', regionShippingFee: 'კურიერი რეგიონებში', freeShipThreshold: 'უფასო მიწოდება',
   contactPhone: 'ტელეფონი', contactEmail: 'ელფოსტა', contactAddress: 'მისამართი',
 };
 

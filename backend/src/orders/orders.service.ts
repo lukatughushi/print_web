@@ -37,7 +37,12 @@ export class OrdersService {
     private readonly files: FilesService,
   ) {}
 
-  async create(dto: CreateOrderDto) {
+  async create(dto: CreateOrderDto & { guestKey?: string }) {
+    const delivery = dto.delivery ?? 'tbilisi';
+    const address = delivery === 'pickup' ? '' : (dto.address ?? '').trim();
+    if (delivery !== 'pickup' && address.length < 3) {
+      throw new BadRequestException({ message: 'ჩაწერე მიწოდების მისამართი', code: 'ADDRESS_REQUIRED' });
+    }
     const ids = [...new Set(dto.items.map((i) => i.productId))];
     // Shop products, or constructor products (which may be hidden from the shop).
     const products = await this.productModel
@@ -78,7 +83,7 @@ export class OrdersService {
 
     const subtotal = round2(lines.reduce((sum, l) => sum + l.lineTotal, 0));
     const settings = await this.settings.get();
-    const shipping = this.settings.shippingFor(subtotal, settings);
+    const shipping = this.settings.shippingFor(subtotal, settings, delivery);
     const total = round2(subtotal + shipping);
 
     // Refuse rather than charge an amount the customer never saw.
@@ -112,7 +117,9 @@ export class OrdersService {
         customerName: dto.customerName,
         customerEmail: dto.customerEmail,
         phone: dto.phone,
-        address: dto.address,
+        delivery,
+        address,
+        guestKey: dto.guestKey,
         notes: dto.notes ?? '',
         payment: dto.payment ?? 'card',
         subtotal,

@@ -58,6 +58,7 @@ export class UpdateSettingsDto {
   @IsOptional() @IsString() @MaxLength(80) proofText?: string;
   @IsOptional() @IsNumber() @Min(0) @Max(1000000) freeShipThreshold?: number;
   @IsOptional() @IsNumber() @Min(0) @Max(100000) shippingFee?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(100000) regionShippingFee?: number;
   @IsOptional() @IsString() @MaxLength(8) currency?: string;
   @IsOptional() @IsString() @MaxLength(60) @Matches(/^[+0-9 ]*$/, { message: 'ტელეფონის ნომერი არასწორია' }) contactPhone?: string;
   @IsOptional() @IsString() @MaxLength(120) contactEmail?: string;

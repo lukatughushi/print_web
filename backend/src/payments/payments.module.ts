@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto';
 import type { RawBodyRequest } from '@nestjs/common';
 import {
   BadRequestException,
@@ -38,6 +39,13 @@ const STATUS: Record<string, PaymentStatus> = {
   refunded_partially: PaymentStatus.PartlyRefunded,
 };
 
+/** Compares secrets in constant time. */
+function safeEqual(a: string, b: string) {
+  const x = Buffer.from(a);
+  const y = Buffer.from(b);
+  return x.length === y.length && timingSafeEqual(x, y);
+}
+
 const round2 = (n: number) => Math.round(n * 100) / 100;
 /** Lari already returned from the admin panel. */
 const refundedSoFar = (order: OrderDocument) => round2((order.refunds ?? []).reduce((sum, r) => sum + r.amount, 0));
@@ -51,7 +59,7 @@ class RefundDto {
 
 /**
  * Card / Apple Pay / Google Pay payment through Bank of Georgia.
- * 1. The signed-in customer places the order (POST /orders), then
+ * 1. The customer (signed in, or a guest with the order's key) places the order (POST /orders), then
  *    POST /payments/bog/:orderId/start returns BOG's payment page.
  * 2. After paying, BOG sends the customer back to /checkout/paid, which asks
  *    GET /payments/bog/:orderId/status; BOG also posts to /callback.
@@ -68,10 +76,15 @@ export class PaymentsController {
     private readonly config: ConfigService,
   ) {}
 
+  @Public()
   @Post(':orderId/start')
   @HttpCode(200)
-  async start(@CurrentUser() user: AuthUser, @Param('orderId') orderId: string) {
-    const order = await this.ownOrder(user, orderId);
+  async start(
+    @CurrentUser() user: AuthUser | undefined,
+    @Param('orderId') orderId: string,
+    @Headers('x-order-key') key?: string,
+  ) {
+    const order = await this.ownOrder(user, orderId, key);
     if (order.paymentStatus === PaymentStatus.Paid) {
       throw new BadRequestException({ message: 'შეკვეთა უკვე გადახდილია', code: 'ALREADY_PAID' });
     }
@@ -83,9 +96,14 @@ export class PaymentsController {
     return { redirectUrl };
   }
 
+  @Public()
   @Get(':orderId/status')
-  async status(@CurrentUser() user: AuthUser, @Param('orderId') orderId: string) {
-    const order = await this.ownOrder(user, orderId);
+  async status(
+    @CurrentUser() user: AuthUser | undefined,
+    @Param('orderId') orderId: string,
+    @Headers('x-order-key') key?: string,
+  ) {
+    const order = await this.ownOrder(user, orderId, key);
     if (order.bogOrderId && [PaymentStatus.Pending, PaymentStatus.PartlyRefunded].includes(order.paymentStatus)) {
       await this.refresh(order).catch(() => undefined);
     }
@@ -95,6 +113,7 @@ export class PaymentsController {
       total: order.total,
       phone: order.phone,
       address: order.address,
+      delivery: order.delivery,
       paymentStatus: order.paymentStatus,
     };
   }
@@ -181,10 +200,14 @@ export class PaymentsController {
     return PaymentStatus.Failed;
   }
 
-  private async ownOrder(user: AuthUser, orderId: string) {
-    const order = isValidObjectId(orderId) ? await this.orders.findById(orderId).exec() : null;
+  /** The order, if this is its customer (account, or the guest's key) or an admin. */
+  private async ownOrder(user: AuthUser | undefined, orderId: string, key?: string) {
+    const order = isValidObjectId(orderId) ? await this.orders.findById(orderId).select('+guestKey').exec() : null;
     if (!order) throw new NotFoundException('Order not found');
-    if (order.customerEmail !== user.email.toLowerCase() && user.role !== Role.Admin) throw new ForbiddenException();
+    const isAdmin = user?.role === Role.Admin;
+    const isOwner = !!user && !!order.customerEmail && order.customerEmail === user.email.toLowerCase();
+    const hasKey = !!key && !!order.guestKey && safeEqual(key, order.guestKey);
+    if (!isAdmin && !isOwner && !hasKey) throw new ForbiddenException();
     return order;
   }
 }

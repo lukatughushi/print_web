@@ -104,7 +104,7 @@ export default function CartPage() {
 
           <div className={s.summary}>
             <div className={s.summaryRow}><span>{t('პროდუქცია')}</span><span>{money(subtotal, cur)}</span></div>
-            <div className={s.summaryRow}><span>{t('მიწოდება')}</span><span>{shipping ? money(shipping, cur) : t('უფასო')}</span></div>
+            <div className={s.summaryRow}><span>{t('მიწოდება თბილისში')}</span><span>{shipping ? money(shipping, cur) : t('უფასო')}</span></div>
             <div className={s.summaryTotal}>
               <b>{t('ჯამი')}</b>
               <span>{money(total, cur)}</span>

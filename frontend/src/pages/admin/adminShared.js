@@ -20,6 +20,13 @@ export const PAYMENT_LABELS = {
 };
 
 /** Online (BOG) payment state of an order. */
+/** How the order reaches the customer. */
+export const DELIVERY_LABELS = {
+  tbilisi: 'კურიერი, თბილისი',
+  region: 'კურიერი, რეგიონი',
+  pickup: 'ადგილიდან გატანა',
+};
+
 export const PAYMENT_STATUS_LABELS = {
   unpaid: 'გადაუხდელი',
   pending: 'მუშავდება',

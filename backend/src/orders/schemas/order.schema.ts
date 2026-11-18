@@ -22,8 +22,11 @@ export enum PaymentStatus {
 
 /** Every method an order may carry; 'cash' and 'bog' remain for older orders. */
 export const PAYMENT_METHODS = ['cash', 'card', 'bog', 'transfer'] as const;
-/** Methods offered at checkout: card, or a transfer to the bank account. */
-export const CHECKOUT_PAYMENT_METHODS = ['card', 'transfer'] as const;
+/** Methods offered at checkout: card (BOG). 'transfer' remains for older orders. */
+export const CHECKOUT_PAYMENT_METHODS = ['card'] as const;
+
+/** How the order reaches the customer. */
+export const DELIVERY_METHODS = ['tbilisi', 'region', 'pickup'] as const;
 
 /** Money returned to the customer through BOG, with the admin's reason. */
 @Schema({ _id: false })
@@ -75,7 +78,12 @@ export class Order {
   @Prop({ required: true, trim: true }) customerName: string;
   @Prop({ trim: true, lowercase: true, index: true }) customerEmail?: string;
   @Prop({ required: true, trim: true }) phone: string;
-  @Prop({ required: true, trim: true }) address: string;
+  /** Courier in Tbilisi, courier to the regions, or picked up at the studio. */
+  @Prop({ enum: DELIVERY_METHODS, default: 'tbilisi' }) delivery: string;
+  /** City and street for a courier; empty for a pickup. */
+  @Prop({ default: '', trim: true }) address: string;
+  /** Lets a customer without an account pay for and check this order. */
+  @Prop({ select: false }) guestKey?: string;
   @Prop({ default: '' }) notes: string;
   @Prop({ enum: PAYMENT_METHODS, default: 'card' }) payment: string;
 

@@ -1,5 +1,17 @@
 // English translations. Keys are the Georgian source text (see i18n-context.js).
 export default {
+  "მაგ. ნინო ბერიძე": "e.g. Nino Beridze",
+  "საკმარისია მხოლოდ სახელიც.": "Just a first name is fine.",
+  "ჩაწერე ქალაქი ან სოფელი.": "Enter your town or village.",
+  "ჩაწერე მიწოდების მისამართი.": "Enter the delivery address.",
+  "კურიერით მიტანა": "Courier delivery",
+  "თბილისში": "In Tbilisi",
+  "რეგიონებში": "To the regions",
+  "ქალაქი / სოფელი": "Town / village",
+  "მაგ. ქუთაისი": "e.g. Kutaisi",
+  "ადგილიდან გატანა": "Pick up at the studio",
+  "გატანა სტუდიიდან": "Pick up at our studio",
+  "მიწოდება თბილისში": "Delivery in Tbilisi",
   "მოგვწერე": "Message us",
   "ნახე პროდუქტები": "Show products",
   "რეგისტრაციით ეთანხმები": "By signing up you accept the",

@@ -1,7 +1,9 @@
+import { randomBytes } from 'crypto';
 import { Body, Controller, Get, Module, Param, Patch, Post, Query } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import type { AuthUser } from '../auth/strategies/jwt.strategy';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { FilesModule } from '../files/files.module';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
@@ -15,10 +17,17 @@ import { Order, OrderSchema } from './schemas/order.schema';
 export class OrdersController {
   constructor(private readonly orders: OrdersService) {}
 
-  /** Checkout needs an account; the order is filed under its e-mail. */
+  /**
+   * Checkout, with or without an account. A signed-in order is filed under the
+   * account's e-mail; a guest gets a key for paying and checking this order.
+   */
+  @Public()
   @Post()
-  create(@CurrentUser() user: AuthUser, @Body() dto: CreateOrderDto) {
-    return this.orders.create({ ...dto, customerEmail: user.email });
+  async create(@CurrentUser() user: AuthUser | undefined, @Body() dto: CreateOrderDto) {
+    if (user) return this.orders.create({ ...dto, customerEmail: user.email });
+    const guestKey = randomBytes(24).toString('hex');
+    const order = await this.orders.create({ ...dto, customerEmail: undefined, guestKey });
+    return { ...order.toJSON(), guestKey };
   }
 
   /** The signed-in customer's orders (matched by e-mail). */

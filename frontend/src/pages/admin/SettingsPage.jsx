@@ -48,6 +48,7 @@ export default function SettingsPage() {
     payload.i18n = form.i18n || {};
     payload.freeShipThreshold = Math.max(0, Number(form.freeShipThreshold) || 0);
     payload.shippingFee = Math.max(0, Number(form.shippingFee) || 0);
+    payload.regionShippingFee = Math.max(0, Number(form.regionShippingFee) || 0);
     setBusy(true);
     setError('');
     try {
@@ -136,8 +137,12 @@ export default function SettingsPage() {
         <h2 className={s.sectionTitle}>მიწოდება და ფასები</h2>
         <div className={s.formGrid3}>
           <div className={s.field}>
-            <label className={s.label} htmlFor="s-fee">მიწოდების ფასი (₾)</label>
+            <label className={s.label} htmlFor="s-fee">კურიერი თბილისში (₾)</label>
             <input id="s-fee" className={s.input} type="number" min="0" step="0.5" value={form.shippingFee ?? ''} onChange={set('shippingFee')} />
+          </div>
+          <div className={s.field}>
+            <label className={s.label} htmlFor="s-fee-reg">კურიერი რეგიონებში (₾)</label>
+            <input id="s-fee-reg" className={s.input} type="number" min="0" step="0.5" value={form.regionShippingFee ?? ''} onChange={set('regionShippingFee')} />
           </div>
           <div className={s.field}>
             <label className={s.label} htmlFor="s-free">უფასო მიწოდება (₾-დან)</label>
@@ -148,7 +153,7 @@ export default function SettingsPage() {
             <input id="s-cur" className={s.input} value={form.currency || ''} onChange={set('currency')} />
           </div>
         </div>
-        <span className={s.hint}>შეკვეთის ჯამს სერვერი ამ მნიშვნელობებით ითვლის.</span>
+        <span className={s.hint}>ადგილიდან გატანა ყოველთვის უფასოა. გატანის მისამართად ჩანს „კონტაქტების“ მისამართი. შეკვეთის ჯამს სერვერი ამ მნიშვნელობებით ითვლის.</span>
       </div>
 
       <div className={`${s.card} ${s.section}`}>

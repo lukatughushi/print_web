@@ -68,9 +68,14 @@ export class SettingsService {
     return this.settingsModel.findOneAndUpdate({ key: 'site' }, patch, { new: true, runValidators: true }).exec();
   }
 
-  /** Delivery fee for a subtotal, using the current settings. */
-  shippingFor(subtotal: number, settings: Pick<Settings, 'freeShipThreshold' | 'shippingFee'>) {
-    return subtotal === 0 || subtotal >= settings.freeShipThreshold ? 0 : settings.shippingFee;
+  /** Delivery fee for a subtotal and delivery method, using the current settings. */
+  shippingFor(
+    subtotal: number,
+    settings: Pick<Settings, 'freeShipThreshold' | 'shippingFee' | 'regionShippingFee'>,
+    delivery = 'tbilisi',
+  ) {
+    if (delivery === 'pickup' || subtotal === 0 || subtotal >= settings.freeShipThreshold) return 0;
+    return delivery === 'region' ? (settings.regionShippingFee ?? 15) : settings.shippingFee;
   }
 
   /** A custom category may only go once no product uses it. */

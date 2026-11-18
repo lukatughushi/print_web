@@ -149,11 +149,12 @@ export function productImg(product) {
   return /^[a-f0-9]{24}$/i.test(src || '') ? assetUrl(`/api/files/${src}`) : assetUrl(src);
 }
 
-// Mirrors server/src/lib/shipping.js; the fee itself comes from /api/settings.
-export function shippingFor(subtotal, settings) {
+// Mirrors SettingsService.shippingFor on the backend; the fees come from /api/settings.
+// delivery: 'tbilisi' (courier), 'region' (courier outside Tbilisi) or 'pickup' (free).
+export function shippingFor(subtotal, settings, delivery = 'tbilisi') {
   const freeFrom = settings.freeShipThreshold ?? 150;
-  const fee = settings.shippingFee ?? 10;
-  return subtotal === 0 || subtotal >= freeFrom ? 0 : fee;
+  if (delivery === 'pickup' || subtotal === 0 || subtotal >= freeFrom) return 0;
+  return delivery === 'region' ? (settings.regionShippingFee ?? 15) : (settings.shippingFee ?? 10);
 }
 
 const NBSP = String.fromCharCode(160);

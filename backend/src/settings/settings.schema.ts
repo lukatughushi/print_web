@@ -37,9 +37,13 @@ export class Settings {
   @Prop({ default: 150, min: 0 })
   freeShipThreshold: number;
 
-  /** Delivery fee (₾) below the free-shipping threshold. */
+  /** Courier fee (₾) in Tbilisi, below the free-shipping threshold. */
   @Prop({ default: 10, min: 0 })
   shippingFee: number;
+
+  /** Courier fee (₾) to cities outside Tbilisi, below the free-shipping threshold. */
+  @Prop({ default: 15, min: 0 })
+  regionShippingFee: number;
 
   @Prop({ default: '₾' })
   currency: string;
