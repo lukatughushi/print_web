@@ -6,13 +6,14 @@ import { useAuth } from '../context/auth-context';
 import { kidsSizesFor, money, priceOf, shippingFor } from '../lib/catalog';
 import s from './storefront.module.css';
 import BackLink from '../components/BackLink';
+import PaymentMarks from '../components/PaymentMarks';
 import c from './Checkout.module.css';
 import { useI18n } from '../i18n/i18n-context';
 import { productName } from '../i18n/products';
 
 // Online only, through Bank of Georgia.
 const PAY_OPTS = [
-  ['card', 'ბარათით, Apple Pay ან Google Pay'],
+  ['card', 'ბარათით გადახდა'],
 ];
 
 // Where the studio is, when settings have no address yet.
@@ -396,7 +397,8 @@ export default function CheckoutPage() {
             <div className={s.payList} role="radiogroup" aria-label={t('გადახდა')}>
               {PAY_OPTS.map(([k, label]) => (
                 <Choice key={k} on={pay === k} onPick={() => setPay(k)}>
-                  <span>{t(label)}</span>
+                  <span className={c.grow}>{t(label)}</span>
+                  {k === 'card' && <PaymentMarks />}
                 </Choice>
               ))}
             </div>

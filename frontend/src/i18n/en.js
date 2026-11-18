@@ -16,6 +16,7 @@ export default {
   "ნახე პროდუქტები": "Show products",
   "რეგისტრაციით ეთანხმები": "By signing up you accept the",
   "ბარათით, Apple Pay ან Google Pay": "Card, Apple Pay or Google Pay",
+  "ბარათით გადახდა": "Pay by card",
   "გადახდის გვერდი ვერ გაიხსნა. სცადე ხელახლა.": "Could not open the payment page. Please try again.",
   "დაიწყე აკრეფა, მაგ. დიზაინერი": "Start typing, e.g. Designer",
   "შეკვეთა ვერ მოიძებნა.": "Order not found.",
