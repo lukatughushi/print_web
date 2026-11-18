@@ -52,7 +52,7 @@ export class UsersService {
 
   /** Current role and status, checked on every signed-in request. */
   findAuthInfo(id: string) {
-    return this.userModel.findById(id).select('email role disabled').lean().exec();
+    return this.userModel.findById(id).select('email role disabled passwordChangedAt').lean().exec();
   }
 
   findByIdWith(id: string, fields: string) {
@@ -75,7 +75,7 @@ export class UsersService {
 
   async setPassword(id: string, plain: string) {
     const password = await bcrypt.hash(plain, SALT_ROUNDS);
-    await this.userModel.updateOne({ _id: id }, { $set: { password } }).exec();
+    await this.userModel.updateOne({ _id: id }, { $set: { password, passwordChangedAt: new Date() } }).exec();
   }
 
   comparePassword(plain: string, hash: string) {

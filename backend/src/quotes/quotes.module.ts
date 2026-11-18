@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { InjectModel, MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import {
@@ -29,9 +30,11 @@ import {
 import { isValidObjectId, Model, Types } from 'mongoose';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { RateLimit, RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { countBy, paginate, PageQuery, searchRegex } from '../common/pagination';
 import { FilesModule } from '../files/files.module';
 import { FilesService } from '../files/files.service';
+import { signFileId } from '../files/file-signature';
 import { Role } from '../users/schemas/user.schema';
 
 /* ── Schema ─────────────────────────────────────────────── */
@@ -47,7 +50,12 @@ const PRODUCTS = ['tee', 'ls', 'polo', 'polo_ls', 'hoodie', 'zip_hoodie', 'bombe
 const ZONES = ['front', 'back', 'sleeve'] as const;
 
 /** Corporate (B2B) quote request from the /corporate page. */
-@Schema({ timestamps: true, versionKey: false, toJSON: { virtuals: true } })
+@Schema({
+  timestamps: true,
+  versionKey: false,
+  // The logo is the customer's file: sent out only as a signed reference.
+  toJSON: { virtuals: true, transform: (_doc, ret: Record<string, any>) => ({ ...ret, logoFile: signFileId(ret.logoFile) }) },
+})
 export class Quote {
   @Prop({ required: true, trim: true }) name: string;
   @Prop({ default: '', trim: true }) company: string;
@@ -173,7 +181,10 @@ export class QuotesService {
 export class QuotesController {
   constructor(private readonly quotes: QuotesService) {}
 
+  // Public form with an optional 10 MB logo: a few per IP per hour.
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit(5, 60)
   @Post()
   create(@Body() dto: CreateQuoteDto) {
     return this.quotes.create(dto);

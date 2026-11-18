@@ -48,8 +48,10 @@ export class FilesService implements OnModuleInit {
     );
   }
 
-  async open(id: string) {
+  /** Opens a file for download; `allowed` can refuse it (answered as not found). */
+  async open(id: string, allowed: (metadata: Record<string, unknown> | undefined) => boolean = () => true) {
     const file = await this.findFile(id);
+    if (!allowed(file.metadata as Record<string, unknown> | undefined)) throw new NotFoundException('File not found');
     return {
       file,
       stream: this.bucket.openDownloadStream(file._id),

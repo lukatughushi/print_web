@@ -27,3 +27,6 @@ legacy/server/uploads/
 
 # Design mockups and their working copies (kept locally; add -f to track one)
 frontend/src/acrhi/
+
+# Design archive (kept locally, not published)
+frontend/src/acrhi/

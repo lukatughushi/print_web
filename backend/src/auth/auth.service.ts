@@ -66,6 +66,10 @@ export class AuthService {
       if (user.disabled) {
         throw new ForbiddenException({ message: 'ანგარიში გათიშულია — დაგვიკავშირდი', code: 'ACCOUNT_DISABLED' });
       }
+      // An unconfirmed account with this e-mail may have been registered by
+      // someone else (who knows its password): Google proves the address is
+      // this person's, so that password is thrown away.
+      if (user.emailVerified === false) await this.usersService.setPassword(user.id, randomBytes(32).toString('hex'));
       await this.usersService.update(user.id, { googleId: claims.sub, emailVerified: true });
     } else {
       user = await this.usersService.create({
@@ -166,7 +170,7 @@ export class AuthService {
     return { ok: true };
   }
 
-  /** Applies a password change confirmed from the e-mailed link. */
+  /** Applies a password change confirmed from the e-mailed link; signs in anew. */
   async confirmPassword(token: string) {
     const user = await this.usersService.findByToken(
       'pendingPasswordTokenHash',
@@ -177,10 +181,11 @@ export class AuthService {
     if (!user?.pendingPassword) {
       throw new BadRequestException({ message: 'ბმული არასწორია ან ვადაგასულია', code: 'BAD_TOKEN' });
     }
-    await this.usersService.update(user.id, { password: user.pendingPassword }, [
+    await this.usersService.update(user.id, { password: user.pendingPassword, passwordChangedAt: new Date() }, [
       'pendingPassword', 'pendingPasswordTokenHash', 'pendingPasswordExpires',
     ]);
-    return { ok: true };
+    // Older sessions end with the change; this browser gets a fresh one.
+    return this.buildAuthResponse(await this.usersService.findById(user.id));
   }
 
   private async sendVerification(user: UserDocument) {

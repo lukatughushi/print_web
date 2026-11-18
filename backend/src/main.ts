@@ -11,6 +11,15 @@ async function bootstrap() {
   // Orders carry the design's print-ready PNG and layers (several MB).
   app.useBodyParser('json', { limit: '30mb' });
 
+  // Don't advertise the framework; basic hardening headers on every answer.
+  app.disable('x-powered-by');
+  app.use((_req: unknown, res: { setHeader: (k: string, v: string) => void }, next: () => void) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+  });
   app.setGlobalPrefix('api');
   app.enableCors(buildCorsOptions());
   app.useWebSocketAdapter(new SocketIoAdapter(app));

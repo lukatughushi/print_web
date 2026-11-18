@@ -72,6 +72,10 @@ export class User {
   @Prop({ default: false })
   disabled: boolean;
 
+  // Sessions (tokens) issued before this moment stop working: set when the
+  // password changes, so a stolen session ends with a reset.
+  @Prop() passwordChangedAt?: Date;
+
   @Prop({ select: false }) verifyTokenHash?: string;
   @Prop({ select: false }) verifyTokenExpires?: Date;
   @Prop({ select: false }) verifySentAt?: Date;

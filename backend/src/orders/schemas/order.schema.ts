@@ -1,3 +1,4 @@
+import { signFileId } from '../../files/file-signature';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -70,7 +71,23 @@ export class OrderItem {
   @Prop({ type: OrderDesign }) design?: OrderDesign;
 }
 
-@Schema({ timestamps: true, versionKey: false, toJSON: { virtuals: true } })
+// The design's files are the customer's: sent out only as signed references.
+const DESIGN_FILES = ['printFile', 'previewFile', 'backPrintFile', 'backPreviewFile', 'layersFile'] as const;
+
+@Schema({
+  timestamps: true,
+  versionKey: false,
+  toJSON: {
+    virtuals: true,
+    transform: (_doc, ret: Record<string, any>) => {
+      for (const item of ret.items ?? []) {
+        if (!item?.design) continue;
+        for (const key of DESIGN_FILES) if (item.design[key]) item.design[key] = signFileId(String(item.design[key]));
+      }
+      return ret;
+    },
+  },
+})
 export class Order {
   @Prop({ type: [OrderItem], required: true })
   items: OrderItem[];

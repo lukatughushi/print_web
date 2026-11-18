@@ -7,6 +7,7 @@ import { UsersService } from '../../users/users.service';
 
 export interface JwtPayload {
   sub: string;
+  iat?: number;
   email: string;
   role: Role;
 }
@@ -35,6 +36,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload): Promise<AuthUser> {
     const user = await this.users.findAuthInfo(payload.sub);
     if (!user || user.disabled) throw new UnauthorizedException('Account is not active');
+    // Signed in before the password was last changed (iat is in whole seconds).
+    const changed = user.passwordChangedAt ? new Date(user.passwordChangedAt).getTime() : 0;
+    if (changed && (payload.iat ?? 0) * 1000 < changed - 1000) {
+      throw new UnauthorizedException('Session ended after a password change');
+    }
     return { id: payload.sub, email: user.email, role: user.role };
   }
 }

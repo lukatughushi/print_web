@@ -135,6 +135,7 @@ export function ResetPasswordPage() {
 /** /confirm-password?token=… — confirms a password change from the account. */
 export function ConfirmPasswordPage() {
   const { t } = useI18n();
+  const { startSession } = useAuth();
   const [params] = useSearchParams();
   const [state, setState] = useState({ done: false, error: '' });
   const sent = useRef(false);
@@ -143,9 +144,13 @@ export function ConfirmPasswordPage() {
     if (sent.current) return;
     sent.current = true;
     api.post('/api/auth/confirm-password', { token: params.get('token') || '' })
-      .then(() => setState({ done: true, error: '' }))
+      .then(({ data }) => {
+        // Other sessions ended with the change; this one starts afresh.
+        if (data?.accessToken) startSession(data);
+        setState({ done: true, error: '' });
+      })
       .catch((err) => setState({ done: false, error: getErrorMessage(err, t('ბმული არასწორია ან ვადაგასულია')) }));
-  }, [params, t]);
+  }, [params, t, startSession]);
 
   return (
     <AuthCard

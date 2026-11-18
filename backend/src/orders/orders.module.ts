@@ -1,10 +1,11 @@
 import { randomBytes } from 'crypto';
-import { Body, Controller, Get, Module, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Module, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import type { AuthUser } from '../auth/strategies/jwt.strategy';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { RateLimit, RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { FilesModule } from '../files/files.module';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
 import { SettingsModule } from '../settings/settings.module';
@@ -21,7 +22,11 @@ export class OrdersController {
    * Checkout, with or without an account. A signed-in order is filed under the
    * account's e-mail; a guest gets a key for paying and checking this order.
    */
+  // Open to everyone and each order can carry MBs of print files: capped per IP
+  // so a script can't fill the database.
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit(15, 60)
   @Post()
   async create(@CurrentUser() user: AuthUser | undefined, @Body() dto: CreateOrderDto) {
     if (user) return this.orders.create({ ...dto, customerEmail: user.email });

@@ -14,6 +14,7 @@ import {
   Param,
   Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel, MongooseModule } from '@nestjs/mongoose';
@@ -24,6 +25,7 @@ import type { AuthUser } from '../auth/strategies/jwt.strategy';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { RateLimit, RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { Order, OrderDocument, OrderSchema, OrderStatus, PaymentStatus } from '../orders/schemas/order.schema';
 import { Role } from '../users/schemas/user.schema';
 import { BogReceipt, BogService } from './bog.service';
@@ -77,6 +79,8 @@ export class PaymentsController {
   ) {}
 
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit(20, 10)
   @Post(':orderId/start')
   @HttpCode(200)
   async start(
