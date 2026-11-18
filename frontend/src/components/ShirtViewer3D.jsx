@@ -887,6 +887,7 @@ function GarmentMesh({
   backPrintMeshRef,
   modelUrl,
   productType,
+  onDesignTap,
 }) {
   const { scene } = useGLTF(modelUrl);
 
@@ -1146,10 +1147,33 @@ function GarmentMesh({
     backTexture,
   ]);
 
+  // A tap (not a drag) on a print surface: where on the editor canvas it
+  // landed, so the page can pick the text / image there. The texture maps
+  // canvas → surface as  t = (uv − min) / span  and  t = a · canvas + b.
+  const handleClick = (e) => {
+    if (!onDesignTap || e.delta > 6 || !e.uv) return;
+    const mesh = e.object;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    const side = materials.map((m) => printSideOf(mesh, m)).find(Boolean);
+    if (!side || mesh.userData.wrapPrint) return;
+    const bounds = mesh.userData.printUvBounds;
+    const mapping = mesh.userData.printMapping || IDENTITY_MAPPING;
+    const spanU = bounds ? bounds.maxU - bounds.minU : 1;
+    const spanV = bounds ? bounds.maxV - bounds.minV : 1;
+    const tx = bounds ? (e.uv.x - bounds.minU) / spanU : e.uv.x;
+    const ty = bounds ? (e.uv.y - bounds.minV) / spanV : e.uv.y;
+    e.stopPropagation();
+    onDesignTap({
+      side,
+      x: ((tx - mapping.bx) / mapping.ax) * EDITOR_W,
+      y: ((ty - mapping.by) / mapping.ay) * EDITOR_H,
+    });
+  };
+
   // Outer group rotates around the already-centred model, so turning it
   // never moves it off-centre.
   return (
-    <group rotation={[0, rotationY, 0]}>
+    <group rotation={[0, rotationY, 0]} onClick={onDesignTap ? handleClick : undefined}>
       <group
         scale={normalizationScale}
         position={[
@@ -1949,6 +1973,9 @@ export default function ShirtViewer3D({
   printSide = 'front',
   // Called when 3D can't be drawn here, so the page can show a flat view.
   onUnavailable,
+  // 3D mode: a tap on the printed design, as { side, x, y } in editor
+  // canvas coordinates (see GarmentMesh).
+  onDesignTap,
 }) {
   const { t } = useI18n();
   const printMeshRef =
@@ -2071,6 +2098,7 @@ export default function ShirtViewer3D({
             productType={
               productType
             }
+            onDesignTap={interactive ? onDesignTap : undefined}
           />
           <ModelReady url={resolvedModelUrl} onReady={setReadyUrl} />
         </Suspense>

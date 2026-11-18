@@ -98,8 +98,8 @@ function Lightbox({ work, index, onIndex, onClose }) {
         <img src={work.photos[index]} alt={t(work.client)} className={s.lbImg} />
         {count > 1 && (
           <>
-            <button type="button" className={`${s.lbArrow} ${s.lbPrev}`} onClick={() => step(-1)} aria-label={t('წინა')}>←</button>
-            <button type="button" className={`${s.lbArrow} ${s.lbNext}`} onClick={() => step(1)} aria-label={t('შემდეგი')}>→</button>
+            <button type="button" className={`${s.lbArrow} ${s.lbPrev}`} onClick={() => step(-1)} aria-label={t('წინა')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
+            <button type="button" className={`${s.lbArrow} ${s.lbNext}`} onClick={() => step(1)} aria-label={t('შემდეგი')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
           </>
         )}
       </div>

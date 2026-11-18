@@ -482,6 +482,43 @@ function SelectionTransformer({ nodeRef, isSelected, is3DMode }) {
 
 /* ── Uploaded image ─────────────────────────────────────── */
 
+// The rotate button: on to the next quarter turn (48° → 90° → 180° → −90° →
+// 0°), kept within −180…180 like the rotation slider.
+function nextRightAngle(rotation = 0) {
+  const next = (Math.floor((rotation ?? 0) / 90 + 1e-6) + 1) * 90;
+  const angle = ((((next + 180) % 360) + 360) % 360) - 180;
+  return angle === -180 ? 180 : angle;
+}
+
+// Whether an editor point lies on a text / image (its box, turned by its
+// rotation about the top-left corner, as Konva draws it).
+const measureCtx = typeof document !== 'undefined' ? document.createElement('canvas').getContext('2d') : null;
+function containsPoint(kind, node, px, py) {
+  let w;
+  let h;
+  if (kind === 'image') {
+    const scale = node.scale ?? 1;
+    w = (node.width ?? UPLOAD_BOX) * scale;
+    h = (node.height ?? UPLOAD_BOX) * scale;
+  } else {
+    const size = node.fontSize || 28;
+    const lines = String(node.text || '').split('\n');
+    if (measureCtx) measureCtx.font = `${size}px '${node.fontFamily || 'sans-serif'}'`;
+    const spacing = node.letterSpacing ?? 0;
+    const widest = Math.max(...lines.map((l) => (measureCtx ? measureCtx.measureText(l).width : l.length * size * 0.6) + spacing * l.length));
+    w = widest * (node.textScaleX ?? 1);
+    h = lines.length * size * (node.lineHeight ?? 1) * (node.textScaleY ?? 1);
+  }
+  const a = -((node.rotation ?? 0) * Math.PI) / 180;
+  const dx = px - node.x;
+  const dy = py - node.y;
+  const lx = dx * Math.cos(a) - dy * Math.sin(a);
+  const ly = dx * Math.sin(a) + dy * Math.cos(a);
+  // A few pixels of slack: small texts are easier to hit.
+  const pad = 6;
+  return lx >= -pad && ly >= -pad && lx <= w + pad && ly <= h + pad;
+}
+
 const DesignImage = ({
   imgData,
   isSelected,
@@ -1835,10 +1872,31 @@ export default function DesignPage() {
     ) || null;
 
   // Selecting an object (on the canvas or in the layer list) also opens
-  // its tool panel.
+  // its tool panel. In 3D mode it also leaves 3D, facing the object's side,
+  // so it can be edited straight away.
   const selectObject = (id, kind) => {
+    if (is3DMode) {
+      setIs3DMode(false);
+      setView3dResetKey((n) => n + 1);
+    }
     setSelectedId(id);
     if (kind) setTool(kind);
+  };
+
+  // 3D mode: a tap on the printed design picks the top text / image under it
+  // (on the side that was tapped) and switches to editing it.
+  const handleDesignTap = ({ side: tapped, x, y }) => {
+    const sideDesign = designs[tapped];
+    if (!sideDesign) return;
+    const hit = [...sortByStack(sideDesign.images, sideDesign.textObjects)]
+      .reverse()
+      .find(({ kind, node }) => node.visible !== false && containsPoint(kind, node, x, y));
+    if (!hit) return;
+    setView3d(supportsBackPrint && tapped === 'back' ? 'back' : 'front');
+    setView3dResetKey((n) => n + 1);
+    setIs3DMode(false);
+    setSelectedId(hit.node.id);
+    setTool(hit.kind);
   };
 
   // Bottom → top, the order both the editor and the print texture draw in.
@@ -3303,10 +3361,15 @@ export default function DesignPage() {
               I
             </button>
             <span className={s.ctxSep} />
-            <span className={s.ctxMeta}>
+            <button
+              type="button"
+              className={s.ctxPillPlain}
+              title={t('90°-ით მობრუნება')}
+              onClick={() => updateText(selectedText.id, { rotation: nextRightAngle(selectedText.rotation) })}
+            >
               {ICONS.rotate}
               {selectedText.rotation ?? 0}°
-            </span>
+            </button>
             <button
               type="button"
               className={`${s.ctxBtn} ${s.ctxDanger}`}
@@ -3368,11 +3431,7 @@ export default function DesignPage() {
               type="button"
               className={s.ctxPillPlain}
               title={t('90°-ით მობრუნება')}
-              onClick={() =>
-                updateImage(selectedImage.id, {
-                  rotation: ((((selectedImage.rotation ?? 0) + 90 + 180) % 360) + 360) % 360 - 180,
-                })
-              }
+              onClick={() => updateImage(selectedImage.id, { rotation: nextRightAngle(selectedImage.rotation) })}
             >
               {ICONS.rotate}
               {selectedImage.rotation ?? 0}°
@@ -3413,6 +3472,7 @@ export default function DesignPage() {
                   backDesignRev={backDesignRev}
                   printSide={editSide}
                   onUnavailable={() => setGlFailed(true)}
+                  onDesignTap={handleDesignTap}
                 />
               ) : (
                 <img
