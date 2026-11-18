@@ -149,14 +149,15 @@ export function productImg(product) {
   return /^[a-f0-9]{24}$/i.test(src || '') ? assetUrl(`/api/files/${src}`) : assetUrl(src);
 }
 
-// Mirrors SettingsService.shippingFor on the backend; the fees come from /api/settings.
+// Mirrors SettingsService.shippingFor on the backend. Fees and the free-delivery
+// threshold come only from /api/settings (admin); pages wait for them.
 // delivery: 'tbilisi' (courier), 'region' (courier outside Tbilisi) or 'pickup' (free).
 export function shippingFor(subtotal, settings, delivery = 'tbilisi') {
-  const freeFrom = settings.freeShipThreshold ?? 150;
+  const freeFrom = Number(settings.freeShipThreshold) || 0;
   if (delivery === 'pickup' || subtotal === 0) return 0;
   // A threshold of 0 means there is no free delivery.
   if (freeFrom > 0 && subtotal >= freeFrom) return 0;
-  return delivery === 'region' ? (settings.regionShippingFee ?? 15) : (settings.shippingFee ?? 10);
+  return Number(delivery === 'region' ? settings.regionShippingFee : settings.shippingFee) || 0;
 }
 
 const NBSP = String.fromCharCode(160);

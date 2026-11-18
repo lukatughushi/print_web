@@ -26,7 +26,6 @@ const DEFAULT_SETTINGS = {
   heroCtaLink: '',
   proofNumber: '',
   proofText: '',
-  freeShipThreshold: 150,
   currency: '₾',
   contactPhone: '',
   contactEmail: '',

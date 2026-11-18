@@ -206,7 +206,7 @@ export default function CorporatePage() {
 
   const phone = settings.contactPhone || '';
   // 0 = no free delivery: the stat is left out.
-  const freeShip = Number(settings.freeShipThreshold ?? 150) || 0;
+  const freeShip = Number(settings.freeShipThreshold) || 0;
 
   return (
     <div className={s.page}>

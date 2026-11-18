@@ -17,9 +17,6 @@ const PAY_OPTS = [
   ['card', 'ბარათით გადახდა'],
 ];
 
-// Where the studio is, when settings have no address yet.
-const STUDIO_ADDRESS = 'ქ. თბილისი, ოდესის ქუჩა 14';
-
 // A phone number: 9–15 digits, optionally starting with + (spaces allowed while typing).
 const cleanPhone = (v) => v.replace(/\s/g, '');
 const PHONE_RE = /^\+?\d{9,15}$/;
@@ -117,7 +114,7 @@ export default function CheckoutPage() {
   const { items, clear, updateItem, removeItem } = useCartStore();
   const { user, refreshUser } = useAuth();
 
-  const [settings, setSettings] = useState({ currency: '₾', freeShipThreshold: 150 });
+  const [settings, setSettings] = useState({ currency: '₾' });
   const [form, setForm] = useState(readDraft);
   const [pay, setPay] = useState('card');
   const [error, setError] = useState('');
@@ -194,16 +191,22 @@ export default function CheckoutPage() {
   const delivery = form.method === 'pickup' ? 'pickup' : form.zone;
   const cur = settings.currency || '₾';
   const subtotal = items.reduce((sum, it) => sum + (it.basePrice || 0) * (it.quantity || 1), 0);
+  // Fees, threshold and pickup text come from the server; until they arrive
+  // nothing is guessed (no built-in fee flashes first).
+  const known = settings.shippingFee !== undefined;
+  const WAIT = '…';
   const shipping = shippingFor(subtotal, settings, delivery);
   const total = subtotal + shipping;
   const feeText = (zone) => {
+    if (!known) return WAIT;
     const fee = shippingFor(subtotal, settings, zone);
     return fee ? money(fee, cur) : t('უფასო');
   };
+  const shippingText = known ? (shipping ? money(shipping, cur) : t('უფასო')) : WAIT;
+  const totalText = known ? money(total, cur) : WAIT;
   // Admin's pickup text (address, hours…), else the contact address.
-  const studioAddress = settingText(settings, 'pickupText', lang, t)
-    || settingText(settings, 'contactAddress', lang, t)
-    || t(STUDIO_ADDRESS);
+  const studioAddress = !known ? WAIT : (settingText(settings, 'pickupText', lang, t)
+    || settingText(settings, 'contactAddress', lang, t));
   const city = form.zone === 'tbilisi' ? t('თბილისი') : form.city.trim();
 
   const set = (key) => (e) => { setForm((f) => ({ ...f, [key]: e.target.value })); setError(''); };
@@ -311,7 +314,7 @@ export default function CheckoutPage() {
           </p>
           <p className={s.doneText} style={{ color: '#8A98A6', marginBottom: 30 }}>
             {delivery === 'pickup'
-              ? `${t('გატანა სტუდიიდან')} · ${studioAddress}`
+              ? [t('გატანა სტუდიიდან'), studioAddress].filter(Boolean).join(' · ')
               : `${t('მიწოდება 2–3 სამუშაო დღეში')} · ${city}`}
           </p>
           <button className={s.btnDark} onClick={() => navigate('/shop')}>{t('გაგრძელება')}</button>
@@ -390,9 +393,9 @@ export default function CheckoutPage() {
                 </div>
               )}
               <Choice on={form.method === 'pickup'} onPick={() => pick({ method: 'pickup' })}>
-                <span className={c.grow}>{t('ადგილიდან გატანა')}</span><span className={c.fee}>{t('უფასო')}</span>
+                <span className={c.grow}>{t('ადგილიდან გატანა')}</span><span className={c.fee}>{known ? t('უფასო') : WAIT}</span>
               </Choice>
-              {form.method === 'pickup' && (
+              {form.method === 'pickup' && studioAddress && (
                 <div className={c.sub}><div className={c.signedIn} style={{ whiteSpace: 'pre-line' }}>{studioAddress}</div></div>
               )}
             </div>
@@ -434,7 +437,7 @@ export default function CheckoutPage() {
                 ? t('იგზავნება…')
                 : priceCheck.status === 'loading'
                   ? t('ფასები მოწმდება…')
-                  : `${t('შეკვეთის დადასტურება')} · ${money(total, cur)}`}
+                  : `${t('შეკვეთის დადასტურება')} · ${totalText}`}
             </button>
             <p className={c.hint} style={{ margin: 0, fontSize: 13 }}>
               {t('შეკვეთის დადასტურებით ეთანხმები')} <Link to="/terms" target="_blank">{t('წესებსა და პირობებს')}</Link>{' '}
@@ -476,11 +479,11 @@ export default function CheckoutPage() {
             ))}
             <div className={s.summaryRow} style={{ marginTop: 12 }}>
               <span>{delivery === 'pickup' ? t('ადგილიდან გატანა') : t('მიწოდება')}</span>
-              <span>{shipping ? money(shipping, cur) : t('უფასო')}</span>
+              <span>{shippingText}</span>
             </div>
             <div className={s.summaryTotal}>
               <b>{t('ჯამი')}</b>
-              <span>{money(total, cur)}</span>
+              <span>{totalText}</span>
             </div>
           </div>
         </div>

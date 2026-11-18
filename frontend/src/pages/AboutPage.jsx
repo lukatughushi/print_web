@@ -10,8 +10,6 @@ import { useI18n } from '../i18n/i18n-context';
 // Same Google Maps pin as the footer.
 const MAP_URL = 'https://maps.app.goo.gl/UDuy3SRruh8H1mS47';
 // Shown until admin settings fill in the contacts.
-const ADDRESS = 'ქ. თბილისი, ოდესის ქუჩა 14';
-const EMAIL = 'prentastudio@gmail.com';
 
 const SERVICES = [
   {
@@ -52,8 +50,8 @@ export default function AboutPage() {
     return () => clearTimeout(tm);
   }, [hash]);
 
-  const address = settingText(settings, 'contactAddress', lang, t) || t(ADDRESS);
-  const email = settings.contactEmail || EMAIL;
+  const address = settingText(settings, 'contactAddress', lang, t);
+  const email = settings.contactEmail || '';
   const phone = settings.contactPhone || '';
 
   return (
@@ -111,10 +109,18 @@ export default function AboutPage() {
             <div className={`${s.card} ${s.cardDark}`}>
               <h2 className={s.h3}>{t('კონტაქტი')}</h2>
               <dl className={s.contacts}>
-                <dt>{t('მისამართი')}</dt>
-                <dd><a href={MAP_URL} target="_blank" rel="noopener noreferrer">{address}</a></dd>
-                <dt>{t('ელფოსტა')}</dt>
-                <dd><a href={`mailto:${email}`}>{email}</a></dd>
+                {address && (
+                  <>
+                    <dt>{t('მისამართი')}</dt>
+                    <dd><a href={MAP_URL} target="_blank" rel="noopener noreferrer">{address}</a></dd>
+                  </>
+                )}
+                {email && (
+                  <>
+                    <dt>{t('ელფოსტა')}</dt>
+                    <dd><a href={`mailto:${email}`}>{email}</a></dd>
+                  </>
+                )}
                 {phone && (
                   <>
                     <dt>{t('ტელეფონი')}</dt>

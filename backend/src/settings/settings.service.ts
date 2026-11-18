@@ -77,7 +77,7 @@ export class SettingsService {
     if (delivery === 'pickup' || subtotal === 0) return 0;
     // A threshold of 0 means there is no free delivery.
     if (settings.freeShipThreshold > 0 && subtotal >= settings.freeShipThreshold) return 0;
-    return delivery === 'region' ? (settings.regionShippingFee ?? 15) : settings.shippingFee;
+    return (delivery === 'region' ? settings.regionShippingFee : settings.shippingFee) || 0;
   }
 
   /** A custom category may only go once no product uses it. */

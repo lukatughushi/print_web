@@ -27,7 +27,7 @@ export default function CartPage() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { items, removeItem, setQty } = useCartStore();
-  const [settings, setSettings] = useState({ currency: '₾', freeShipThreshold: 150 });
+  const [settings, setSettings] = useState({ currency: '₾' });
   const studioPath = '/design/start';
   const [productsById, setProductsById] = useState({});
 
@@ -42,9 +42,11 @@ export default function CartPage() {
   }, []);
 
   const subtotal = items.reduce((sum, it) => sum + (it.basePrice || 0) * (it.quantity || 1), 0);
-  const freeFrom = settings.freeShipThreshold ?? 150;
+  const freeFrom = Number(settings.freeShipThreshold) || 0;
   const shipping = shippingFor(subtotal, settings);
   const total = subtotal + shipping;
+  // Until the server's fees arrive, show none rather than a built-in guess.
+  const known = settings.shippingFee !== undefined;
   const cur = settings.currency || '₾';
 
   if (items.length === 0) {
@@ -104,15 +106,15 @@ export default function CartPage() {
 
           <div className={s.summary}>
             <div className={s.summaryRow}><span>{t('პროდუქცია')}</span><span>{money(subtotal, cur)}</span></div>
-            <div className={s.summaryRow}><span>{t('მიწოდება თბილისში')}</span><span>{shipping ? money(shipping, cur) : t('უფასო')}</span></div>
+            <div className={s.summaryRow}><span>{t('მიწოდება თბილისში')}</span><span>{known ? (shipping ? money(shipping, cur) : t('უფასო')) : '…'}</span></div>
             <div className={s.summaryTotal}>
               <b>{t('ჯამი')}</b>
-              <span>{money(total, cur)}</span>
+              <span>{known ? money(total, cur) : '…'}</span>
             </div>
             <button className={`${s.btnDark} ${s.summaryBtn}`} onClick={() => navigate('/checkout')}>
               {t('შეკვეთის გაფორმება')}
             </button>
-            {freeFrom > 0 && (
+            {known && freeFrom > 0 && (
               <div className={s.summaryNote}>
                 {subtotal >= freeFrom
                   ? t('მიწოდება უფასოა')

@@ -7,8 +7,6 @@ import { useI18n } from '../i18n/i18n-context';
 import s from './LegalPage.module.css';
 
 // Shown until admin settings fill in the contacts (same as the About page).
-const ADDRESS = 'ქ. თბილისი, ოდესის ქუჩა 14';
-const EMAIL = 'prentastudio@gmail.com';
 const UPDATED = '2026 წლის 18 ნოემბერი';
 
 /*
@@ -150,13 +148,13 @@ export default function LegalPage({ doc }) {
     api.get('/api/settings').then((r) => r.data && setSettings(r.data)).catch(() => {});
   }, []);
 
-  const address = settingText(settings, 'contactAddress', lang, t) || t(ADDRESS);
-  const email = settings.contactEmail || EMAIL;
+  const address = settingText(settings, 'contactAddress', lang, t);
+  const email = settings.contactEmail || '';
   const phone = settings.contactPhone || '';
   const contacts = (
     <ul className={s.list}>
-      <li>{t('მისამართი')}: {address}</li>
-      <li>{t('ელ. ფოსტა')}: <a href={`mailto:${email}`}>{email}</a></li>
+      {address && <li>{t('მისამართი')}: {address}</li>}
+      {email && <li>{t('ელ. ფოსტა')}: <a href={`mailto:${email}`}>{email}</a></li>}
       {phone && <li>{t('ტელეფონი')}: <a href={`tel:${phone.replace(/\s/g, '')}`}>{phone}</a></li>}
     </ul>
   );
