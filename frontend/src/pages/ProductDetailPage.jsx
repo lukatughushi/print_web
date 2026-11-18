@@ -5,6 +5,7 @@ import useCartStore from '../store/cartStore';
 import { CATEGORY_BY_CODE, COLORS, GENDERS, isOnSale, money, priceOf } from '../lib/catalog';
 import { ProductImage } from '../components/ProductCard';
 import s from './storefront.module.css';
+import BackLink from '../components/BackLink';
 import { useI18n } from '../i18n/i18n-context';
 import { productName, productText } from '../i18n/products';
 
@@ -40,7 +41,7 @@ export default function ProductDetailPage() {
     return (
       <main className={s.page}>
         <div className={s.wrapNarrow}>
-          <div className={s.back} onClick={() => navigate('/shop')}>{t('← მაღაზიაში დაბრუნება')}</div>
+          <BackLink to="/shop">{t('მაღაზიაში დაბრუნება')}</BackLink>
           <div className={s.status}>{t(error)}</div>
         </div>
       </main>

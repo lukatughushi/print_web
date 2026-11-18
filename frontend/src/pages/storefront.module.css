@@ -17,15 +17,37 @@
 }
 .lead { color: #8A98A6; margin: 0 0 26px; }
 
+/* "Back" link: round arrow + label; on hover the circle fills and the arrow nudges left. */
 .back {
-  font-size: 14px;
-  color: #8A98A6;
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 18px;
-  display: inline-block;
-  transition: color .15s;
+  padding: 4px 14px 4px 4px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #5A6B7E;
+  text-decoration: none;
+  transition: color .2s, background-color .2s;
 }
-.back:hover { color: #EF5F79; }
+.backIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #E1D6CE;
+  background: #fff;
+  color: #16283F;
+  transition: background-color .2s, border-color .2s, color .2s, transform .2s;
+}
+.backIcon svg { transition: transform .2s; }
+.back:hover { color: #EF5F79; background: #FDEEF1; }
+.back:hover .backIcon { background: #EF5F79; border-color: #EF5F79; color: #fff; }
+.back:hover .backIcon svg { transform: translateX(-2px); }
+.back:focus-visible { outline: 2px solid #EF5F79; outline-offset: 2px; }
 
 /* ── Buttons ─────────────────────────────────────────────── */
 .btnPrimary,

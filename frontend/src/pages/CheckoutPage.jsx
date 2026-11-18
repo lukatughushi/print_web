@@ -5,6 +5,7 @@ import useCartStore from '../store/cartStore';
 import { useAuth } from '../context/auth-context';
 import { kidsSizesFor, money, priceOf, shippingFor } from '../lib/catalog';
 import s from './storefront.module.css';
+import BackLink from '../components/BackLink';
 import c from './Checkout.module.css';
 import { useI18n } from '../i18n/i18n-context';
 import { productName } from '../i18n/products';
@@ -334,7 +335,7 @@ export default function CheckoutPage() {
   return (
     <main className={s.page}>
       <div className={s.wrapMid}>
-        <div className={s.back} onClick={() => navigate('/cart')}>{t('← კალათა')}</div>
+        <BackLink to="/cart">{t('კალათა')}</BackLink>
         <h1 className={s.h1} style={{ marginBottom: 20 }}>{t('შეკვეთის გაფორმება')}</h1>
 
         <div className={s.twoCol}>
@@ -359,11 +360,11 @@ export default function CheckoutPage() {
             <div className={c.group}>{t('მიწოდება')}</div>
             <div className={s.payList} role="radiogroup" aria-label={t('მიწოდება')}>
               <Choice on={form.method === 'courier'} onPick={() => pick({ method: 'courier' })}>
-                <span>{t('კურიერით მიტანა')}</span>
+                <span>{t('საკურიერო მომსახურება')}</span>
               </Choice>
               {form.method === 'courier' && (
                 <div className={c.sub}>
-                  <div className={s.payList} role="radiogroup" aria-label={t('კურიერით მიტანა')}>
+                  <div className={s.payList} role="radiogroup" aria-label={t('საკურიერო მომსახურება')}>
                     <Choice on={form.zone === 'tbilisi'} onPick={() => pick({ zone: 'tbilisi' })}>
                       <span className={c.grow}>{t('თბილისში')}</span><span className={c.fee}>{feeText('tbilisi')}</span>
                     </Choice>
