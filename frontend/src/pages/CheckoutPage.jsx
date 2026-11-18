@@ -380,11 +380,11 @@ export default function CheckoutPage() {
                   <div className={s.formGrid}>
                     {form.zone === 'region' && (
                       <label className={s.field}>{t('ქალაქი / სოფელი')}
-                        <input className={s.input} value={form.city} onChange={set('city')} placeholder={t('მაგ. ქუთაისი')} autoComplete="address-level2" />
+                        <input className={s.input} value={form.city} onChange={set('city')} autoComplete="address-level2" />
                       </label>
                     )}
                     <label className={s.field}>{t('მისამართი')}
-                      <input className={s.input} value={form.addr} onChange={set('addr')} placeholder={t('ჭავჭავაძის 12, ბ. 4')} autoComplete="street-address" />
+                      <input className={s.input} value={form.addr} onChange={set('addr')} autoComplete="street-address" />
                     </label>
                   </div>
                 </div>
