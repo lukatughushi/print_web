@@ -1264,6 +1264,24 @@ function SmoothViewControls({
     spherical,
   ]);
 
+  /*
+   * Touch scrolling on phones. OrbitControls turns off the browser's touch
+   * gestures on the canvas (touch-action: none). That is right in 3D mode,
+   * where a swipe turns the model, but in the flat front / back view the
+   * page must scroll when swiped over the model, so it is set back to vertical
+   * panning there. OrbitControls listens on the element R3F's events are
+   * connected to (the canvas's wrapper), so that is the one to change.
+   * Checked every frame, because OrbitControls sets it again whenever it
+   * reconnects; it only writes when the value is wrong.
+   */
+  const eventsTarget = useThree((state) => state.events.connected);
+  useFrame(() => {
+    const want = interactive ? 'none' : 'pan-y';
+    if (eventsTarget && eventsTarget.style.touchAction !== want) eventsTarget.style.touchAction = want;
+    const canvas = gl?.domElement;
+    if (canvas && canvas.style.touchAction !== want) canvas.style.touchAction = want;
+  });
+
   /* Wheel zoom that also works through the editor overlay */
   useEffect(() => {
     const handleWheel = (e) => {

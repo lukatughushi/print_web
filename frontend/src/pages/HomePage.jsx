@@ -7,12 +7,7 @@ import SiteFooter from '../components/SiteFooter';
 import s from './HomePage.module.css';
 
 import HeroRack from '../components/HeroRack';
-import teeImg from '../assets/home/tee.webp';
-import hoodieImg from '../assets/home/hoodie.webp';
-import longsleeveImg from '../assets/home/longsleeve.webp';
-import toteImg from '../assets/home/tote.webp';
-import capImg from '../assets/home/cap.webp';
-import mugImg from '../assets/home/mug.webp';
+import { tileImage, tileLabel, tilesFrom } from '../lib/homeTiles';
 import corpRoofing from '../assets/corp/roofing-2.webp';
 import corpSushi from '../assets/corp/sushi.webp';
 import corpVlog from '../assets/corp/vlog-1.webp';
@@ -41,17 +36,6 @@ const DEFAULT_SETTINGS = {
 // Starting price shown on the hero chip (a printed T-shirt).
 const HERO_FROM_PRICE = 29;
 
-// Category cards. `cats` are the shop categories whose lowest price the tile shows;
-// `from` is the fallback while products load.
-const BENTO = [
-  { ka: 'მაისური', cats: ['TSHIRT'], img: teeImg, from: 35 },
-  { ka: 'ჰუდი', cats: ['HOODIE', 'ZIP_HOODIE'], img: hoodieImg, from: 89 },
-  { ka: 'პოლო', cats: ['POLO', 'POLO_LONGSLEEVE'], img: corpRoofing, from: 45, photo: true },
-  { ka: 'გრძელმკლავიანი', cats: ['LONGSLEEVE'], img: longsleeveImg, from: 55 },
-  { ka: 'ჩანთა', cats: ['BAG'], img: toteImg, from: 29 },
-  { ka: 'კეპი', cats: ['CAP'], img: capImg, from: 39 },
-  { ka: 'ჭიქა', cats: ['MUG'], img: mugImg, from: 25 },
-];
 
 const TICKER = ['მაისური', 'ჰუდი', 'პოლო', 'ბომბერი', 'ჩანთა', 'კეპი', 'ჭიქა', 'DTF ბეჭდვა', '1 ცალიდან', 'მიწოდება 3 დღეში'];
 
@@ -75,13 +59,17 @@ export default function HomePage() {
 
   /* ── Settings ───────────────────────────────────────────── */
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  // The category tiles wait for the server, so old tiles never flash first.
+  const [settingsReady, setSettingsReady] = useState(false);
   useEffect(() => {
     api.get('/api/settings')
       .then((r) => setSettings({ ...DEFAULT_SETTINGS, ...Object.fromEntries(
         Object.entries(r.data || {}).filter(([, v]) => v !== null && v !== undefined && v !== ''),
       ) }))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setSettingsReady(true));
   }, []);
+  const tiles = settingsReady ? tilesFrom(settings).filter((tile) => !tile.hidden) : [];
 
   /* ── Products ───────────────────────────────────────────── */
   const [products, setProducts] = useState([]);
@@ -98,9 +86,10 @@ export default function HomePage() {
     const price = priceOf(p);
     if (price > 0 && !(fromPrice[p.category] <= price)) fromPrice[p.category] = price;
   });
+  // Lowest price in the tile's categories; null until products are in.
   const tileFrom = (tile) => {
-    const prices = tile.cats.map((c) => fromPrice[c]).filter((v) => v !== undefined);
-    return prices.length ? Math.min(...prices) : tile.from;
+    const prices = (tile.cats || []).map((c) => fromPrice[c]).filter((v) => v !== undefined);
+    return prices.length ? Math.min(...prices) : null;
   };
 
   // Best sellers: discounted first, then new arrivals, one of each category at most.
@@ -193,21 +182,23 @@ export default function HomePage() {
             <Link className={s.more} to="/shop">{t('ყველა პროდუქტი →')}</Link>
           </div>
           <div className={s.cats}>
-            {BENTO.map((b) => (
-              <Link key={b.ka} to={`/shop?cat=${b.cats[0]}`} className={s.cat}>
+            {tiles.map((b, i) => (
+              <Link key={`${i}-${b.label}`} to={`/shop?cat=${(b.cats || []).join(',')}`} className={s.cat}>
                 <span className={s.catMedia}>
-                  <img src={b.img} alt={t(b.ka)} loading="lazy" className={b.photo ? s.catPhoto : ''} />
+                  {b.image && <img src={tileImage(b.image)} alt={tileLabel(b, lang, t)} loading="lazy" className={b.photo ? s.catPhoto : ''} />}
                 </span>
                 <span className={s.catBar}>
                   <span className={s.catText}>
-                    <span className={s.catName}>{t(b.ka)}</span>
-                    <span className={s.catFrom}>{t('{price}-დან', { price: money(tileFrom(b)) })}</span>
+                    <span className={s.catName}>{tileLabel(b, lang, t)}</span>
+                    {tileFrom(b) !== null && (
+                      <span className={s.catFrom}>{t('{price}-დან', { price: money(tileFrom(b)) })}</span>
+                    )}
                   </span>
                   <span className={s.catArrow}>→</span>
                 </span>
               </Link>
             ))}
-            <Link to="/shop" className={`${s.cat} ${s.catAll}`}>
+            {settingsReady && <Link to="/shop" className={`${s.cat} ${s.catAll}`}>
               <span className={s.catAllBody}>
                 <span className={s.catAllTitle}>{t('მრავალფეროვანი არჩევანი')}</span>
                 <span className={s.catAllText}>{t('ზომები XS-დან XL-მდე.')}</span>
@@ -216,7 +207,7 @@ export default function HomePage() {
                 <span className={s.catName}>{t('ყველა პროდუქტი')}</span>
                 <span className={s.catArrow}>→</span>
               </span>
-            </Link>
+            </Link>}
           </div>
         </section>
 

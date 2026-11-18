@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsInt,
@@ -47,6 +48,20 @@ export class HeroRackItemDto {
   @IsString() @Matches(/^#[0-9a-fA-F]{6}$/) hex: string;
 }
 
+/** One home-page category tile. */
+export class HomeTileDto {
+  @IsString() @MinLength(1) @MaxLength(40) label: string;
+  @IsOptional() @IsString() @MaxLength(40) en?: string;
+  @IsOptional() @IsString() @MaxLength(40) ru?: string;
+  /** Shop categories the tile opens (and whose lowest price it shows). */
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(10) @Matches(/^[A-Z][A-Z0-9_]{1,29}$/, { each: true }) cats: string[];
+  /** GridFS id, or "builtin:<name>" for a picture bundled with the site. */
+  @IsString() @Matches(/^([a-f0-9]{24}|builtin:[a-z0-9-]{1,30})$/i) image: string;
+  /** A real photo: cropped a little higher so faces / logos stay in view. */
+  @IsOptional() @IsBoolean() photo?: boolean;
+  @IsOptional() @IsBoolean() hidden?: boolean;
+}
+
 export class UpdateSettingsDto {
   @IsOptional() @IsString() @MaxLength(300) announcementText?: string;
   @IsOptional() @IsBoolean() announcementActive?: boolean;
@@ -74,4 +89,6 @@ export class UpdateSettingsDto {
   categories?: CategoriesDto;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true }) @Type(() => HeroRackItemDto)
   heroRack?: HeroRackItemDto[];
+  @IsOptional() @IsArray() @ArrayMaxSize(24) @ValidateNested({ each: true }) @Type(() => HomeTileDto)
+  homeTiles?: HomeTileDto[];
 }

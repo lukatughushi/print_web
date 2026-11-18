@@ -46,6 +46,7 @@ const AdminLogs = lazy(() => import('./pages/admin/LogsPage'));
 const SettingsPage = lazy(() => import('./pages/admin/SettingsPage'));
 const AdminConstructor = lazy(() => import('./pages/admin/ConstructorPage'));
 const AdminHeroSpecial = lazy(() => import('./pages/admin/HeroSpecialPage'));
+const AdminHomeTiles = lazy(() => import('./pages/admin/HomeTilesPage'));
 const AdminCategories = lazy(() => import('./pages/admin/CategoriesPage'));
 
 // Fetch the constructor code once the current page is idle, so opening it
@@ -132,6 +133,7 @@ function AppContent() {
             <Route path="products" element={<AdminProducts />} />
             <Route path="constructor" element={<AdminConstructor />} />
             <Route path="hero-special" element={<AdminHeroSpecial />} />
+            <Route path="home-tiles" element={<AdminHomeTiles />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="roles" element={<AdminRoles />} />

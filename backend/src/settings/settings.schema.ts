@@ -107,6 +107,34 @@ export class Settings {
     default: [],
   })
   heroRack: { slot: number; image: string; x: number; y: number; scale: number; hex: string }[];
+
+  /**
+   * Category tiles on the home page ("რაზე დავბეჭდოთ?"), in display order
+   * (admin Home tiles page). image: a GridFS file id, or "builtin:<name>" for
+   * a picture bundled with the site. Empty = the site's built-in tiles.
+   */
+  @Prop({
+    type: [{
+      _id: false,
+      label: String,
+      en: String,
+      ru: String,
+      cats: [String],
+      image: String,
+      photo: Boolean,
+      hidden: Boolean,
+    }],
+    default: [],
+  })
+  homeTiles: {
+    label: string;
+    en?: string;
+    ru?: string;
+    cats: string[];
+    image: string;
+    photo?: boolean;
+    hidden?: boolean;
+  }[];
 }
 
 export type SettingsDocument = HydratedDocument<Settings>;
