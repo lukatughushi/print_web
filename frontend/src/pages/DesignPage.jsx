@@ -917,6 +917,13 @@ export default function DesignPage() {
   const [textInput, setTextInput] =
     useState('');
 
+  // Typing in the text box adds the text to the garment at once. Enter or
+  // leaving the box finishes it: the box empties (the text stays selected so
+  // font, size and colour still apply to it) and the next typing adds a new
+  // text. Picking a text on the garment makes the box edit that one again.
+  const [textDone, setTextDone] =
+    useState(false);
+
   const [textColor, setTextColor] =
     useState('#1a1a1a');
 
@@ -1633,10 +1640,12 @@ export default function DesignPage() {
           )
         ];
 
-  // Adds a text on top of the stack: the typed text when nothing is
-  // selected, otherwise a placeholder the customer edits in place.
-  function handleAddText() {
+  // Adds a text on top of the stack: the given text (as typed), else the
+  // typed text when nothing is selected, otherwise a placeholder the
+  // customer edits in place.
+  function handleAddText(typed) {
     const text =
+      (typeof typed === 'string' && typed) ||
       (!selectedText &&
         textInput.trim()) ||
       t('ტექსტი');
@@ -1691,6 +1700,7 @@ export default function DesignPage() {
     setSelectedId(id);
     setTool('text');
     setTextInput('');
+    setTextDone(false);
   }
 
   function handleFontSizeChange(
@@ -1860,6 +1870,21 @@ export default function DesignPage() {
   const commitHistory = () =>
     saveHistory(images, textObjects);
 
+  // Enter / leaving the text box: keep the text, empty the box for a new one.
+  const finishText = () => {
+    if (!editingText) return;
+    commitHistory();
+    setTextDone(true);
+    setTextInput('');
+  };
+
+  // Another text picked (on the garment or in the layers): the box edits it.
+  const [textSelFor, setTextSelFor] = useState(selectedId);
+  if (textSelFor !== selectedId) {
+    setTextSelFor(selectedId);
+    setTextDone(false);
+  }
+
   // Swap an object with its neighbour in the stack (dir +1 = up).
   const moveLayer = (id, dir) => {
     const from = stack.findIndex(
@@ -1930,16 +1955,21 @@ export default function DesignPage() {
   };
 
   // The text box edits the selected text, or drafts the next new one.
+  // The text the box edits: the selected one, unless it was just finished.
+  const editingText = textDone ? null : selectedText;
+
   const editText = (value) => {
-    if (!selectedText) {
-      setTextInput(value);
+    if (!editingText) {
+      // First character typed: the text goes onto the garment straight away.
+      if (value.trim()) handleAddText(value);
+      else setTextInput(value);
       return;
     }
     const keepName =
-      selectedText.layerName &&
-      selectedText.layerName !== selectedText.text;
+      editingText.layerName &&
+      editingText.layerName !== editingText.text;
     updateText(
-      selectedText.id,
+      editingText.id,
       {
         text: value,
         ...(keepName ? {} : { layerName: value }),
@@ -2722,7 +2752,7 @@ export default function DesignPage() {
               <div>
                 <div className={s.panelTitle}>{t('ტექსტი')}</div>
                 <div className={s.panelSub}>
-                  {selectedText
+                  {editingText
                     ? t('დაარედაქტირეთ არჩეული ტექსტი')
                     : t('ჩაწერეთ და დაამატეთ ახალი ტექსტი')}
                 </div>
@@ -2732,9 +2762,16 @@ export default function DesignPage() {
                 className={s.textArea}
                 rows={3}
                 placeholder={t('ჩაწერე ტექსტი…')}
-                value={selectedText ? selectedText.text : textInput}
+                value={editingText ? editingText.text : textInput}
                 onChange={(e) => editText(e.target.value)}
-                onBlur={() => selectedText && commitHistory()}
+                onKeyDown={(e) => {
+                  // Enter finishes this text (Shift+Enter: a new line).
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    finishText();
+                  }
+                }}
+                onBlur={finishText}
               />
 
               <div className={s.field}>
