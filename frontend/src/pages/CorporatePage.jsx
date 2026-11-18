@@ -205,7 +205,8 @@ export default function CorporatePage() {
   };
 
   const phone = settings.contactPhone || '';
-  const freeShip = Number(settings.freeShipThreshold) || 150;
+  // 0 = no free delivery: the stat is left out.
+  const freeShip = Number(settings.freeShipThreshold ?? 150) || 0;
 
   return (
     <div className={s.page}>
@@ -224,7 +225,7 @@ export default function CorporatePage() {
             <div className={s.stats}>
               <div><div className={s.statValue}>10+</div><div className={s.statLabel}>{t('მინიმალური საბითუმო შეკვეთა')}</div></div>
               <div><div className={s.statValue}>{t('3–5 დღე')}</div><div className={s.statLabel}>{t('დამზადების ვადა')}</div></div>
-              <div><div className={s.statValue}>{t('უფასო')}</div><div className={s.statLabel}>{t('მიწოდება {price}-დან', { price: `${freeShip} ${settings.currency || '₾'}` })}</div></div>
+              {freeShip > 0 && <div><div className={s.statValue}>{t('უფასო')}</div><div className={s.statLabel}>{t('მიწოდება {price}-დან', { price: `${freeShip} ${settings.currency || '₾'}` })}</div></div>}
             </div>
           </div>
           <div className={s.mosaic}>

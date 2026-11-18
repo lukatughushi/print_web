@@ -145,7 +145,7 @@ export default function SettingsPage() {
             <input id="s-fee-reg" className={s.input} type="number" min="0" step="0.5" value={form.regionShippingFee ?? ''} onChange={set('regionShippingFee')} />
           </div>
           <div className={s.field}>
-            <label className={s.label} htmlFor="s-free">უფასო მიწოდება (₾-დან)</label>
+            <label className={s.label} htmlFor="s-free">უფასო მიწოდება (₾-დან, 0 = არასდროს)</label>
             <input id="s-free" className={s.input} type="number" min="0" step="1" value={form.freeShipThreshold ?? ''} onChange={set('freeShipThreshold')} />
           </div>
           <div className={s.field}>

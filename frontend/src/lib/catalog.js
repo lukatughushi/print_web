@@ -153,7 +153,9 @@ export function productImg(product) {
 // delivery: 'tbilisi' (courier), 'region' (courier outside Tbilisi) or 'pickup' (free).
 export function shippingFor(subtotal, settings, delivery = 'tbilisi') {
   const freeFrom = settings.freeShipThreshold ?? 150;
-  if (delivery === 'pickup' || subtotal === 0 || subtotal >= freeFrom) return 0;
+  if (delivery === 'pickup' || subtotal === 0) return 0;
+  // A threshold of 0 means there is no free delivery.
+  if (freeFrom > 0 && subtotal >= freeFrom) return 0;
   return delivery === 'region' ? (settings.regionShippingFee ?? 15) : (settings.shippingFee ?? 10);
 }
 

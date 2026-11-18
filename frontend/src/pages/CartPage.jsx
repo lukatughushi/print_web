@@ -112,11 +112,13 @@ export default function CartPage() {
             <button className={`${s.btnDark} ${s.summaryBtn}`} onClick={() => navigate('/checkout')}>
               {t('შეკვეთის გაფორმება')}
             </button>
-            <div className={s.summaryNote}>
-              {subtotal >= freeFrom
-                ? t('მიწოდება უფასოა')
-                : t('კიდევ {amount} უფასო მიწოდებამდე', { amount: money(freeFrom - subtotal, cur) })}
-            </div>
+            {freeFrom > 0 && (
+              <div className={s.summaryNote}>
+                {subtotal >= freeFrom
+                  ? t('მიწოდება უფასოა')
+                  : t('კიდევ {amount} უფასო მიწოდებამდე', { amount: money(freeFrom - subtotal, cur) })}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -74,7 +74,9 @@ export class SettingsService {
     settings: Pick<Settings, 'freeShipThreshold' | 'shippingFee' | 'regionShippingFee'>,
     delivery = 'tbilisi',
   ) {
-    if (delivery === 'pickup' || subtotal === 0 || subtotal >= settings.freeShipThreshold) return 0;
+    if (delivery === 'pickup' || subtotal === 0) return 0;
+    // A threshold of 0 means there is no free delivery.
+    if (settings.freeShipThreshold > 0 && subtotal >= settings.freeShipThreshold) return 0;
     return delivery === 'region' ? (settings.regionShippingFee ?? 15) : settings.shippingFee;
   }
 
