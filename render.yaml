@@ -5,7 +5,7 @@ services:
   - type: web
     name: printweb-api
     runtime: node
-    plan: free
+    plan: starter
     rootDir: backend
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start:prod
