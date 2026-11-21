@@ -144,6 +144,9 @@ const NO_ZONES = {};
 // is reached first. Recomputed when the viewer is resized.
 const CAMERA_DISTANCE = 2.25;
 const CAMERA_FOV = 38;
+// Zoom in up to 3×; never out past the starting view, so the garment can't shrink.
+const MIN_DISTANCE = CAMERA_DISTANCE / 3;
+const MAX_DISTANCE = CAMERA_DISTANCE;
 const FIT_HEIGHT = 0.84;
 const FIT_WIDTH = 0.82;
 // A 360° label (mug) is edited as an unrolled strip that can stick out to
@@ -1224,9 +1227,6 @@ function SmoothViewControls({
     () => new THREE.Spherical(),
     []
   );
-
-  const MIN_DISTANCE = 1.25;
-  const MAX_DISTANCE = 5;
 
   /* Front / Back button */
   useEffect(() => {
